@@ -1,0 +1,30 @@
+# algorithm parameter
+algo_name: trpo
+rollout_steps: 2048
+max_timesteps: !!float 1e6
+eval_freq: 5000
+gamma: 0.995
+buffer_size: 2048
+lambda: 0.97
+delta: !!float 1e-2
+damping: !!float 1e-1
+n_critic_update: 5
+
+# conjugate gradient parameter
+residual_tol: !!float 1e-10
+cg_steps: 10
+
+# line search parameter
+beta: 0.5
+max_backtrack: 10
+line_search_accept_ratio: 0.1
+
+# network parameter
+actor_hidden_size: [64, 64]
+critic_hidden_size: [64, 64]
+lr: !!float 3e-4
+weight_decay: !!float 1e-3
+
+# environment parameter
+env_name: HalfCheetah-v3
+device: 'cuda'
