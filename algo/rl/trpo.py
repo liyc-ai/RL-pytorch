@@ -5,7 +5,6 @@ import torch.nn.functional as F
 from torch.optim import Adam
 from torch.nn.utils.convert_parameters import parameters_to_vector
 from torch.distributions.normal import Normal
-from torch.distributions import Independent
 from torch.distributions.kl import kl_divergence
 from algo.rl.base import BaseAgent
 from network.actor import StochasticActor
@@ -14,15 +13,13 @@ from utils.buffer import SimpleReplayBuffer
 from utils.gae import GAE
 
 class TRPOAgent(BaseAgent):
-    """Trust Region actor Optimization
+    """Trust Region Policy Optimization
     """
     def __init__(self, configs):
         super().__init__(configs)
         
         self.rollout_steps = configs['rollout_steps']
         self.lambda_ = configs['lambda']
-        self.gae = GAE(self.gamma, self.lambda_, self.device)
-        
         self.residual_tol = configs['residual_tol']
         self.cg_steps = configs['cg_steps']
         self.damping = configs['damping']
@@ -32,11 +29,11 @@ class TRPOAgent(BaseAgent):
         self.line_search_accept_ratio = configs['line_search_accept_ratio']
         self.n_critic_update = configs['n_critic_update']
         
+        self.gae = GAE(self.gamma, self.lambda_)
+        self.replay_buffer = SimpleReplayBuffer(self.state_dim, self.action_dim, self.device, int(configs['buffer_size']))
         self.actor = StochasticActor(self.state_dim, configs['actor_hidden_size'], self.action_dim).to(self.device)
         self.critic = Critic(self.state_dim, configs['critic_hidden_size']).to(self.device)
         self.critic_optim = Adam(self.critic.parameters(), configs['lr'], weight_decay=configs['weight_decay'])
-        
-        self.replay_buffer = SimpleReplayBuffer(self.state_dim, self.action_dim, self.device, int(configs['buffer_size']))
         
     def _conjugate_gradient(self, Hvp_func, g):
         """To calculate s = H^{-1}g without solving inverse of H
@@ -116,12 +113,7 @@ class TRPOAgent(BaseAgent):
         # estimate advantage
         states, actions, next_states, rewards, not_dones = self.replay_buffer.sample()
         with torch.no_grad():
-            values = self.critic(states)
-            ## The "last_val" argument should be 0 if the trajectory ended because the agent reached a terminal state (died), and otherwise
-            ## should be V(s_T), the value function estimated for the last state.
-            last_value = self.critic(next_states[-1])
-            Rs, advantages = self.gae(self.replay_buffer.size, values, not_dones, rewards, last_value)
-            self.advantages = (advantages-torch.mean(advantages))/torch.std(advantages)  # advantage normalization
+            Rs, self.advantages = self.gae(self.critic, states, rewards, not_dones, next_states)
             
         # estimate actor gradient
         action_mean, action_std = self.actor(states)
@@ -176,8 +168,6 @@ class TRPOAgent(BaseAgent):
             self.critic_optim.zero_grad()
             critic_loss.backward()
             self.critic_optim.step()
-        
-        
         
         # clear buffer
         self.replay_buffer.clear()

@@ -7,18 +7,30 @@ class GAE():
     [1] https://nn.labml.ai/rl/ppo/gae.html
     [2] https://github.com/ikostrikov/pytorch-trpo
     """
-    def __init__(self, gamma, lambda_, device):
+    def __init__(self, gamma, lambda_):
         self.gamma = gamma
         self.lambda_ = lambda_
-        self.device = device
         
-    def __call__(self, buffer_size, values, not_dones, rewards, last_value):
-        Rs = torch.FloatTensor(np.zeros((buffer_size, 1))).to(self.device)  # reward to go R_t
-        advantages = torch.FloatTensor(np.zeros((buffer_size, 1))).to(self.device)  # advantage
-
-        last_advantage = torch.FloatTensor([0.]).to(self.device)
+    def __call__(self, value_net, states, rewards, not_dones, next_states, bootstrap=True):
+        """Here we can use two different methods to calculate Returns
+        """
+        if bootstrap:
+            Rs, advantages = self.td_lambda(value_net, states, rewards, not_dones, next_states)
+        else:
+            Rs, advantages = self.gae(value_net, states, rewards, not_dones, next_states)
+            
+        return Rs, (advantages-advantages.mean())/(advantages.std()+1e-8)
+        
+    def gae(self, value_net, states, rewards, not_dones, next_states):
+        Rs = torch.empty_like(rewards) # reward-to-go R_t
+        advantages = torch.empty_like(rewards) # advantage
+        values = value_net(states)
+        
+        last_value = value_net(next_states[-1])
         last_return = last_value.clone()
-        for t in reversed(range(buffer_size)):
+        last_advantage = 0.
+        
+        for t in reversed(range(rewards.shape[0])):
             # calculate rewards-to-go reward
             Rs[t] = rewards[t] + self.gamma*last_return*not_dones[t]
             # delta and advantage
@@ -28,5 +40,18 @@ class GAE():
             last_value = values[t].clone()
             last_advantage = advantages[t].clone()
             last_return = Rs[t].clone()
-        return Rs, advantages 
-        
+        return Rs, advantages
+    
+    def td_lambda(self, value_net, states, rewards, not_dones, next_states):
+        # Calcultae value
+        values, next_values = value_net(states), value_net(next_states)
+        # Calculate TD errors.
+        deltas = rewards + self.gamma * next_values * not_dones - values
+        # Initialize gae.
+        gaes = torch.empty_like(rewards)
+        # Calculate gae recursively from behind.
+        gaes[-1] = deltas[-1]
+        for t in reversed(range(rewards.size(0) - 1)):
+            gaes[t] = deltas[t] + self.gamma * self.lambda_ * not_dones[t] * gaes[t + 1]
+
+        return gaes + values, gaes

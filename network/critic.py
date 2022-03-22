@@ -16,6 +16,7 @@ class Critic(nn.Module):
             hidden_size[-1] if len(hidden_size)>0 else input_dim,
             output_dim
         )
+        
         # init
         value_head.weight.data.mul_(0.1)
         value_head.bias.data.mul_(0.0)
