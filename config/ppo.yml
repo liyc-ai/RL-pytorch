@@ -11,6 +11,7 @@ entropy_coef: 0.
 value_coef: 0.5
 mini_batch_size: 64
 max_grad_norm: 0.5
+norm_state: true
 
 # network parameter
 actor_hidden_size: [64, 64]

@@ -1,14 +1,24 @@
+import os
 import gym
 import torch
 import numpy as np
 from algo import ALGOS
 from utils.config import read_config
 from utils.transform import ZFilter
+from utils.logger import get_logger
+
+# for safefy
+from torch.utils.backcompat import broadcast_warning, keepdim_warning
+broadcast_warning.enabled = True
+keepdim_warning.enabled = True
 
 state_filter = lambda x: x
+logger = None
+
+log_dir = 'logs'
 
 def eval(agent, env_name, seed, eval_episodes):
-    global state_filter
+    global state_filter, logger
     eval_env = gym.make(env_name)
     eval_env.seed(seed + 100)
     
@@ -22,15 +32,16 @@ def eval(agent, env_name, seed, eval_episodes):
 
     avg_reward /= eval_episodes
     
-    print(f"Evaluation over {eval_episodes} episodes: {avg_reward:.3f}")
+    logger.info(f"Evaluation over {eval_episodes} episodes: {avg_reward:.3f}")
 
 def train(configs, seed):
-    global state_filter
+    global state_filter, logger
     # init environment
     env = gym.make(configs['env_name'])
     configs['state_dim'] = env.observation_space.shape[0]
     configs['action_space'] = env.action_space
-    state_filter = ZFilter(configs['state_dim'])
+    if configs['norm_state']:
+        state_filter = ZFilter(configs['state_dim'])
     
     # fix all the seeds
     env.seed(seed)
@@ -40,6 +51,11 @@ def train(configs, seed):
     
     # prepare training
     configs['device'] = torch.device(configs['device']) if torch.cuda.is_available() else torch.device('cpu')
+    file_name = f"{configs['algo_name']}_{configs['env_name']}_{seed}"
+    
+    os.makedirs(log_dir, exist_ok=True)
+    
+    logger = get_logger(os.path.join(log_dir, file_name+'.log'))
         
     episode_timesteps = 0
     episode_reward = 0
@@ -55,18 +71,21 @@ def train(configs, seed):
         # 0. state transition
         state = next_state
         # 1. select action
-        action = agent.select_action(state, training=True)
+        if 'start_timesteps' in configs.keys() and t < configs['start_timesteps']:
+            action = env.action_space.sample()
+        else:
+            action = agent.select_action(state, training=True)
         # 2. conduct action
         next_state, reward, done, _ = env.step(action)
-        next_state = state_filter(next_state)  # state normalization
+        next_state = state_filter(next_state)
         # 3. update agent
         real_done = done if episode_timesteps < env._max_episode_steps else False  # during training, exceed the env's max steps does not really mean end
         agent.update(state, action, next_state, reward, float(real_done))
         episode_reward += reward  # accumulate reward
         # 4. check env
         if done:
-            next_state = env.reset()
-            print(f"Total T: {t+1} Episode Num: {episode_num+1} Episode T: {episode_timesteps} Reward: {episode_reward:.3f}")
+            next_state = state_filter(env.reset())
+            logger.info(f"Total T: {t+1} Episode Num: {episode_num+1} Episode T: {episode_timesteps} Reward: {episode_reward:.3f}")
             # reset log variable
             episode_reward = 0
             episode_timesteps = 0

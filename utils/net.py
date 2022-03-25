@@ -1,4 +1,6 @@
+import torch
 import torch.nn as nn
+import numpy as np
 
 def build_mlp_extractor(input_dim, hidden_size, activation_fn):
     """
@@ -16,3 +18,13 @@ def build_mlp_extractor(input_dim, hidden_size, activation_fn):
         mlp_extractor.append(activation_fn())
         
     return mlp_extractor
+
+def soft_update(rho, net, target_net):
+    for param, target_param in zip(net.parameters(), target_net.parameters()):
+        target_param.data.copy_(rho * param.data + (1 - rho) * target_param.data)
+        
+# Initialize Policy weights
+def weights_init_(m):
+    if isinstance(m, nn.Linear):
+        torch.nn.init.xavier_uniform_(m.weight, gain=nn.init.calculate_gain('relu'))
+        torch.nn.init.constant_(m.bias, 0)

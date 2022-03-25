@@ -1,5 +1,7 @@
 # Customized
 .vscode/
+logs/
+ref/
 run_test.py
 
 # Byte-compiled / optimized / DLL files

@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn 
-from utils.net import build_mlp_extractor
+from utils.net import build_mlp_extractor, weights_init_
 
 LOG_STD_MIN = -20
 LOG_STD_MAX = 2
@@ -10,11 +10,11 @@ class StochasticActor(nn.Module):
         super().__init__()
         self.state_std_independent = state_std_independent
         self.feature_extractor = nn.Sequential(*build_mlp_extractor(state_dim, hidden_size, activation_fn))
+        
         if len(hidden_size)>0:
             input_dim = hidden_size[-1]
         else:
-            input_dim = state_dim
-            
+            input_dim = state_dim 
         # mean and log std
         self.mu = nn.Linear(input_dim, action_dim)
         if state_std_independent:
@@ -22,9 +22,10 @@ class StochasticActor(nn.Module):
         else:
             self.log_std = nn.Linear(input_dim, action_dim)
         
-        # init parameter
         self.mu.weight.data.mul_(0.1)
         self.mu.bias.data.mul_(0.0)
+        
+        # self.apply(weights_init_)
         
     def forward(self, state):
         feature = self.feature_extractor(state)
