@@ -4,21 +4,26 @@ import torch
 import numpy as np
 from algo import ALGOS
 from utils.config import read_config
-from utils.transform import ZFilter
-from utils.logger import get_logger
+from utils.transform import Regularizer
+from utils.logger import get_logger, get_writer
 
 # for safefy
 from torch.utils.backcompat import broadcast_warning, keepdim_warning
 broadcast_warning.enabled = True
 keepdim_warning.enabled = True
 
-state_filter = lambda x: x
-logger = None
-
+# some needed directories
 log_dir = 'logs'
+tb_dir = 'tb'
+os.makedirs(log_dir, exist_ok=True)
+os.makedirs(tb_dir, exist_ok=True)
+
+state_normalizer = lambda x: x
+logger = None
 
 def eval(agent, env_name, seed, eval_episodes):
     global state_filter, logger
+    
     eval_env = gym.make(env_name)
     eval_env.seed(seed + 100)
     
@@ -26,13 +31,14 @@ def eval(agent, env_name, seed, eval_episodes):
     for _ in range(eval_episodes):
         state, done = eval_env.reset(), False
         while not done:
-            action = agent.select_action(state_filter(state), training=False)
+            action = agent.select_action(state_normalizer(state), training=False)
             state, reward, done, _ = eval_env.step(action)
             avg_reward += reward
 
     avg_reward /= eval_episodes
-    
     logger.info(f"Evaluation over {eval_episodes} episodes: {avg_reward:.3f}")
+    
+    return avg_reward
 
 def train(configs, seed):
     global state_filter, logger
@@ -41,7 +47,7 @@ def train(configs, seed):
     configs['state_dim'] = env.observation_space.shape[0]
     configs['action_space'] = env.action_space
     if configs['norm_state']:
-        state_filter = ZFilter(configs['state_dim'])
+        state_filter = Regularizer()
     
     # fix all the seeds
     env.seed(seed)
@@ -53,16 +59,15 @@ def train(configs, seed):
     configs['device'] = torch.device(configs['device']) if torch.cuda.is_available() else torch.device('cpu')
     file_name = f"{configs['algo_name']}_{configs['env_name']}_{seed}"
     
-    os.makedirs(log_dir, exist_ok=True)
-    
     logger = get_logger(os.path.join(log_dir, file_name+'.log'))
+    writer = get_writer(os.path.join(tb_dir, file_name))
         
     episode_timesteps = 0
     episode_reward = 0
     episode_num = 0
     # init agent
     agent = ALGOS[configs['algo_name']](configs)
-    eval(agent, configs['env_name'], seed, 10)  # evaluate before update, to get baseline
+    writer.add_scalar('Evaluation Averaged Return', eval(agent, configs['env_name'], seed, 10), global_step=0)  # evaluate before update, to get baseline
     
     # agent interects with environment
     next_state = state_filter(env.reset())
@@ -92,7 +97,7 @@ def train(configs, seed):
             episode_num += 1
         # 5. periodically evaluate learned policy
         if (t + 1) % configs['eval_freq'] == 0:
-            eval(agent, configs['env_name'], seed, 10)
+            writer.add_scalar('Evaluation Averaged Return', eval(agent, configs['env_name'], seed, 10), global_step=t)
 
 if __name__ == '__main__':
     # read configs

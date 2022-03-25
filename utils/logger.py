@@ -1,4 +1,5 @@
 import logging
+import tensorboardX
 
 def get_logger(log_file):
     logger = logging.getLogger()
@@ -20,3 +21,7 @@ def get_logger(log_file):
     logger.addHandler(sh)
     logger.addHandler(fh)
     return logger
+
+def get_writer(tb_dir):
+    writer = tensorboardX.SummaryWriter(tb_dir)
+    return writer
