@@ -2,6 +2,7 @@
 .vscode/
 logs/
 ref/
+tb/
 run_test.py
 
 # Byte-compiled / optimized / DLL files
