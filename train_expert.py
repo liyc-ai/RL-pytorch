@@ -15,8 +15,10 @@ keepdim_warning.enabled = True
 # some needed directories
 log_dir = 'logs'
 tb_dir = 'tb'
+model_dir = 'models'
 os.makedirs(log_dir, exist_ok=True)
 os.makedirs(tb_dir, exist_ok=True)
+os.makedirs(model_dir, exist_ok=True)
 
 state_normalizer = lambda x: x
 logger = None
@@ -65,8 +67,15 @@ def train(configs, seed):
     episode_timesteps = 0
     episode_reward = 0
     episode_num = 0
+    best_avg_reward = -np.inf
+    
     # init agent
     agent = ALGOS[configs['algo_name']](configs)
+    model_path = os.path.join(model_dir, file_name)
+    if os.path.exists(model_path):
+        agent.load_model(model_path)
+        logger.info(f"Successfully load model: {model_path}")
+        
     writer.add_scalar('evaluation_averaged_return', eval(agent, configs['env_name'], seed, 10), global_step=0)  # evaluate before update, to get baseline
     
     # agent interects with environment
@@ -76,7 +85,7 @@ def train(configs, seed):
         # 0. state transition
         state = next_state
         # 1. select action
-        if 'start_timesteps' in configs.keys() and t < configs['start_timesteps']:
+        if 'start_timesteps' in configs.keys() and t < configs['start_timesteps'] and not os.path.exists(model_path):
             action = env.action_space.sample()
         else:
             action = agent.select_action(state, training=True)
@@ -85,7 +94,7 @@ def train(configs, seed):
         next_state = state_normalizer(next_state)
         # 3. update agent
         real_done = done if episode_timesteps < env._max_episode_steps else False  # during training, exceed the env's max steps does not really mean end
-        agent.update(state, action, next_state, reward, float(real_done))
+        agent.learn(state, action, next_state, reward, float(real_done))
         episode_reward += reward  # accumulate reward
         # 4. check env
         if done:
@@ -98,7 +107,11 @@ def train(configs, seed):
             episode_num += 1
         # 5. periodically evaluate learned policy
         if (t + 1) % configs['eval_freq'] == 0:
-            writer.add_scalar('evaluation_averaged_return', eval(agent, configs['env_name'], seed, 10), global_step=t)
+            avg_reward = eval(agent, configs['env_name'], seed, 10)
+            writer.add_scalar('evaluation_averaged_return', avg_reward , global_step=t)
+            if avg_reward > best_avg_reward:
+                best_avg_reward = avg_reward
+                agent.save_model(model_path)
 
 if __name__ == '__main__':
     # read configs

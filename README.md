@@ -17,6 +17,9 @@ python run_rl.py trpo  # which will run trpo with config file in config/trpo.yml
 
 1. [TRPO](https://arxiv.org/abs/1502.05477)
 2. [PPO](https://arxiv.org/abs/1707.06347)
+3. [SAC](https://arxiv.org/abs/1812.05905)
+4. [TD3](https://arxiv.org/abs/1802.09477)
+5. [DDPG](https://arxiv.org/abs/1509.02971)
 
 ## Acknowledgement
 During my implementation of IL and RL algorithms, a lot of classic open-source materials on the Internet served as good references. And I highly appreciate their author's effort. Below is a detailed list.
@@ -28,6 +31,8 @@ During my implementation of IL and RL algorithms, a lot of classic open-source m
 + [stable-baselines-contrib](https://github.com/Stable-Baselines-Team/stable-baselines3-contrib)
 + [spinningup](https://github.com/openai/spinningup)
 + [RL-Adventure2](https://github.com/higgsfield/RL-Adventure-2)
++ [imitation](https://github.com/HumanCompatibleAI/imitation)
++ [d4rl_evaluations](https://github.com/rail-berkeley/d4rl_evaluations)
 
 **Open Source Code Repo**
 

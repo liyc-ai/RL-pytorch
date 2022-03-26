@@ -7,10 +7,9 @@ import torch
 import torch.nn.functional as F
 import copy
 import numpy as np
-from algo.rl.base import BaseAgent
+from algo.base import BaseAgent
 from network.actor import DeterministicActor
 from network.critic import Critic
-from utils.buffer import SimpleReplayBuffer
 from utils.net import soft_update
 
 
@@ -31,19 +30,26 @@ class DDPGAgent(BaseAgent):
         self.critic_target = copy.deepcopy(self.critic)
         self.critic_optim = torch.optim.Adam(self.critic.parameters(), lr=configs['critic_lr'])
         
-        self.replay_buffer = SimpleReplayBuffer(self.state_dim, self.action_dim, self.device, configs['buffer_size'])
+        self.models = {
+            'actor': self.actor,
+            'actor_target': self.actor_target,
+            'actor_optim': self.actor_optim,
+            'critic': self.critic,
+            'critic_target': self.critic_target,
+            'critic_optim': self.critic_optim
+        }
         
     def select_action(self, state, training=False):
         state = torch.FloatTensor(state.reshape(1, -1)).to(self.device)
         with torch.no_grad():
-            action = self.transform_action(self.actor(state)).cpu().data.numpy().flatten()
+            action = self._transform_action(self.actor(state)).cpu().data.numpy().flatten()
             if training:
                 action = (action
                     + np.random.normal(0, self.expl_std, size=self.action_dim)
                 ).clip(-self.action_high, self.action_high)
         return action
     
-    def update(self, state, action, next_state, reward, done):
+    def learn(self, state, action, next_state, reward, done):
         # update buffer
         self.replay_buffer.add(state, action, next_state, reward, done)
         
@@ -54,7 +60,7 @@ class DDPGAgent(BaseAgent):
 
         # compute the target Q value
         with torch.no_grad():
-            target_Q = self.critic_target(next_states, self.transform_action(self.actor_target(next_states)))
+            target_Q = self.critic_target(next_states, self._transform_action(self.actor_target(next_states)))
             target_Q = rewards + not_dones * self.gamma * target_Q
 
         # get current Q estimate
@@ -70,7 +76,7 @@ class DDPGAgent(BaseAgent):
 
         # compute actor loss
         self.critic.eval()
-        actor_loss = -torch.mean(self.critic(states, self.transform_action(self.actor(states))))
+        actor_loss = -torch.mean(self.critic(states, self._transform_action(self.actor(states))))
         
         # optimize the actor 
         self.actor_optim.zero_grad()

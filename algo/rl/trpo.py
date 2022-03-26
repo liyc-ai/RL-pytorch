@@ -6,10 +6,9 @@ from torch.optim import Adam
 from torch.nn.utils.convert_parameters import parameters_to_vector
 from torch.distributions.normal import Normal
 from torch.distributions.kl import kl_divergence
-from algo.rl.base import BaseAgent
+from algo.base import BaseAgent
 from network.actor import StochasticActor
 from network.critic import Critic
-from utils.buffer import SimpleReplayBuffer
 from utils.gae import GAE
 
 class TRPOAgent(BaseAgent):
@@ -30,10 +29,15 @@ class TRPOAgent(BaseAgent):
         self.n_critic_update = configs['n_critic_update']
         
         self.gae = GAE(self.gamma, self.lambda_)
-        self.replay_buffer = SimpleReplayBuffer(self.state_dim, self.action_dim, self.device, int(configs['buffer_size']))
         self.actor = StochasticActor(self.state_dim, configs['actor_hidden_size'], self.action_dim, init=True).to(self.device)
         self.critic = Critic(self.state_dim, configs['critic_hidden_size'], init=True).to(self.device)
         self.critic_optim = Adam(self.critic.parameters(), configs['lr'], weight_decay=configs['weight_decay'])
+        
+        self.models = {
+            'actor': self.actor,
+            'critic': self.critic,
+            'critic_optim': self.critic_optim
+        }
         
     def _conjugate_gradient(self, Hvp_func, g):
         """To calculate s = H^{-1}g without solving inverse of H
@@ -105,7 +109,7 @@ class TRPOAgent(BaseAgent):
                 action = action_mean
         return action.cpu().data.numpy().flatten()
         
-    def update(self, state, action, next_state, reward, done):
+    def learn(self, state, action, next_state, reward, done):
         # collect transitions
         self.replay_buffer.add(state, action, next_state, reward, done)
         if self.replay_buffer.size < self.rollout_steps: return

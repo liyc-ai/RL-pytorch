@@ -1,0 +1,9 @@
+# algo param
+algo_name: 'bc'
+
+# network param
+
+# env param
+env_name: 'HalfCheetah-v2'
+task_name: 'halfcheetah-expert-v2'
+device: 'cuda'

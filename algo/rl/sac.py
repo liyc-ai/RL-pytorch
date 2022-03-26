@@ -4,10 +4,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import itertools
-from algo.rl.base import BaseAgent
+from algo.base import BaseAgent
 from network.critic import Critic
 from network.actor import StochasticActor
-from utils.buffer import SimpleReplayBuffer
 from torch.distributions.normal import Normal
 from utils.net import soft_update
 
@@ -29,8 +28,7 @@ class SACAgent(BaseAgent):
                 self.alpha = configs['alpha']  # entropy coefficient
             else:
                 self.alpha = self.log_alpha.exp().item()
-        
-        self.replay_buffer = SimpleReplayBuffer(self.state_dim, self.action_dim, self.device, int(configs['buffer_size']))     
+   
         # policy
         self.actor = StochasticActor(self.state_dim, configs['actor_hidden_size'], self.action_dim, nn.ReLU).to(self.device)
         self.actor_optim = torch.optim.Adam(self.actor.parameters(), lr=configs['actor_lr'])
@@ -43,6 +41,18 @@ class SACAgent(BaseAgent):
         
         self.critic_params = itertools.chain(self.critic_1.parameters(), self.critic_2.parameters())
         self.critic_optim = torch.optim.Adam(self.critic_params, lr=configs['critic_lr'])
+        
+        self.models = {
+            'actor': self.actor,
+            'actor_optim': self.actor_optim,
+            'critic_1': self.critic_1,
+            'critic_target_1': self.critic_target_1,
+            'critic_2': self.critic_2,
+            'critic_target_2': self.critic_target_2,
+            'critic_optim': self.critic_optim,
+            'log_alpha': self.log_alpha,
+            'alpha_optim': self.alpha_optim
+        }
         
     def select_action(self, state, training=False, calcu_log_prob=False):
         if not calcu_log_prob:  # just get and excute action
@@ -68,7 +78,7 @@ class SACAgent(BaseAgent):
             action = self.action_high * torch.tanh(action)
             return action, logp_pi
         
-    def update(self, state, action, next_state, reward, done):
+    def learn(self, state, action, next_state, reward, done):
         self.replay_buffer.add(state, action, next_state, reward, done)
         if self.replay_buffer.size < self.start_timesteps or\
                 (self.replay_buffer.size-self.start_timesteps) % self.env_steps != 0: return  # update model after every env steps
@@ -109,9 +119,16 @@ class SACAgent(BaseAgent):
                 self.alpha_optim.zero_grad()
                 alpha_loss.backward()
                 self.alpha_optim.step()
+                self.models['log_alpha'].data = self.log_alpha.data  # update log_alpha in self.models
                 self.alpha = self.log_alpha.clone().detach().exp().item()
                 
             # update target critic
             soft_update(self.rho, self.critic_1, self.critic_target_1)
             soft_update(self.rho, self.critic_2, self.critic_target_2)
-        
+            
+    def load_model(self, model_path):
+        """Overload the super load_model, due to log_alpha
+        """
+        super().load_model(model_path)
+        self.log_alpha.data = self.models['log_alpha'].data
+        self.alpha = self.log_alpha.clone().detach().exp().item()

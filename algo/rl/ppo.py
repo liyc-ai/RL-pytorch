@@ -4,14 +4,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.optim import Adam
 from torch.distributions.normal import Normal
-from algo.rl.base import BaseAgent
+from algo.base import BaseAgent
 from network.actor import StochasticActor
 from network.critic import Critic
-from utils.buffer import SimpleReplayBuffer
 from utils.gae import GAE
 
 class PPOAgent(BaseAgent):
-    """Trust Region Policy Optimization
+    """Proximal Policy Optimization
     """
     def __init__(self, configs):
         super().__init__(configs)
@@ -26,13 +25,18 @@ class PPOAgent(BaseAgent):
         self.max_grad_norm = configs['max_grad_norm']
         
         self.gae = GAE(self.gamma, self.lambda_)
-        self.replay_buffer = SimpleReplayBuffer(self.state_dim, self.action_dim, self.device, int(configs['buffer_size']))
         self.actor = StochasticActor(self.state_dim, configs['actor_hidden_size'], self.action_dim, state_std_independent=True, init=True).to(self.device)
         self.critic = Critic(self.state_dim, configs['critic_hidden_size'], init=True).to(self.device)
         self.optim = Adam([
                         {'params': self.actor.parameters(), 'lr': configs['actor_lr']},
                         {'params': self.critic.parameters(), 'lr': configs['critic_lr']}
                     ])
+        
+        self.models = {
+            'actor': self.actor,
+            'critic': self.critic,
+            'optim': self.optim,
+        }
             
     def select_action(self, state, training=False):
         state = np.array(state)
@@ -45,7 +49,7 @@ class PPOAgent(BaseAgent):
                 action = action_mean
         return action.cpu().data.numpy().flatten()
         
-    def update(self, state, action, next_state, reward, done):
+    def learn(self, state, action, next_state, reward, done):
         # collect transitions
         self.replay_buffer.add(state, action, next_state, reward, done)
         if self.replay_buffer.size < self.rollout_steps: return

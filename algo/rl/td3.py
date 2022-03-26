@@ -3,10 +3,9 @@ import torch.nn.functional as F
 import copy
 import numpy as np
 import itertools
-from algo.rl.base import BaseAgent
+from algo.base import BaseAgent
 from network.actor import DeterministicActor
 from network.critic import Critic
-from utils.buffer import SimpleReplayBuffer
 from utils.net import soft_update
 
 class TD3Agent(BaseAgent):
@@ -39,19 +38,28 @@ class TD3Agent(BaseAgent):
         self.critic_params = itertools.chain(self.critic_1.parameters(), self.critic_2.parameters())
         self.critic_optim = torch.optim.Adam(self.critic_params, lr=configs['critic_lr'])
         
-        self.replay_buffer = SimpleReplayBuffer(self.state_dim, self.action_dim, self.device, configs['buffer_size'])
+        self.models = {
+            'actor': self.actor,
+            'actor_target': self.actor_target,
+            'actor_optim': self.actor_optim,
+            'critic_1': self.critic_1,
+            'critic_target_1': self.critic_target_1,
+            'critic_2': self.critic_2,
+            'critic_target_2': self.critic_target_2,
+            'critic_optim': self.critic_optim
+        }
         
     def select_action(self, state, training=False):
         state = torch.FloatTensor(state.reshape(1, -1)).to(self.device)
         with torch.no_grad():
-            action = self.transform_action(self.actor(state)).cpu().data.numpy().flatten()
+            action = self._transform_action(self.actor(state)).cpu().data.numpy().flatten()
             if training:
                 action = (action
                     + np.random.normal(0, self.expl_std, size=self.action_dim)
                 ).clip(-self.action_high, self.action_high)
         return action
     
-    def update(self, state, action, next_state, reward, done):
+    def learn(self, state, action, next_state, reward, done):
         self.total_it += 1
         self.replay_buffer.add(state, action, next_state, reward, done)
         
@@ -68,7 +76,7 @@ class TD3Agent(BaseAgent):
             ).clamp(-self.c, self.c)
             
             next_actions = (
-                self.transform_action(self.actor_target(next_states)) + noises
+                self._transform_action(self.actor_target(next_states)) + noises
             ).clamp(-self.action_high, self.action_high)
 
             # compute the target Q value
@@ -92,7 +100,7 @@ class TD3Agent(BaseAgent):
             self.critic_1.eval(), self.critic_2.eval()
             
             # compute actor losse
-            actor_loss = -torch.mean(self.critic_1(states, self.transform_action(self.actor(states))))
+            actor_loss = -torch.mean(self.critic_1(states, self._transform_action(self.actor(states))))
             # optimize the actor 
             self.actor_optim.zero_grad()
             actor_loss.backward()

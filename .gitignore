@@ -3,7 +3,9 @@
 logs/
 ref/
 tb/
+data/
 run_test.py
+cmds.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
