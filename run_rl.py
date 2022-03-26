@@ -4,7 +4,7 @@ import torch
 import numpy as np
 from algo import ALGOS
 from utils.config import read_config
-from utils.transform import Regularizer
+from utils.transform import Normalizer
 from utils.logger import get_logger, get_writer
 
 # for safefy
@@ -47,7 +47,7 @@ def train(configs, seed):
     configs['state_dim'] = env.observation_space.shape[0]
     configs['action_space'] = env.action_space
     if configs['norm_state']:
-        state_normalizer = Regularizer()
+        state_normalizer = Normalizer()
     
     # fix all the seeds
     env.seed(seed)

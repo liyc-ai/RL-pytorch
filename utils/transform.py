@@ -93,7 +93,7 @@ class RunningMeanStd(object):
         self.mean, self.var = new_mean, new_var
         self.count = total_count
         
-class Regularizer:
+class Normalizer:
     """
     y = (x-mean)/std
     using running estimates of mean,std

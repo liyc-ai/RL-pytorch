@@ -3,7 +3,7 @@ import torch.nn as nn
 from utils.net import build_mlp_extractor, weights_init_
 
 class Critic(nn.Module):
-    def __init__(self, state_dim, hidden_size, action_dim=None, activation_fn=nn.Tanh, output_dim=1):
+    def __init__(self, state_dim, hidden_size, action_dim=None, activation_fn=nn.Tanh, output_dim=1, init=False):
         super().__init__()
         self.action_dim = action_dim
         if action_dim != None:
@@ -16,9 +16,10 @@ class Critic(nn.Module):
             hidden_size[-1] if (hidden_size != None and len(hidden_size)>0) else input_dim,
             output_dim
         )
-
-        value_head.weight.data.mul_(0.1)
-        value_head.bias.data.mul_(0.0)
+        
+        if init:
+            value_head.weight.data.mul_(0.1)
+            value_head.bias.data.mul_(0.0)
         
         # concat all the layer
         model = feature_extractor + [value_head]

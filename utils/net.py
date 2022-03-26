@@ -28,3 +28,7 @@ def weights_init_(m):
     if isinstance(m, nn.Linear):
         torch.nn.init.xavier_uniform_(m.weight, gain=nn.init.calculate_gain('relu'))
         torch.nn.init.constant_(m.bias, 0)
+        
+def set_grad(net_params, require_grad):
+    for p in net_params:
+        p.requires_grad = require_grad

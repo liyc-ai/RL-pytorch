@@ -35,13 +35,13 @@ class SACAgent(BaseAgent):
         self.actor = StochasticActor(self.state_dim, configs['actor_hidden_size'], self.action_dim, nn.ReLU).to(self.device)
         self.actor_optim = torch.optim.Adam(self.actor.parameters(), lr=configs['actor_lr'])
         # Q1
-        self.critic1 = Critic(self.state_dim, configs['critic_hidden_size'], self.action_dim, nn.ReLU).to(self.device)
-        self.critic_target1 = copy.deepcopy(self.critic1)
+        self.critic_1 = Critic(self.state_dim, configs['critic_hidden_size'], self.action_dim, nn.ReLU).to(self.device)
+        self.critic_target_1 = copy.deepcopy(self.critic_1)
         # Q2
-        self.critic2 = Critic(self.state_dim, configs['critic_hidden_size'], self.action_dim, nn.ReLU).to(self.device)
-        self.critic_target2 = copy.deepcopy(self.critic2)
+        self.critic_2 = Critic(self.state_dim, configs['critic_hidden_size'], self.action_dim, nn.ReLU).to(self.device)
+        self.critic_target_2 = copy.deepcopy(self.critic_2)
         
-        self.critic_params = itertools.chain(self.critic1.parameters(), self.critic2.parameters())
+        self.critic_params = itertools.chain(self.critic_1.parameters(), self.critic_2.parameters())
         self.critic_optim = torch.optim.Adam(self.critic_params, lr=configs['critic_lr'])
         
     def select_action(self, state, training=False, calcu_log_prob=False):
@@ -78,31 +78,29 @@ class SACAgent(BaseAgent):
             # calculate target q value
             with torch.no_grad():
                 next_actions, next_log_pis = self.select_action(next_states, training=True, calcu_log_prob=True)
-                target_Q1, target_Q2 = self.critic_target1(next_states, next_actions), self.critic_target2(next_states, next_actions)
+                target_Q1, target_Q2 = self.critic_target_1(next_states, next_actions), self.critic_target_2(next_states, next_actions)
                 target_Q = torch.min(target_Q1, target_Q2) - self.alpha * next_log_pis
                 target_Q = rewards + not_dones * self.gamma * target_Q
             
             # update critic
-            current_Q1, current_Q2 = self.critic1(states, actions), self.critic2(states, actions)
+            current_Q1, current_Q2 = self.critic_1(states, actions), self.critic_2(states, actions)
             critic_loss = F.mse_loss(current_Q1, target_Q) + F.mse_loss(current_Q2, target_Q)
             self.critic_optim.zero_grad()
             critic_loss.backward()
             self.critic_optim.step()
             
             # update actor
-            for p in self.critic_params:
-                p.requires_grad = False  # Freeze Q-networks to save computational effort
+            self.critic_1.eval(), self.critic_2.eval()  # Freeze Q-networks to save computational effort
                 
             pred_actions, pred_log_pis = self.select_action(states, training=True, calcu_log_prob=True)
-            current_Q1, current_Q2 = self.critic1(states, pred_actions), self.critic2(states, pred_actions)
+            current_Q1, current_Q2 = self.critic_1(states, pred_actions), self.critic_2(states, pred_actions)
             
             actor_loss = (self.alpha * pred_log_pis - torch.min(current_Q1, current_Q2)).mean()
             self.actor_optim.zero_grad()
             actor_loss.backward()
             self.actor_optim.step()
             
-            for p in self.critic_params:
-                p.requires_grad = True
+            self.critic_1.train(), self.critic_2.train()
             
             # update alpha
             if not self.fixed_alpha:
@@ -114,6 +112,6 @@ class SACAgent(BaseAgent):
                 self.alpha = self.log_alpha.clone().detach().exp().item()
                 
             # update target critic
-            soft_update(self.rho, self.critic1, self.critic_target1)
-            soft_update(self.rho, self.critic2, self.critic_target2)
+            soft_update(self.rho, self.critic_1, self.critic_target_1)
+            soft_update(self.rho, self.critic_2, self.critic_target_2)
         
