@@ -28,7 +28,7 @@ class PPOAgent(BaseAgent):
         self.gae = GAE(self.gamma, self.lambda_)
         self.replay_buffer = SimpleReplayBuffer(self.state_dim, self.action_dim, self.device, int(configs['buffer_size']))
         self.actor = StochasticActor(self.state_dim, configs['actor_hidden_size'], self.action_dim, state_std_independent=True, init=True).to(self.device)
-        self.critic = Critic(self.state_dim, configs['critic_hidden_size']).to(self.device)
+        self.critic = Critic(self.state_dim, configs['critic_hidden_size'], init=True).to(self.device)
         self.optim = Adam([
                         {'params': self.actor.parameters(), 'lr': configs['actor_lr']},
                         {'params': self.critic.parameters(), 'lr': configs['critic_lr']}

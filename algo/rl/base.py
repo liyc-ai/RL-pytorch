@@ -1,4 +1,5 @@
 from abc import ABCMeta, abstractmethod
+import torch
 
 class BaseAgent(metaclass=ABCMeta):
     """Base agent class for RL
@@ -21,3 +22,6 @@ class BaseAgent(metaclass=ABCMeta):
     @abstractmethod
     def update(self):
         pass
+    
+    def transform_action(self, action):
+        return self.action_high*torch.tanh(action)  # squash and rescale output action

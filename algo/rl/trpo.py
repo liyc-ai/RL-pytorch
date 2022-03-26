@@ -31,8 +31,8 @@ class TRPOAgent(BaseAgent):
         
         self.gae = GAE(self.gamma, self.lambda_)
         self.replay_buffer = SimpleReplayBuffer(self.state_dim, self.action_dim, self.device, int(configs['buffer_size']))
-        self.actor = StochasticActor(self.state_dim, configs['actor_hidden_size'], self.action_dim).to(self.device)
-        self.critic = Critic(self.state_dim, configs['critic_hidden_size']).to(self.device)
+        self.actor = StochasticActor(self.state_dim, configs['actor_hidden_size'], self.action_dim, init=True).to(self.device)
+        self.critic = Critic(self.state_dim, configs['critic_hidden_size'], init=True).to(self.device)
         self.critic_optim = Adam(self.critic.parameters(), configs['lr'], weight_decay=configs['weight_decay'])
         
     def _conjugate_gradient(self, Hvp_func, g):

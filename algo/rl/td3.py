@@ -41,13 +41,10 @@ class TD3Agent(BaseAgent):
         
         self.replay_buffer = SimpleReplayBuffer(self.state_dim, self.action_dim, self.device, configs['buffer_size'])
         
-    def _transform_action(self, action):
-        return self.action_high*torch.tanh(action)  # squash and rescale output action
-        
     def select_action(self, state, training=False):
         state = torch.FloatTensor(state.reshape(1, -1)).to(self.device)
         with torch.no_grad():
-            action = self._transform_action(self.actor(state)).cpu().data.numpy().flatten()
+            action = self.transform_action(self.actor(state)).cpu().data.numpy().flatten()
             if training:
                 action = (action
                     + np.random.normal(0, self.expl_std, size=self.action_dim)
@@ -71,7 +68,7 @@ class TD3Agent(BaseAgent):
             ).clamp(-self.c, self.c)
             
             next_actions = (
-                self._transform_action(self.actor_target(next_states)) + noises
+                self.transform_action(self.actor_target(next_states)) + noises
             ).clamp(-self.action_high, self.action_high)
 
             # compute the target Q value
@@ -95,7 +92,7 @@ class TD3Agent(BaseAgent):
             self.critic_1.eval(), self.critic_2.eval()
             
             # compute actor losse
-            actor_loss = -torch.mean(self.critic_1(states, self._transform_action(self.actor(states))))
+            actor_loss = -torch.mean(self.critic_1(states, self.transform_action(self.actor(states))))
             # optimize the actor 
             self.actor_optim.zero_grad()
             actor_loss.backward()
