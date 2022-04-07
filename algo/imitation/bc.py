@@ -1,6 +1,7 @@
+import torch
+from torch.optim import Adam
 from algo.imitation.base import BaseImitator
 from network.actor import StochasticActor
-from torch.optim import Adam
 
 
 class BCImitator(BaseImitator):
@@ -12,7 +13,8 @@ class BCImitator(BaseImitator):
         self.actor_optim = Adam(self.actor.parameters(), lr=configs['actor_lr'])
       
     def select_action(self, state, training=False):
-        ...
+        state = torch.FloatTensor(state.reshape(1, -1)).to(self.device)
+        
         
     def learn(self, logger, writer):
         ...

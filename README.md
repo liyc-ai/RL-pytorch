@@ -1,5 +1,5 @@
 # ILAlgo
-Imitation Learning Algorithms Codebase with Baseline of Reinforcement Learning Algorithms
+Imitation Learning Algorithms Codebase with Baseline of Reinforcement Learning Algorithms, all code are tested on Mujoco.
 
 ## Install Dependency
 
@@ -10,7 +10,10 @@ pip install -r requirements
 ## Run experiment
 
 ```bash
-python run_rl.py trpo  # which will run trpo with config file in config/trpo.yml
+# train expert
+python train_expert.py --config 'config/sac.yml' --gpu 0
+# train imitator
+python train_expert.py --config 'config/bc.yml' --gpu 0
 ```
 
 ## Currently Implemented Algorithms:
@@ -20,16 +23,6 @@ python run_rl.py trpo  # which will run trpo with config file in config/trpo.yml
 3. [SAC](https://arxiv.org/abs/1812.05905)
 4. [TD3](https://arxiv.org/abs/1802.09477)
 5. [DDPG](https://arxiv.org/abs/1509.02971)
-
-
-## Run experiment
-
-```bash
-# train expert
-python train_expert.py --config 'config/sac.yml' --gpu 0
-# train imitator
-python train_expert.py --config 'config/bc.yml' --gpu 0
-```
 
 ## Acknowledgement
 During my implementation of IL and RL algorithms, a lot of classic open-source materials on the Internet served as good references. And I highly appreciate their author's effort. Below is a detailed list.
