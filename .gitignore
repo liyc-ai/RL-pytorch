@@ -4,6 +4,7 @@ logs/
 ref/
 tb/
 data/d4rl/
+data/expert_data/
 run_test.py
 cmds.txt
 

@@ -35,6 +35,8 @@ During my implementation of IL and RL algorithms, a lot of classic open-source m
 + [d4rl_evaluations](https://github.com/rail-berkeley/d4rl_evaluations)
 + [imitation-learning](https://github.com/Kaixhin/imitation-learning)
 + [ILSwiss](https://github.com/Ericonaldo/ILSwiss)
++ [gail-airl-ppo.pytorch](https://github.com/ku2482/gail-airl-ppo.pytorch)
++ [pytorch-a2c-ppo-acktr-gail](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail)
 
 **Open Source Code Repo**
 

@@ -2,10 +2,12 @@ import os
 import gym
 import torch
 import numpy as np
+import h5py
 from algo import ALGOS
 from utils.config import read_config
 from utils.transform import Normalizer
 from utils.logger import get_logger, get_writer
+from utils.data import generate_expert_dataset
 
 # for safefy
 from torch.utils.backcompat import broadcast_warning, keepdim_warning
@@ -16,9 +18,11 @@ keepdim_warning.enabled = True
 log_dir = 'logs'
 tb_dir = 'tb'
 model_dir = 'models'
+data_dir = 'data/expert_data'
 os.makedirs(log_dir, exist_ok=True)
 os.makedirs(tb_dir, exist_ok=True)
 os.makedirs(model_dir, exist_ok=True)
+os.makedirs(data_dir, exist_ok=True)
 
 state_normalizer = lambda x: x
 logger = None
@@ -42,16 +46,18 @@ def eval(agent, env_name, seed, eval_episodes):
     
     return avg_reward
 
-def train(configs, seed):
+def train(configs):
     global state_normalizer, logger
     # init environment
     env = gym.make(configs['env_name'])
     configs['state_dim'] = env.observation_space.shape[0]
-    configs['action_space'] = env.action_space
+    configs['action_dim'] = env.action_space.shape[0]
+    configs['action_high'] = float(env.action_space.high[0])
     if configs['norm_state']:
         state_normalizer = Normalizer()
     
     # fix all the seeds
+    seed = configs['seed']
     env.seed(seed)
     env.action_space.seed(seed)  # we may use env.action_space.sample(), especially at the warm start period of training
     torch.manual_seed(seed)
@@ -112,9 +118,22 @@ def train(configs, seed):
             if avg_reward > best_avg_reward:
                 best_avg_reward = avg_reward
                 agent.save_model(model_path)
+                
+    agent.load_model(model_path)  # use the best model
+    return agent
 
 if __name__ == '__main__':
     # read configs
     configs = read_config()
     # train agent
-    train(configs, seed=0)
+    expert = train(configs)
+    # generate expert dataset
+    dataset = generate_expert_dataset(expert, configs['env_name'], configs['seed']+100)
+    # save expert dataset, where the file name follows from d4rl
+    env_name, version = configs['env_name'].lower().split('-')
+    data_file_path = os.path.join(data_dir, env_name + '_expert-'+version)
+    hfile = h5py.File(data_file_path, 'w')
+    for k in dataset:
+        hfile.create_dataset(k, data=dataset[k], compression='gzip')
+    logger.info(f"Successfully save expert dataset to {data_file_path}")
+    

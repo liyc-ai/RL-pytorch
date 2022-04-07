@@ -6,22 +6,17 @@ from utils.buffer import SimpleReplayBuffer
 class BaseAgent(metaclass=ABCMeta):
     """Base agent class for RL
     """
-    def __init__(self, configs, init_buffer=True):
+    def __init__(self, configs):
         self.configs = configs
         
         self.state_dim = configs['state_dim']
-        self.action_space = configs['action_space']
-        self.action_dim  = configs['action_space'].shape[0]
-        self.action_high = float(configs['action_space'].high[0])
+        self.action_dim  = configs['action_dim']
+        self.action_high = configs['action_high']
         
         self.gamma = configs['gamma']
         self.device = configs['device']
-        self._init_buffer(init_buffer)
+        self.replay_buffer = SimpleReplayBuffer(self.state_dim, self.action_dim, self.device, self.configs['buffer_size'])
         self.models = dict()
-    
-    def _init_buffer(self, init_buffer):
-        if init_buffer:
-            self.replay_buffer = SimpleReplayBuffer(self.state_dim, self.action_dim, self.device, self.configs['buffer_size'])
         
     @abstractmethod
     def select_action(self):

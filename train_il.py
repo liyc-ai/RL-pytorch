@@ -6,6 +6,7 @@ import numpy as np
 from algo import ALGOS
 from utils.config import read_config
 from utils.logger import get_logger, get_writer
+from utils.data import read_hdf5_dataset
 
 # for safefy
 from torch.utils.backcompat import broadcast_warning, keepdim_warning
@@ -40,17 +41,10 @@ def eval(imitator, env_name, seed, eval_episodes):
     
     return avg_reward
 
-def train_imitator(configs, seed):
+def train_imitator(configs):
     global state_normalizer, logger
-    # load expert dataset
-    env = gym.make('halfcheetah-expert-v2')
-    configs['state_dim'] = env.observation_space.shape[0]
-    configs['action_space'] = env.action_space
-    configs['dataset'] = env.get_dataset()
-    
     # fix all the seeds
-    env.seed(seed)
-    env.action_space.seed(seed)  # we may use env.action_space.sample(), especially at the warm start period of training
+    seed = configs['seed']
     torch.manual_seed(seed)
     np.random.seed(seed)
     
@@ -81,6 +75,16 @@ def train_imitator(configs, seed):
 if __name__ == '__main__':
     # read configs
     configs = read_config()
+    # load dataset
+    if configs['use_d4rl'] and 'd4rl_task_name' in configs:
+        env = gym.make(configs['d4rl_task_name'])
+        dataset = env.get_dataset()
+        dataset['env_info'] = env.observation_space.shape[0], env.action_space.shape[0], float(env.action_space.high[0])
+    else:
+        assert 'dataset' in configs, 'Please specify dataset!'
+        dataset = read_hdf5_dataset(configs['dataset'])
+    configs['dataset'] = dataset
+    configs['state_dim'], configs['action_dim'], configs['action_high'] = dataset['env_info']  # additonal info, different from d4rl
     # train imitator
-    train_imitator(configs, seed=0)
+    train_imitator(configs)
     

@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-class SimpleReplayBuffer():
+class SimpleReplayBuffer:
     def __init__(self, state_dim, action_dim, device, buffer_size=int(1e6)):
         self.state_dim = state_dim
         self.action_dim = action_dim
@@ -44,4 +44,9 @@ class SimpleReplayBuffer():
         self.not_done_buffer = torch.zeros((self.buffer_size, 1), dtype=torch.float32).to(self.device)
         self.ptr = 0  # position of the next inserted transition
         self.size = 0  # current num of inserted transitions
+        
+
+class TrajectoryBuffer:
+    def __init__(self, ):
+        ...
         

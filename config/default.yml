@@ -14,3 +14,6 @@ critic_lr: !!float 3e-4
 
 # env param
 env_name: HalfCheetah-v3
+
+# others
+seed: 0
