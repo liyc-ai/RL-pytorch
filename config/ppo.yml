@@ -1,8 +1,6 @@
-# algorithm parameter
+# algo param
 algo_name: ppo
 rollout_steps: 2048
-max_timesteps: !!float 1e6
-eval_freq: 5000
 gamma: 0.99
 buffer_size: 2048
 lambda: 0.95
@@ -13,13 +11,7 @@ mini_batch_size: 64
 max_grad_norm: 0.5
 norm_state: true
 
-# network parameter
+# network param
 actor_hidden_size: [64, 64]
 critic_hidden_size: [64, 64]
-actor_lr: !!float 3e-4
-critic_lr: !!float 3e-4
 update_times: 10
-
-# environment parameter
-env_name: HalfCheetah-v3
-device: 'cuda'

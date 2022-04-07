@@ -1,24 +1,8 @@
-# algorithm parameters
+# algo param
 algo_name: sac
-gamma: 0.99  # discount factor
 rho: .005  # target network update rate
-batch_size: 256  # batch size for both actor and critic
 env_steps: 1  # update model after every env_steps
 start_timesteps: 10000  # time steps initial random policy is used
-eval_freq: 5000  # how often (time steps) we evaluate
-max_timesteps: !!float 1e6  # max time steps to run environment
-buffer_size: !!float 1e6  # replay buffer size
-actor_lr: !!float 3e-4
-critic_lr: !!float 3e-4
-alpha_lr: !!float 3e-4
 fixed_alpha: false  # whether to fine-tune alpha
 alpha: 1.0
-norm_state: false
-
-# network parameter
-actor_hidden_size: [256, 256]
-critic_hidden_size: [256, 256]
-
-# env paramaters
-env_name: HalfCheetah-v3
-device: 'cuda'
+alpha_lr: !!float 3e-4

@@ -3,7 +3,7 @@
 logs/
 ref/
 tb/
-data/
+data/d4rl/
 run_test.py
 cmds.txt
 

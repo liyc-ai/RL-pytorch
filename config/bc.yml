@@ -2,8 +2,8 @@
 algo_name: 'bc'
 
 # network param
+actor_hidden_size: [100, 100]
 
 # env param
 env_name: 'HalfCheetah-v2'
 task_name: 'halfcheetah-expert-v2'
-device: 'cuda'

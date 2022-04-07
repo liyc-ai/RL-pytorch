@@ -31,7 +31,7 @@ class TRPOAgent(BaseAgent):
         self.gae = GAE(self.gamma, self.lambda_)
         self.actor = StochasticActor(self.state_dim, configs['actor_hidden_size'], self.action_dim, init=True).to(self.device)
         self.critic = Critic(self.state_dim, configs['critic_hidden_size'], init=True).to(self.device)
-        self.critic_optim = Adam(self.critic.parameters(), configs['lr'], weight_decay=configs['weight_decay'])
+        self.critic_optim = Adam(self.critic.parameters(), configs['critic_lr'], weight_decay=configs['weight_decay'])
         
         self.models = {
             'actor': self.actor,

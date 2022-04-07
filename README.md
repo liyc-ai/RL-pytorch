@@ -33,10 +33,14 @@ During my implementation of IL and RL algorithms, a lot of classic open-source m
 + [RL-Adventure2](https://github.com/higgsfield/RL-Adventure-2)
 + [imitation](https://github.com/HumanCompatibleAI/imitation)
 + [d4rl_evaluations](https://github.com/rail-berkeley/d4rl_evaluations)
++ [imitation-learning](https://github.com/Kaixhin/imitation-learning)
++ [ILSwiss](https://github.com/Ericonaldo/ILSwiss)
 
 **Open Source Code Repo**
 
 + [pytorch-trpo](https://github.com/ikostrikov/pytorch-trpo)
++ [TD3](https://github.com/sfujim/TD3)
++ [gail-airl-ppo.pytorch](https://github.com/ku2482/gail-airl-ppo.pytorch)
 
 **Blog**
 
