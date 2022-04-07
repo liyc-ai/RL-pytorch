@@ -1,5 +1,8 @@
+import os
 import gym
+import h5py
 import numpy as np
+from tqdm import tqdm
 
 def _get_reset_data():
     data = dict(
@@ -57,6 +60,20 @@ def generate_expert_dataset(agent, env_name, seed, max_steps=int(1e6)):
     # add env info, for learning   
     dataset['env_info'] = [env.observation_space.shape[0], env.action_space.shape[0], float(env.action_space.high[0])]
     return dataset
+
+def _get_keys(h5file):
+    keys = []
     
+    def visitor(name, item):
+        if isinstance(item, h5py.Dataset):
+            keys.append(name)
+    
+    h5file.visititems(visitor)
+    return keys
+
 def read_hdf5_dataset(data_file_path):
-    ...
+    dataset = dict()
+    with h5py.File(data_file_path, 'r') as dataset_file:
+        for k in tqdm(_get_keys(dataset_file), desc="load datafile"):
+            dataset[k] = dataset_file[k][:]
+    return dataset

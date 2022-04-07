@@ -16,6 +16,7 @@ keepdim_warning.enabled = True
 # some needed directories
 log_dir = 'logs'
 tb_dir = 'tb'
+data_dir = 'data/expert_data'
 os.makedirs(log_dir, exist_ok=True)
 os.makedirs(tb_dir, exist_ok=True)
 
@@ -55,6 +56,21 @@ def train_imitator(configs):
     logger = get_logger(os.path.join(log_dir, file_name+'.log'))
     writer = get_writer(os.path.join(tb_dir, file_name))
     
+    # load dataset
+    if configs['use_d4rl'] and 'd4rl_task_name' in configs:
+        env = gym.make(configs['d4rl_task_name'])
+        dataset = env.get_dataset()
+        configs['state_dim'], configs['action_dim'], configs['action_high'] = \
+            env.observation_space.shape[0], env.action_space.shape[0], float(env.action_space.high[0])
+    else:
+        assert 'dataset_name' in configs, 'Please specify dataset!'
+        data_file_path = os.path.join(data_dir, configs['dataset_name'] + '.hdf5')
+        dataset = read_hdf5_dataset(data_file_path)
+        configs['state_dim'], configs['action_dim'], configs['action_high'] = \
+            int(dataset['env_info'][0]), int(dataset['env_info'][1]), dataset['env_info'][2]
+        logger.info(f"Dataset loaded from {data_file_path}")
+    configs['dataset'] = dataset
+    
     # init imitator
     imitator = ALGOS[configs['algo_name']](configs)
     writer.add_scalar('evaluation_averaged_return', eval(imitator, configs['env_name'], seed, 10), global_step=0)  # evaluate before update, to get baseline
@@ -75,16 +91,5 @@ def train_imitator(configs):
 if __name__ == '__main__':
     # read configs
     configs = read_config()
-    # load dataset
-    if configs['use_d4rl'] and 'd4rl_task_name' in configs:
-        env = gym.make(configs['d4rl_task_name'])
-        dataset = env.get_dataset()
-        dataset['env_info'] = env.observation_space.shape[0], env.action_space.shape[0], float(env.action_space.high[0])
-    else:
-        assert 'dataset' in configs, 'Please specify dataset!'
-        dataset = read_hdf5_dataset(configs['dataset'])
-    configs['dataset'] = dataset
-    configs['state_dim'], configs['action_dim'], configs['action_high'] = dataset['env_info']  # additonal info, different from d4rl
     # train imitator
-    train_imitator(configs)
-    
+    train_imitator(configs)  

@@ -131,7 +131,7 @@ if __name__ == '__main__':
     dataset = generate_expert_dataset(expert, configs['env_name'], configs['seed']+100)
     # save expert dataset, where the file name follows from d4rl
     env_name, version = configs['env_name'].lower().split('-')
-    data_file_path = os.path.join(data_dir, env_name + '_expert-'+version)
+    data_file_path = os.path.join(data_dir, env_name + '_expert-'+version+'.hdf5')
     hfile = h5py.File(data_file_path, 'w')
     for k in dataset:
         hfile.create_dataset(k, data=dataset[k], compression='gzip')

@@ -5,12 +5,9 @@ class BaseImitator(BaseAgent):
     """Base agent class for IL
     """
     def __init__(self, configs):
-        super().__init__(configs, init_buffer=True)
+        super().__init__(configs)
         
         self.dataset = configs['dataset']
-        self.expert_size = self.dataset['rewards'].shape[0]
-        self.expert_buffer = SimpleReplayBuffer(self.state_dim, self.action_dim, self.device, self.expert_size)
-        
         # self._load_expert_data()
         
     def _load_expert_data(self):
