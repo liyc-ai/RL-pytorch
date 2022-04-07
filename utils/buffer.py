@@ -45,8 +45,3 @@ class SimpleReplayBuffer:
         self.ptr = 0  # position of the next inserted transition
         self.size = 0  # current num of inserted transitions
         
-
-class TrajectoryBuffer:
-    def __init__(self, ):
-        ...
-        

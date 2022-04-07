@@ -27,7 +27,7 @@ def generate_expert_dataset(agent, env_name, seed, max_steps=int(1e6)):
         action = agent.select_action(obs, training=False)
         next_obs, reward, done, _ = env.step(action)
         timeout, terminal = False, False
-        if t == max_steps:
+        if t == env._max_episode_steps:
             timeout = True
         elif done:
             terminal = done
@@ -77,3 +77,12 @@ def read_hdf5_dataset(data_file_path):
         for k in tqdm(_get_keys(dataset_file), desc="load datafile"):
             dataset[k] = dataset_file[k][:]
     return dataset
+
+def split_dataset(dataset):
+    """split dataset into trajectories, return a list of start index
+    """
+    timeout_idx = np.where(dataset['timeouts'] == True)[0]
+    real_done_idx = np.where(dataset['terminals'] == True)[0]        
+    start_idx = sorted([0] + (timeout_idx+1).tolist() + (real_done_idx+1).tolist())
+    return start_idx
+    
