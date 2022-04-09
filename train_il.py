@@ -3,6 +3,7 @@ import gym
 import d4rl  # Import required to register environments
 import torch
 import numpy as np
+import random
 from algo import ALGOS
 from algo.base import BaseAgent
 from utils.config import read_config, write_config
@@ -40,6 +41,7 @@ def train_imitator(configs, result_dir="out", data_dir="data/expert_data"):
     seed = configs["seed"]
     torch.manual_seed(seed)
     np.random.seed(seed)
+    random.seed(seed)
 
     # prepare training
     broadcast_warning.enabled = True
@@ -95,7 +97,7 @@ def train_imitator(configs, result_dir="out", data_dir="data/expert_data"):
 
     # train imitator
     traj_pair = split_dataset(dataset)
-    expert_traj = np.random.choice(traj_pair, configs["max_traj_num"], replace=False)
+    expert_traj = random.sample(traj_pair, configs["max_traj_num"])
     for i, (start_idx, end_idx) in enumerate(expert_traj):
         new_trajectory = get_trajectory(dataset, start_idx, end_idx)
         agent.learn(new_trajectory)
