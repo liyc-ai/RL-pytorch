@@ -1,0 +1,21 @@
+share:
+  gamma: 0.99  # discount factor
+  seed: 0
+  buffer_size: 1000_000
+  batch_size: 256
+rl:
+  # algo param
+  max_timesteps: 1000_000
+  eval_freq: 5000
+  norm_state: false
+
+  # net param
+  actor_hidden_size: [256, 256]
+  critic_hidden_size: [256, 256]
+  actor_lr: !!float 3e-4
+  critic_lr: !!float 3e-4
+
+  # env param
+  env_name: HalfCheetah-v3
+il:
+  max_traj_num: 30

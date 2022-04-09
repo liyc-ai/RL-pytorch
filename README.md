@@ -11,9 +11,9 @@ pip install -r requirements
 
 ```bash
 # train expert
-python train_expert.py --config 'config/sac.yml' --gpu 0
+python train_expert.py --config 'sac.yml' --gpu 0
 # train imitator
-python train_expert.py --config 'config/bc.yml' --gpu 0
+python train_expert.py --config 'bc.yml' --gpu 0
 ```
 
 ## Currently Implemented Algorithms:

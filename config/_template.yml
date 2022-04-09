@@ -1,0 +1,18 @@
+# modified from https://docs.ansible.com/ansible/latest/reference_appendices/YAMLSyntax.html
+algo: ppo
+max_timesteps: 1000_000
+norm_state: True
+env:  # list
+  - Walker2d-v3
+  - HalfCheetah-v3
+  - Hopper-v3
+  - ant-v3
+net_param:  # dict
+  hidden_size: [256,256]
+  actor_lr: !!float 3e-4
+descript: >  # singleline string
+  run ppo with mujoco
+  tasks
+note: |  # multiline string
+  all algo all fine-tuned,
+  to be used for comparison

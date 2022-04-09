@@ -1,10 +1,10 @@
 # Customized
 .vscode/
-logs/
 ref/
-tb/
-data/d4rl/
-data/expert_data/
+data/**
+!data/d4rl_task.md
+out/**
+!out/readme.txt
 run_test.py
 cmds.txt
 

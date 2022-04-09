@@ -62,17 +62,14 @@ import numpy as np
 #             x = np.clip(x, -self.clip, self.clip)
 #         return x
 
+
 class RunningMeanStd(object):
     """Calculates the running mean and std of a data stream.
 
     https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Parallel_algorithm
     """
 
-    def __init__(
-        self,
-        mean = 0.0,
-        std = 1.0
-    ) -> None:
+    def __init__(self, mean=0.0, std=1.0) -> None:
         self.mean, self.var = mean, std
         self.count = 0
 
@@ -92,7 +89,8 @@ class RunningMeanStd(object):
 
         self.mean, self.var = new_mean, new_var
         self.count = total_count
-        
+
+
 class Normalizer:
     """
     y = (x-mean)/std
@@ -101,8 +99,7 @@ class Normalizer:
 
     def __init__(self):
         self.rms = RunningMeanStd()
-        
+
     def __call__(self, data_array: np.ndarray):
         self.rms.update(data_array)
-        return (data_array-self.rms.mean)/(np.sqrt(self.rms.var)+1e-8)
-    
+        return (data_array - self.rms.mean) / (np.sqrt(self.rms.var) + 1e-8)
