@@ -1,5 +1,6 @@
 import torch
 from torch.optim import Adam
+import torch.nn as nn
 from torch.distributions.normal import Normal
 from algo.base import BaseAgent
 from network.actor import StochasticActor
@@ -11,8 +12,8 @@ class BCAgent(BaseAgent):
 
     def __init__(self, configs):
         super().__init__(configs)
-        self.num_epochs = configs["num_epochs"]
         self.batch_size = configs["batch_size"]
+        self.max_grad_norm = configs["max_grad_norm"]
 
         self.actor = StochasticActor(
             self.state_dim, configs["actor_hidden_size"], self.action_dim
@@ -22,11 +23,16 @@ class BCAgent(BaseAgent):
         self.replay_buffer = ImitationReplayBuffer(
             self.state_dim, self.action_dim, self.device, configs["buffer_size"]
         )
-        
+
         self.models = {
             "actor": self.actor,
             "optim": self.actor_optim,
         }
+        
+        # Note: in oue experiment, mse loss works better than mle loss in BC
+        self.mse_loss_fn = None
+        if configs["loss_fn"] == "mse":
+            self.mse_loss_fn = nn.MSELoss()
 
     def select_action(self, state, training=False):
         with torch.no_grad():
@@ -38,20 +44,28 @@ class BCAgent(BaseAgent):
                 action = action_mean
         return action.cpu().data.numpy().flatten()
 
-    def learn(self, trajectory):
-        # insert new trajectory into replay buffer
-        observations, actions = trajectory["observations"], trajectory["actions"]
-        traj_len = actions.shape[0]
-        for i in range(traj_len):
-            self.replay_buffer.add(observations[i], actions[i])
-
-        # train actor
-        for _ in range(self.num_epochs):
-            self.batch_size = min(self.replay_buffer.size, self.batch_size)
-            states, actions = self.replay_buffer.sample(self.batch_size)
-            action_mean, action_std = self.actor(states)
-            log_prob = Normal(action_mean, action_std).log_prob(actions)
+    def _get_loss(self):
+        states, actions = self.replay_buffer.sample(self.batch_size)
+        action_means, action_stds = self.actor(states)
+        if self.mse_loss_fn != None:
+            loss = self.mse_loss_fn(action_means, actions)
+        else:
+            log_prob = (
+                Normal(action_means, action_stds)
+                .log_prob(actions)
+                .sum(axis=-1, keepdims=True)
+            )
             loss = -log_prob.mean()
-            self.actor_optim.zero_grad()
-            loss.backward()
-            self.actor_optim.step()
+        return loss
+
+    def learn(self):
+        # train actor
+        loss = self._get_loss()
+        self.actor_optim.zero_grad()
+        loss.backward()
+        nn.utils.clip_grad_norm_(self.actor.parameters(), self.max_grad_norm)
+        self.actor_optim.step()
+
+        return {
+            "loss": loss.item(),
+        }

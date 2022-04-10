@@ -13,7 +13,7 @@ def load_yml(yml_file_path):
     return configs
 
 
-def read_config(config_type="rl", config_dir="config"):
+def read_config(config_dir="config"):
     # read config from CLI
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default="sac.yml")
@@ -21,20 +21,10 @@ def read_config(config_type="rl", config_dir="config"):
     args = parser.parse_args()
 
     # load yaml file
-    custom_configs = load_yml(os.path.join(config_dir, args.config))
-    custom_configs["device"] = torch.device(
+    configs = load_yml(os.path.join(config_dir, args.config))
+    configs["device"] = torch.device(
         f"cuda:{args.gpu}" if torch.cuda.is_available() else "cpu"
     )
-    common_configs = load_yml(os.path.join(config_dir, "_common.yml"))
-
-    # merge all the configs
-    configs = common_configs["share"]
-    if config_type == "rl":
-        configs = {**configs, **common_configs["rl"], **custom_configs}
-    elif config_type == "il":
-        configs = {**configs, **common_configs["il"], **custom_configs}
-    else:
-        raise ValueError("config_type should be 'rl' or 'il'")
     return configs
 
 

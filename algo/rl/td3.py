@@ -66,7 +66,7 @@ class TD3Agent(BaseAgent):
     def select_action(self, state, training=False):
         state = torch.FloatTensor(state.reshape(1, -1)).to(self.device)
         with torch.no_grad():
-            action = self._squash_action(self.actor(state)).cpu().data.numpy().flatten()
+            action = self.squash_action(self.actor(state)).cpu().data.numpy().flatten()
             if training:
                 action = (
                     action + np.random.normal(0, self.expl_std, size=self.action_dim)
@@ -90,7 +90,7 @@ class TD3Agent(BaseAgent):
             noises = (torch.randn_like(actions) * self.sigma).clamp(-self.c, self.c)
 
             next_actions = (
-                self._squash_action(self.actor_target(next_states)) + noises
+                self.squash_action(self.actor_target(next_states)) + noises
             ).clamp(-self.action_high, self.action_high)
 
             # compute the target Q value
@@ -121,7 +121,7 @@ class TD3Agent(BaseAgent):
 
             # compute actor losse
             actor_loss = -torch.mean(
-                self.critic_1(states, self._squash_action(self.actor(states)))
+                self.critic_1(states, self.squash_action(self.actor(states)))
             )
             # optimize the actor
             self.actor_optim.zero_grad()

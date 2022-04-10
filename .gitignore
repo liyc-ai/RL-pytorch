@@ -5,7 +5,7 @@ data/**
 !data/d4rl_task.md
 out/**
 !out/readme.txt
-run_test.py
+test/
 cmds.txt
 
 # Byte-compiled / optimized / DLL files

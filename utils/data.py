@@ -99,17 +99,16 @@ def split_dataset(dataset):
         + real_done_idx[real_done_idx < max_step].tolist()
         + [max_step]
     )
-    traj_pair = list(zip(start_idx[:-1], map(lambda x: x-1, start_idx[1:])))
+    traj_pair = list(zip(start_idx[:-1], start_idx[1:]))
     return traj_pair
 
 
 def get_trajectory(dataset, start_idx, end_idx):
     new_traj = {
-        'observations': dataset['observations'][start_idx:end_idx],
-        'actions': dataset['actions'][start_idx:end_idx],
-        'next_observations': dataset['next_observations'][start_idx:end_idx],
-        'rewards': dataset['rewards'][start_idx:end_idx],
-        'terminals': dataset['terminals'][start_idx:end_idx],
+        "observations": dataset["observations"][start_idx:end_idx],
+        "actions": dataset["actions"][start_idx:end_idx],
+        "next_observations": dataset["next_observations"][start_idx:end_idx],
+        "rewards": dataset["rewards"][start_idx:end_idx],
+        "terminals": dataset["terminals"][start_idx:end_idx],
     }
     return new_traj
-    

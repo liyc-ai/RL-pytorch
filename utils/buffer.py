@@ -55,7 +55,8 @@ class SimpleReplayBuffer:
         ).to(self.device)
         self.ptr = 0  # position of the next inserted transition
         self.size = 0  # current num of inserted transitions
-        
+
+
 class ImitationReplayBuffer:
     def __init__(self, state_dim, action_dim, device, buffer_size=int(1e6)):
         self.state_dim = state_dim

@@ -8,6 +8,7 @@ from utils.config import read_config, write_config
 from utils.transform import Normalizer
 from utils.logger import get_logger, get_writer
 from utils.data import generate_expert_dataset
+from utils.exp import set_random_seed
 from torch.utils.backcompat import broadcast_warning, keepdim_warning
 
 state_normalizer = lambda x: x
@@ -36,6 +37,9 @@ def eval(agent, env_name, seed, eval_episodes):
 
 def train(configs, result_dir="out"):
     global state_normalizer, logger
+    # fix all the seeds
+    seed = configs["seed"]
+    set_random_seed(seed)
     # init environment
     env = gym.make(configs["env_name"])
     configs["state_dim"] = env.observation_space.shape[0]
@@ -43,15 +47,6 @@ def train(configs, result_dir="out"):
     configs["action_high"] = float(env.action_space.high[0])
     if configs["norm_state"]:
         state_normalizer = Normalizer()
-
-    # fix all the seeds
-    seed = configs["seed"]
-    env.seed(seed)
-    env.action_space.seed(
-        seed
-    )  # we may use env.action_space.sample(), especially at the warm start period of training
-    torch.manual_seed(seed)
-    np.random.seed(seed)
 
     # prepare training
     broadcast_warning.enabled = True  # for safety
@@ -137,7 +132,7 @@ def train(configs, result_dir="out"):
 
 if __name__ == "__main__":
     # read configs
-    configs = read_config(config_type="rl")
+    configs = read_config()
     # train agent
     expert = train(configs)
     # generate expert dataset

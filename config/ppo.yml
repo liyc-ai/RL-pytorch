@@ -3,6 +3,9 @@ algo_name: ppo
 rollout_steps: 2048
 gamma: 0.99
 buffer_size: 2048
+gamma: 0.99
+max_timesteps: 1000_000
+eval_freq: 5000
 lambda: 0.95
 epsilon_clip: 0.2
 entropy_coef: 0.
@@ -11,7 +14,13 @@ mini_batch_size: 64
 max_grad_norm: 0.5
 norm_state: true
 
-# network param
+# net param
 actor_hidden_size: [64, 64]
 critic_hidden_size: [64, 64]
 update_times: 10
+
+# env param
+env_name: HalfCheetah-v3
+
+# others
+seed: 0

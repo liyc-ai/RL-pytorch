@@ -34,18 +34,19 @@ During my implementation of IL and RL algorithms, a lot of classic open-source m
 + [stable-baselines-contrib](https://github.com/Stable-Baselines-Team/stable-baselines3-contrib)
 + [spinningup](https://github.com/openai/spinningup)
 + [RL-Adventure2](https://github.com/higgsfield/RL-Adventure-2)
-+ [imitation](https://github.com/HumanCompatibleAI/imitation)
 + [d4rl_evaluations](https://github.com/rail-berkeley/d4rl_evaluations)
-+ [imitation-learning](https://github.com/Kaixhin/imitation-learning)
-+ [ILSwiss](https://github.com/Ericonaldo/ILSwiss)
-+ [gail-airl-ppo.pytorch](https://github.com/ku2482/gail-airl-ppo.pytorch)
-+ [pytorch-a2c-ppo-acktr-gail](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail)
 
 **Open Source Code Repo**
 
 + [pytorch-trpo](https://github.com/ikostrikov/pytorch-trpo)
 + [TD3](https://github.com/sfujim/TD3)
 + [gail-airl-ppo.pytorch](https://github.com/ku2482/gail-airl-ppo.pytorch)
++ [imitation](https://github.com/HumanCompatibleAI/imitation)
++ [imitation-learning](https://github.com/Kaixhin/imitation-learning)
++ [ILSwiss](https://github.com/Ericonaldo/ILSwiss)
++ [gail-airl-ppo.pytorch](https://github.com/ku2482/gail-airl-ppo.pytorch)
++ [pytorch-a2c-ppo-acktr-gail](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail)
++ [Code-for-Error-Bounds-of-Imitating-Policies-and-Environments](https://github.com/tianxusky/Code-for-Error-Bounds-of-Imitating-Policies-and-Environments)
 
 **Blog**
 

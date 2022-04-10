@@ -6,9 +6,11 @@ import numpy as np
 import random
 from algo import ALGOS
 from algo.base import BaseAgent
+from utils.transform import Normalizer
 from utils.config import read_config, write_config
 from utils.logger import get_logger, get_writer
-from utils.data import read_hdf5_dataset, split_dataset, get_trajectory
+from utils.data import read_hdf5_dataset, split_dataset
+from utils.exp import set_random_seed
 from torch.utils.backcompat import broadcast_warning, keepdim_warning
 
 state_normalizer = lambda x: x
@@ -37,12 +39,11 @@ def eval(agent: BaseAgent, env_name, seed, eval_episodes):
 
 def train_imitator(configs, result_dir="out", data_dir="data/expert_data"):
     global state_normalizer, logger
+    if configs["norm_state"]:
+        state_normalizer = Normalizer()
     # fix all the seeds
     seed = configs["seed"]
-    torch.manual_seed(seed)
-    np.random.seed(seed)
-    random.seed(seed)
-
+    set_random_seed(seed)
     # prepare training
     broadcast_warning.enabled = True
     keepdim_warning.enabled = True
@@ -62,7 +63,6 @@ def train_imitator(configs, result_dir="out", data_dir="data/expert_data"):
     best_avg_reward = -np.inf
 
     write_config(configs, os.path.join(exp_path, "config.yml"))  # for reproducibility
-
     # load dataset
     if configs["use_d4rl"] and "d4rl_task_name" in configs:
         env = gym.make(configs["d4rl_task_name"])
@@ -83,35 +83,44 @@ def train_imitator(configs, result_dir="out", data_dir="data/expert_data"):
         )
         logger.info(f"Dataset loaded from {data_file_path}")
 
+    expert_traj_num = configs["expert_traj_num"]
+    traj_pair = split_dataset(dataset)
+    if len(traj_pair) < expert_traj_num:
+        raise ValueError("Not enough expert trajectories!")
+    expert_traj = random.sample(traj_pair, expert_traj_num)
+
     # init imitator
     agent = ALGOS[configs["algo_name"]](configs)
-    model_path = os.path.join(exp_path, "model.pt")
-    if os.path.exists(model_path):
+    model_path = os.path.join(exp_path, "model")
+    if configs["load_model"] and os.path.exists(model_path):
         agent.load_model(model_path)
         logger.info(f"Successfully load model: {model_path}")
+    agent.load_expert_traj(dataset, expert_traj)
+
+    # train imitator
     writer.add_scalar(
-        "evaluation_averaged_return",
+        f"evaluation_averaged_return_{expert_traj_num}",
         eval(agent, configs["env_name"], seed, 10),
         global_step=0,
     )  # evaluate before update, to get baseline
-
-    # train imitator
-    traj_pair = split_dataset(dataset)
-    expert_traj = random.sample(traj_pair, configs["max_traj_num"])
-    for i, (start_idx, end_idx) in enumerate(expert_traj):
-        new_trajectory = get_trajectory(dataset, start_idx, end_idx)
-        agent.learn(new_trajectory)
-        avg_reward = eval(agent, configs["env_name"], seed, 10)
-        writer.add_scalar(
-            "evaluation_averaged_return", avg_reward, global_step=i + 1
-        )  # evaluate before update, to get baseline
-        if avg_reward > best_avg_reward:
-            best_avg_reward = avg_reward
-            agent.save_model(model_path)
+    for i in range(configs["max_iters"]):
+        losses = agent.learn()
+        if (i + 1) % configs["eval_freq"] == 0:
+            avg_reward = eval(agent, configs["env_name"], configs["seed"], 10)
+            writer.add_scalar(
+                f"evaluation_averaged_return_{expert_traj_num}",
+                avg_reward,
+                global_step=i + 1,
+            )  # evaluate before update, to get baseline
+            if avg_reward > best_avg_reward:
+                best_avg_reward = avg_reward
+                agent.save_model(model_path)
+        for key, value in losses.items():
+            writer.add_scalar(key, value, global_step=i + 1)
 
 
 if __name__ == "__main__":
     # read configs
-    configs = read_config(config_type="il")
+    configs = read_config()
     # train imitator
     train_imitator(configs)

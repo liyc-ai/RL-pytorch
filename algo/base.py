@@ -2,6 +2,7 @@ import os
 import torch
 from abc import ABCMeta, abstractmethod
 from utils.buffer import SimpleReplayBuffer
+from utils.data import get_trajectory
 
 
 class BaseAgent(metaclass=ABCMeta):
@@ -29,7 +30,7 @@ class BaseAgent(metaclass=ABCMeta):
     def learn(self):
         pass
 
-    def _squash_action(self, action):
+    def squash_action(self, action):
         return self.action_high * torch.tanh(action)  # squash and rescale output action
 
     def load_model(self, model_path):
@@ -55,3 +56,11 @@ class BaseAgent(metaclass=ABCMeta):
             else:
                 state_dicts[model] = self.models[model].state_dict()
         torch.save(state_dicts, model_path)
+
+    def load_expert_traj(self, dataset, expert_traj):
+        for i, (start_idx, end_idx) in enumerate(expert_traj):
+            new_traj = get_trajectory(dataset, start_idx, end_idx)
+            observations, actions = new_traj["observations"], new_traj["actions"]
+            traj_len = actions.shape[0]
+            for i in range(traj_len):
+                self.replay_buffer.add(observations[i], actions[i])

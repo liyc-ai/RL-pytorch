@@ -50,7 +50,7 @@ class DDPGAgent(BaseAgent):
     def select_action(self, state, training=False):
         state = torch.FloatTensor(state.reshape(1, -1)).to(self.device)
         with torch.no_grad():
-            action = self._squash_action(self.actor(state)).cpu().data.numpy().flatten()
+            action = self.squash_action(self.actor(state)).cpu().data.numpy().flatten()
             if training:
                 action = (
                     action + np.random.normal(0, self.expl_std, size=self.action_dim)
@@ -72,7 +72,7 @@ class DDPGAgent(BaseAgent):
         # compute the target Q value
         with torch.no_grad():
             target_Q = self.critic_target(
-                next_states, self._squash_action(self.actor_target(next_states))
+                next_states, self.squash_action(self.actor_target(next_states))
             )
             target_Q = rewards + not_dones * self.gamma * target_Q
 
@@ -90,7 +90,7 @@ class DDPGAgent(BaseAgent):
         # compute actor loss
         self.critic.eval()
         actor_loss = -torch.mean(
-            self.critic(states, self._squash_action(self.actor(states)))
+            self.critic(states, self.squash_action(self.actor(states)))
         )
 
         # optimize the actor
