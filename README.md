@@ -1,5 +1,5 @@
 # ILAlgo
-Imitation Learning Algorithms Codebase with Baseline of Reinforcement Learning Algorithms, all code are tested on Mujoco.
+Imitation Learning Algorithms Codebase with Reinforcement Learning Baseline Algorithms with Pytorch backend. All code are tested on Mujoco.
 
 ## Install Dependency
 
@@ -11,18 +11,24 @@ pip install -r requirements
 
 ```bash
 # train expert
-python train_expert.py --config 'sac.yml' --gpu 0
+python train_expert.py --config 'sac.yml'
 # train imitator
-python train_expert.py --config 'bc.yml' --gpu 0
+python train_expert.py --config 'bc.yml'
 ```
 
-## Currently Implemented Algorithms:
+## Currently Implemented Algorithms
+
+**Reinforcement Learning**
 
 1. [TRPO](https://arxiv.org/abs/1502.05477)
 2. [PPO](https://arxiv.org/abs/1707.06347)
 3. [SAC](https://arxiv.org/abs/1812.05905)
 4. [TD3](https://arxiv.org/abs/1802.09477)
 5. [DDPG](https://arxiv.org/abs/1509.02971)
+
+**Imitation Learning**
+
+1. [BC](https://proceedings.neurips.cc/paper/1990/hash/248e844336797ec98478f85e7626de4a-Abstract.html)
 
 ## Acknowledgement
 During my implementation of IL and RL algorithms, a lot of classic open-source materials on the Internet served as good references. And I highly appreciate their author's effort. Below is a detailed list.
@@ -52,6 +58,6 @@ During my implementation of IL and RL algorithms, a lot of classic open-source m
 
 + [The 37 Implementation Details of Proximal Policy Optimization](https://iclr.iro.umontreal.ca/679b37e0-caab-4710-921b-b59a688075df_1642188062/blog/)
 
-**Tutorials**
+**Tutorial**
 
 + [OpenAI SpinningUp](https://spinningup.openai.com/en/latest/index.html)

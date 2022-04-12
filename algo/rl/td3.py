@@ -63,7 +63,7 @@ class TD3Agent(BaseAgent):
             "critic_optim": self.critic_optim,
         }
 
-    def select_action(self, state, training=False):
+    def __call__(self, state, training=False):
         state = torch.FloatTensor(state.reshape(1, -1)).to(self.device)
         with torch.no_grad():
             action = self.squash_action(self.actor(state)).cpu().data.numpy().flatten()

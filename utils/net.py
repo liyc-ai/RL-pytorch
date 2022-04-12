@@ -4,11 +4,11 @@ import numpy as np
 
 
 def build_mlp_extractor(input_dim, hidden_size, activation_fn):
-    """
+    '''
     Create MLP feature extractor, code modified from:
 
     https://github.com/DLR-RM/stable-baselines3/blob/master/stable_baselines3/common/torch_layers.py
-    """
+    '''
     if len(hidden_size) > 0:
         mlp_extractor = [nn.Linear(input_dim, hidden_size[0]), activation_fn()]
     else:
@@ -29,7 +29,7 @@ def soft_update(rho, net, target_net):
 # Initialize Policy weights
 def weights_init_(m):
     if isinstance(m, nn.Linear):
-        torch.nn.init.xavier_uniform_(m.weight, gain=nn.init.calculate_gain("relu"))
+        torch.nn.init.xavier_uniform_(m.weight, gain=nn.init.calculate_gain('relu'))
         torch.nn.init.constant_(m.bias, 0)
 
 

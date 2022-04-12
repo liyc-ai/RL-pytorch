@@ -49,7 +49,7 @@ class PPOAgent(BaseAgent):
             "optim": self.optim,
         }
 
-    def select_action(self, state, training=False):
+    def __call__(self, state, training=False):
         state = torch.FloatTensor(state.reshape(1, -1)).to(self.device)
         with torch.no_grad():
             action_mean, action_std = self.actor(state)

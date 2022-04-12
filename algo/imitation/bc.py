@@ -34,7 +34,7 @@ class BCAgent(BaseAgent):
         if configs["loss_fn"] == "mse":
             self.mse_loss_fn = nn.MSELoss()
 
-    def select_action(self, state, training=False):
+    def __call__(self, state, training=False):
         with torch.no_grad():
             state = torch.FloatTensor(state.reshape(1, -1)).to(self.device)
             action_mean, action_std = self.actor(state)

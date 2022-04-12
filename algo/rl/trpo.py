@@ -114,7 +114,7 @@ class TRPOAgent(BaseAgent):
         Hvp += self.damping * v
         return Hvp
 
-    def select_action(self, state, training=False):
+    def __call__(self, state, training=False):
         state = np.array(state)
         state = torch.FloatTensor(state.reshape(1, -1)).to(self.device)
         with torch.no_grad():  # action follows normal distribution

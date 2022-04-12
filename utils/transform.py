@@ -40,10 +40,10 @@ import numpy as np
 #         return self._M.shape
 
 # class ZFilter:
-#     """
+#     '''
 #     y = (x-mean)/std
 #     using running estimates of mean,std
-#     """
+#     '''
 
 #     def __init__(self, shape, demean=True, destd=True, clip=10.0):
 #         self.demean = demean
@@ -64,17 +64,17 @@ import numpy as np
 
 
 class RunningMeanStd(object):
-    """Calculates the running mean and std of a data stream.
+    '''Calculates the running mean and std of a data stream.
 
     https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Parallel_algorithm
-    """
+    '''
 
     def __init__(self, mean=0.0, std=1.0) -> None:
         self.mean, self.var = mean, std
         self.count = 0
 
     def update(self, data_array: np.ndarray):
-        """Add a batch of item into RMS with the same shape, modify mean/var/count."""
+        '''Add a batch of item into RMS with the same shape, modify mean/var/count.'''
         batch_mean, batch_var = np.mean(data_array, axis=0), np.var(data_array, axis=0)
         batch_count = len(data_array)
 
@@ -92,10 +92,10 @@ class RunningMeanStd(object):
 
 
 class Normalizer:
-    """
+    '''
     y = (x-mean)/std
     using running estimates of mean,std
-    """
+    '''
 
     def __init__(self):
         self.rms = RunningMeanStd()

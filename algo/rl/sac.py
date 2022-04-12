@@ -69,7 +69,7 @@ class SACAgent(BaseAgent):
             "alpha_optim": self.alpha_optim,
         }
 
-    def select_action(self, state, training=False, calcu_log_prob=False):
+    def __call__(self, state, training=False, calcu_log_prob=False):
         if not calcu_log_prob:  # just get and excute action
             state = torch.FloatTensor(state.reshape(1, -1)).to(self.device)
             with torch.no_grad():
@@ -113,7 +113,7 @@ class SACAgent(BaseAgent):
             ) = self.replay_buffer.sample(self.configs["batch_size"])
             # calculate target q value
             with torch.no_grad():
-                next_actions, next_log_pis = self.select_action(
+                next_actions, next_log_pis = self(
                     next_states, training=True, calcu_log_prob=True
                 )
                 target_Q1, target_Q2 = self.critic_target_1(
@@ -136,7 +136,7 @@ class SACAgent(BaseAgent):
             # update actor
             self.critic_1.eval(), self.critic_2.eval()  # Freeze Q-networks to save computational effort
 
-            pred_actions, pred_log_pis = self.select_action(
+            pred_actions, pred_log_pis = self(
                 states, training=True, calcu_log_prob=True
             )
             current_Q1, current_Q2 = self.critic_1(states, pred_actions), self.critic_2(

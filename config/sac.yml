@@ -23,3 +23,4 @@ critic_lr: !!float 3e-4
 
 # others
 seed: 0
+device: cuda:0

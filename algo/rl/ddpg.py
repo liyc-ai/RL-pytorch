@@ -47,7 +47,7 @@ class DDPGAgent(BaseAgent):
             "critic_optim": self.critic_optim,
         }
 
-    def select_action(self, state, training=False):
+    def __call__(self, state, training=False):
         state = torch.FloatTensor(state.reshape(1, -1)).to(self.device)
         with torch.no_grad():
             action = self.squash_action(self.actor(state)).cpu().data.numpy().flatten()
@@ -97,7 +97,6 @@ class DDPGAgent(BaseAgent):
         self.actor_optim.zero_grad()
         actor_loss.backward()
         self.actor_optim.step()
-
         self.critic.train()
 
         # update the frozen target models

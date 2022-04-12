@@ -1,15 +1,19 @@
 # algo param
-algo_name: bc
+algo_name: dagger
 max_iters: 100_000
 gamma: 0.
 eval_freq: 500
 batch_size: 128
-expert_traj_num: 25
+expert_traj_num: 1  # \beta = 1
 buffer_size: 30_000
 max_grad_norm: 10
 load_model: false
 norm_state: false
 loss_fn: mse
+expert_model_path: ''
+
+rollout_freq: 5000
+rollout_step: 1000
 
 # net param
 actor_hidden_size: [100, 100]

@@ -6,28 +6,30 @@ from utils.data import get_trajectory
 
 
 class BaseAgent(metaclass=ABCMeta):
-    """Base agent class for RL"""
-
     def __init__(self, configs):
         self.configs = configs
-
+        self.gamma = configs["gamma"]
+        
         self.state_dim = configs["state_dim"]
         self.action_dim = configs["action_dim"]
         self.action_high = configs["action_high"]
+        self.device = torch.device(configs["device"] if torch.cuda.is_available() else "cpu")
 
-        self.gamma = configs["gamma"]
-        self.device = configs["device"]
         self.replay_buffer = SimpleReplayBuffer(
             self.state_dim, self.action_dim, self.device, self.configs["buffer_size"]
         )
         self.models = dict()
 
     @abstractmethod
-    def select_action(self):
+    def __call__(self, state, training=False):
         pass
 
     @abstractmethod
     def learn(self):
+        pass
+    
+    @abstractmethod
+    def rollout(self):
         pass
 
     def squash_action(self, action):

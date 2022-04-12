@@ -21,3 +21,4 @@ env_name: HalfCheetah-v3
 
 # others
 seed: 0
+device: cuda:0
