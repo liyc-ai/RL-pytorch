@@ -20,10 +20,10 @@ def generate_expert_dataset(agent, env_name, seed, max_steps=int(1e6)):
     env = gym.make(env_name)
     env.seed(seed)
     dataset, traj_data = _get_reset_data(), _get_reset_data()
-    print('Start to rollout...')
+    print("Start to rollout...")
     t = 0
     obs = env.reset()
-    while len(dataset['rewards']) < max_steps:
+    while len(dataset["rewards"]) < max_steps:
         t += 1
         action = agent.select_action(obs, training=False)
         next_obs, reward, done, _ = env.step(action)
@@ -33,12 +33,12 @@ def generate_expert_dataset(agent, env_name, seed, max_steps=int(1e6)):
         elif done:
             terminal = done
         # insert transition
-        traj_data['observations'].append(obs)
-        traj_data['actions'].append(action)
-        traj_data['next_observations'].append(next_obs)
-        traj_data['rewards'].append(reward)
-        traj_data['terminals'].append(terminal)
-        traj_data['timeouts'].append(timeout)
+        traj_data["observations"].append(obs)
+        traj_data["actions"].append(action)
+        traj_data["next_observations"].append(next_obs)
+        traj_data["rewards"].append(reward)
+        traj_data["terminals"].append(terminal)
+        traj_data["timeouts"].append(timeout)
 
         obs = next_obs
         if terminal or timeout:
@@ -49,17 +49,17 @@ def generate_expert_dataset(agent, env_name, seed, max_steps=int(1e6)):
             traj_data = _get_reset_data()
 
     dataset = dict(
-        observations=np.array(dataset['observations']).astype(np.float32),
-        actions=np.array(dataset['actions']).astype(np.float32),
-        next_observations=np.array(dataset['next_observations']).astype(np.float32),
-        rewards=np.array(dataset['rewards']).astype(np.float32),
-        terminals=np.array(dataset['terminals']).astype(np.bool),
-        timeouts=np.array(dataset['timeouts']).astype(np.bool),
+        observations=np.array(dataset["observations"]).astype(np.float32),
+        actions=np.array(dataset["actions"]).astype(np.float32),
+        next_observations=np.array(dataset["next_observations"]).astype(np.float32),
+        rewards=np.array(dataset["rewards"]).astype(np.float32),
+        terminals=np.array(dataset["terminals"]).astype(np.bool),
+        timeouts=np.array(dataset["timeouts"]).astype(np.bool),
     )
     for k in dataset:
         dataset[k] = dataset[k][:max_steps]  # clip the additional data
     # add env info, for learning
-    dataset['env_info'] = [
+    dataset["env_info"] = [
         env.observation_space.shape[0],
         env.action_space.shape[0],
         float(env.action_space.high[0]),
@@ -80,17 +80,17 @@ def _get_keys(h5file):
 
 def read_hdf5_dataset(data_file_path):
     dataset = dict()
-    with h5py.File(data_file_path, 'r') as dataset_file:
-        for k in tqdm(_get_keys(dataset_file), desc='load datafile'):
+    with h5py.File(data_file_path, "r") as dataset_file:
+        for k in tqdm(_get_keys(dataset_file), desc="load datafile"):
             dataset[k] = dataset_file[k][:]
     return dataset
 
 
 def split_dataset(dataset):
-    '''split dataset into trajectories, return a list of start index'''
-    max_step = dataset['observations'].shape[0]
-    timeout_idx = np.where(dataset['timeouts'] == True)[0] + 1
-    real_done_idx = np.where(dataset['terminals'] == True)[0] + 1
+    """split dataset into trajectories, return a list of start index"""
+    max_step = dataset["observations"].shape[0]
+    timeout_idx = np.where(dataset["timeouts"] == True)[0] + 1
+    real_done_idx = np.where(dataset["terminals"] == True)[0] + 1
     start_idx = sorted(
         [0]
         + timeout_idx[timeout_idx < max_step].tolist()
@@ -103,10 +103,10 @@ def split_dataset(dataset):
 
 def get_trajectory(dataset, start_idx, end_idx):
     new_traj = {
-        'observations': dataset['observations'][start_idx:end_idx],
-        'actions': dataset['actions'][start_idx:end_idx],
-        'next_observations': dataset['next_observations'][start_idx:end_idx],
-        'rewards': dataset['rewards'][start_idx:end_idx],
-        'terminals': dataset['terminals'][start_idx:end_idx],
+        "observations": dataset["observations"][start_idx:end_idx],
+        "actions": dataset["actions"][start_idx:end_idx],
+        "next_observations": dataset["next_observations"][start_idx:end_idx],
+        "rewards": dataset["rewards"][start_idx:end_idx],
+        "terminals": dataset["terminals"][start_idx:end_idx],
     }
     return new_traj

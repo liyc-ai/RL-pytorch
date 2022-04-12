@@ -28,7 +28,7 @@ class BCAgent(BaseAgent):
             "actor": self.actor,
             "optim": self.actor_optim,
         }
-        
+
         # Note: in oue experiment, mse loss works better than mle loss in BC
         self.mse_loss_fn = None
         if configs["loss_fn"] == "mse":

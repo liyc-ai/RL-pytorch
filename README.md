@@ -11,9 +11,9 @@ pip install -r requirements
 
 ```bash
 # train expert
-python train_expert.py --config 'sac.yml'
+python train_expert.py --config 'sac.yml' --env-name HalfCheetah-v3 --generate-data
 # train imitator
-python train_expert.py --config 'bc.yml'
+python train_expert.py --config 'bc.yml' --env-name HalfCheetah-v3
 ```
 
 ## Currently Implemented Algorithms

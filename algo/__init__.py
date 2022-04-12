@@ -8,13 +8,12 @@ from .imitation.dagger import DAggerAgent
 
 ALGOS = {
     # Reinforcement Learning
-    'trpo': TRPOAgent,
-    'ppo': PPOAgent,
-    'sac': SACAgent,
-    'td3': TD3Agent,
-    'ddpg': DDPGAgent,
-    
+    "trpo": TRPOAgent,
+    "ppo": PPOAgent,
+    "sac": SACAgent,
+    "td3": TD3Agent,
+    "ddpg": DDPGAgent,
     # Imitation Learning
-    'bc': BCAgent,
-    'dagger': DAggerAgent,
+    "bc": BCAgent,
+    "dagger": DAggerAgent,
 }

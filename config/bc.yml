@@ -16,7 +16,6 @@ actor_hidden_size: [100, 100]
 actor_lr: !!float 3e-4
 
 # env param
-env_name: HalfCheetah-v2
 use_d4rl: true  # whether to use d4rl dataset
 d4rl_task_name: halfcheetah-expert-v2
 dataset_name: halfcheetah_expert-v3  # use manually generated expert data if not use d4rl

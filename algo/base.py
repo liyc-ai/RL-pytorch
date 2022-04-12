@@ -9,11 +9,13 @@ class BaseAgent(metaclass=ABCMeta):
     def __init__(self, configs):
         self.configs = configs
         self.gamma = configs["gamma"]
-        
-        self.state_dim = configs["state_dim"]
-        self.action_dim = configs["action_dim"]
-        self.action_high = configs["action_high"]
-        self.device = torch.device(configs["device"] if torch.cuda.is_available() else "cpu")
+
+        self.state_dim = int(configs["state_dim"])
+        self.action_dim = int(configs["action_dim"])
+        self.action_high = float(configs["action_high"])
+        self.device = torch.device(
+            configs["device"] if torch.cuda.is_available() else "cpu"
+        )
 
         self.replay_buffer = SimpleReplayBuffer(
             self.state_dim, self.action_dim, self.device, self.configs["buffer_size"]
@@ -27,8 +29,7 @@ class BaseAgent(metaclass=ABCMeta):
     @abstractmethod
     def learn(self):
         pass
-    
-    @abstractmethod
+
     def rollout(self):
         pass
 

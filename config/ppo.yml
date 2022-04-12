@@ -19,9 +19,6 @@ actor_hidden_size: [64, 64]
 critic_hidden_size: [64, 64]
 update_times: 10
 
-# env param
-env_name: HalfCheetah-v3
-
 # others
 seed: 0
 device: cuda:0

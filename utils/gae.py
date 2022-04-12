@@ -3,11 +3,11 @@ import numpy as np
 
 
 class GAE:
-    '''Estimate Advantage using GAE (https://arxiv.org/abs/1506.02438)
+    """Estimate Advantage using GAE (https://arxiv.org/abs/1506.02438)
     Ref:
     [1] https://nn.labml.ai/rl/ppo/gae.html
     [2] https://github.com/ikostrikov/pytorch-trpo
-    '''
+    """
 
     def __init__(self, gamma, lambda_):
         self.gamma = gamma
@@ -16,7 +16,7 @@ class GAE:
     def __call__(
         self, value_net, states, rewards, not_dones, next_states, bootstrap=True
     ):
-        '''Here we can use two different methods to calculate Returns'''
+        """Here we can use two different methods to calculate Returns"""
         if bootstrap:
             Rs, advantages = self.td_lambda(
                 value_net, states, rewards, not_dones, next_states

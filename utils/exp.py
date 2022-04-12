@@ -1,9 +1,8 @@
 import torch
 import numpy as np
 import random
-from algo import ALGOS
-from train_expert import train
-from utils.config import load_yml_config
+import gym
+
 
 def set_random_seed(seed, env=None):
     torch.manual_seed(seed)
@@ -12,12 +11,18 @@ def set_random_seed(seed, env=None):
     if env is not None:
         env.seed(seed)
         env.action_space.seed(seed)
-        
-def get_expert(expert_model_path = '', expert_config='sac.yaml'):
-    configs = load_yml_config(expert_config)
-    if expert_model_path:
-        expert = ALGOS[configs['algo']](configs)
-        expert.load_model(expert_model_path)
+
+
+def add_env_info(configs, env=None, env_info=None):
+    if env != None:
+        configs["state_dim"], configs["action_dim"], configs["action_high"] = (
+            env.observation_space.shape[0],
+            env.action_space.shape[0],
+            env.action_space.high[0],
+        )
+    elif env_info == None:
+        configs = {**configs, **env_info}
     else:
-        expert = train(configs)
-    return expert
+        raise ValueError("env or env_info must be not None")
+
+    return configs

@@ -4,14 +4,17 @@ max_iters: 100_000
 gamma: 0.
 eval_freq: 500
 batch_size: 128
-expert_traj_num: 1  # \beta = 1
+expert_traj_num: 0
 buffer_size: 30_000
 max_grad_norm: 10
 load_model: false
 norm_state: false
 loss_fn: mse
-expert_model_path: ''
 
+query: true
+expert_name: sac
+expert_model: 'out/sac_HalfCheetah-v3_0/model.pt'
+expert_config: sac.yml
 rollout_freq: 5000
 rollout_step: 1000
 
@@ -20,10 +23,7 @@ actor_hidden_size: [100, 100]
 actor_lr: !!float 3e-4
 
 # env param
-env_name: HalfCheetah-v2
-use_d4rl: true  # whether to use d4rl dataset
-d4rl_task_name: halfcheetah-expert-v2
-dataset_name: halfcheetah_expert-v3  # use manually generated expert data if not use d4rl
+use_d4rl: false
 
 # others
 seed: 0

@@ -9,6 +9,7 @@ gamma: 0.99  # discount factor
 buffer_size: 1000_000
 batch_size: 256
 eval_freq: 5000
+max_timesteps: 1000_000
 
 # conjugate gradient param
 residual_tol: !!float 1e-10
@@ -26,9 +27,6 @@ actor_hidden_size: [64, 64]
 critic_hidden_size: [64, 64]
 weight_decay: !!float 1e-3
 n_critic_update: 5
-
-# env param
-env_name: HalfCheetah-v3
 
 # others
 seed: 0
