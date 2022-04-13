@@ -17,6 +17,8 @@ norm_state: true
 # net param
 actor_hidden_size: [64, 64]
 critic_hidden_size: [64, 64]
+actor_lr: !!float 3e-4
+critic_lr: !!float 3e-4
 update_times: 10
 
 # others

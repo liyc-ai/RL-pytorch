@@ -1,9 +1,10 @@
 # algo param
 algo_name: gail
 batch_size: 128
+eval_freq: 10
 expert_traj_num: 20
-expert_dbuffer_size: 30_000
-max_iters: 100_000
+expert_buffer_size: 20_000
+max_iters: 1000
 
 update_disc_times: 10
 
@@ -11,8 +12,6 @@ load_model: false
 norm_state: false
 
 # net param
-actor_hidden_size: [100, 100]
-actor_lr: !!float 3e-4
 discriminator_hidden_size: [100, 100]
 discriminator_lr: !!float 3e-4
 

@@ -111,7 +111,7 @@ class PPOAgent(BaseAgent):
                 nn.utils.clip_grad_norm_(self.actor.parameters(), self.max_grad_norm)
                 nn.utils.clip_grad_norm_(self.critic.parameters(), self.max_grad_norm)
                 self.optim.step()
-                np.append(all_loss, loss.item())
+                all_loss = np.append(all_loss, loss.item())
 
         # clear buffer
         self.replay_buffer.clear()
@@ -129,3 +129,4 @@ class PPOAgent(BaseAgent):
         # update parameters
         states, actions, next_states, rewards, not_dones = self.replay_buffer.sample()
         return self.update_param(states, actions, next_states, rewards, not_dones)
+    

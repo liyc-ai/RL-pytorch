@@ -1,5 +1,5 @@
 # ILAlgo
-Imitation Learning Algorithms Codebase with Reinforcement Learning Baseline Algorithms with Pytorch backend. All code are tested on Mujoco.
+Imitation Learning Algorithms Codebase with Reinforcement Learning Baseline Algorithms with Pytorch backend. All code are tested on Mujoco, issues and bug report are welcome.
 
 ## Install Dependency
 
@@ -11,9 +11,9 @@ pip install -r requirements
 
 ```bash
 # train expert
-python train_expert.py --config 'sac.yml' --env-name HalfCheetah-v3 --generate-data
+python train_expert.py --config sac.yml --env-name HalfCheetah-v3 --generate-data
 # train imitator
-python train_expert.py --config 'bc.yml' --env-name HalfCheetah-v3
+python train_expert.py --config bc.yml --env-name HalfCheetah-v3
 ```
 
 ## Currently Implemented Algorithms

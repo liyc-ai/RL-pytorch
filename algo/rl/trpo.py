@@ -215,7 +215,7 @@ class TRPOAgent(BaseAgent):
             self.critic_optim.zero_grad()
             critic_loss.backward()
             self.critic_optim.step()
-            np.append(all_critic_loss, critic_loss.item())
+            all_critic_loss = np.append(all_critic_loss, critic_loss.item())
 
         # clear buffer
         self.replay_buffer.clear()

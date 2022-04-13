@@ -195,9 +195,9 @@ class SACAgent(BaseAgent):
             actor_loss, critic_loss, alpha_loss = self.update_param(
                 states, actions, next_states, rewards, not_dones
             )
-            np.append(all_actor_loss, actor_loss)
-            np.append(all_critic_loss, critic_loss)
-            np.append(all_alpha_loss, alpha_loss)
+            all_actor_loss = np.append(all_actor_loss, actor_loss)
+            all_critic_loss = np.append(all_critic_loss, critic_loss)
+            all_alpha_loss = np.append(all_alpha_loss, alpha_loss)
 
         return {
             "mean_actor_loss": np.mean(all_actor_loss),

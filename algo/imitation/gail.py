@@ -28,7 +28,7 @@ class GAILAgent(BaseAgent):
 
         # discriminator
         self.disc = GAILDiscrim(
-            self.state_dim, configs["critic_hidden_size"], self.action_dim
+            self.state_dim, configs["discriminator_hidden_size"], self.action_dim
         ).to(self.device)
         self.disc_optim = Adam(self.disc.parameters(), lr=configs["discriminator_lr"])
 
@@ -37,8 +37,11 @@ class GAILAgent(BaseAgent):
         )
 
         self.models = {
-            "policy": self.policy,
+            "policy_actor": self.policy.actor,
+            "policy_critic": self.policy.critic,
+            "policy_optim": self.policy.optim,
             "disc": self.disc,
+            "optim": self.disc_optim
         }
 
     def rollout(self):
@@ -61,7 +64,7 @@ class GAILAgent(BaseAgent):
         all_disc_loss = np.array([])
         for _ in range(self.update_disc_times):
             # Discriminator is to maximize E_{\pi} [log(1 - D)] + E_{exp} [log(D)].
-            pi_states, pi_actions = self.policy.replay_buffer.sample(self.batch_size)
+            pi_states, pi_actions = self.policy.replay_buffer.sample(self.batch_size)[:2]
             log_pi = self.disc(pi_states, pi_actions)
             loss_pi = -F.logsigmoid(-log_pi).mean()
 
@@ -74,7 +77,7 @@ class GAILAgent(BaseAgent):
             disc_loss.backward()
             self.disc_optim.step()
 
-            np.append(all_disc_loss, disc_loss.item())
+            all_disc_loss = np.append(all_disc_loss, disc_loss.item())
 
         # update generator
         (
@@ -85,13 +88,13 @@ class GAILAgent(BaseAgent):
             not_dones,
         ) = self.policy.replay_buffer.sample()
         rewards = self.disc.gail_reward(states, actions)
-        policy_loss = self.policy.update_param(
+        policy_snapshot = self.policy.update_param(
             states, actions, next_states, rewards, not_dones
         )
 
         return {
             "disc_loss": np.mean(all_disc_loss),
-            "genetor_loss": policy_loss,
+            "generator_loss": policy_snapshot["mean_loss"],
         }
 
     def learn(self):
