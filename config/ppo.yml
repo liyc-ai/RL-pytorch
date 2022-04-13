@@ -10,7 +10,7 @@ lambda: 0.95
 epsilon_clip: 0.2
 entropy_coef: 0.
 value_coef: 0.5
-mini_batch_size: 64
+batch_size: 64
 max_grad_norm: 0.5
 norm_state: true
 

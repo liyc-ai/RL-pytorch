@@ -1,11 +1,10 @@
 # algo param
 algo_name: dagger
 max_iters: 100_000
-gamma: 0.
 eval_freq: 500
 batch_size: 128
 expert_traj_num: 0
-buffer_size: 30_000
+expert_buffer_size: 25_000
 max_grad_norm: 10
 load_model: false
 norm_state: false
@@ -16,7 +15,7 @@ expert_name: sac
 expert_model: 'out/sac_HalfCheetah-v3_0/model.pt'
 expert_config: sac.yml
 rollout_freq: 5000
-rollout_step: 1000
+rollout_steps: 1000
 
 # net param
 actor_hidden_size: [100, 100]

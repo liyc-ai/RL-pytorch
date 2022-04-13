@@ -5,9 +5,10 @@ import torch.nn.functional as F
 from torch.optim import Adam
 from torch.distributions.normal import Normal
 from algo.base import BaseAgent
-from network.actor import StochasticActor
-from network.critic import Critic
+from net.actor import StochasticActor
+from net.critic import Critic
 from utils.gae import GAE
+from utils.buffer import SimpleReplayBuffer
 
 
 class PPOAgent(BaseAgent):
@@ -15,16 +16,15 @@ class PPOAgent(BaseAgent):
 
     def __init__(self, configs):
         super().__init__(configs)
-
+        self.gamma = configs["gamma"]
         self.rollout_steps = configs["rollout_steps"]
         self.lambda_ = configs["lambda"]
         self.epsilon_clip = configs["epsilon_clip"]
         self.value_coef = configs["value_coef"]
         self.entropy_coef = configs["entropy_coef"]
         self.update_times = configs["update_times"]
-        self.mini_batch_size = configs["mini_batch_size"]
+        self.batch_size = configs["batch_size"]
         self.max_grad_norm = configs["max_grad_norm"]
-
         self.gae = GAE(self.gamma, self.lambda_)
         self.actor = StochasticActor(
             self.state_dim,
@@ -42,7 +42,9 @@ class PPOAgent(BaseAgent):
                 {"params": self.critic.parameters(), "lr": configs["critic_lr"]},
             ]
         )
-
+        self.replay_buffer = SimpleReplayBuffer(
+            self.state_dim, self.action_dim, self.device, self.configs["buffer_size"]
+        )
         self.models = {
             "actor": self.actor,
             "critic": self.critic,
@@ -59,14 +61,8 @@ class PPOAgent(BaseAgent):
                 action = action_mean
         return action.cpu().data.numpy().flatten()
 
-    def learn(self, state, action, next_state, reward, done):
-        # collect transitions
-        self.replay_buffer.add(state, action, next_state, reward, done)
-        if self.replay_buffer.size < self.rollout_steps:
-            return
-
+    def update_param(self, states, actions, next_states, rewards, not_dones):
         # estimate advantage
-        states, actions, next_states, rewards, not_dones = self.replay_buffer.sample()
         with torch.no_grad():
             Rs, advantages = self.gae(
                 self.critic, states, rewards, not_dones, next_states
@@ -79,12 +75,11 @@ class PPOAgent(BaseAgent):
             )
 
         # update actor and critic
+        all_loss = np.array([])
         full_idx = np.array(list(range(self.replay_buffer.size)))
         for _ in range(self.update_times):
             np.random.shuffle(full_idx)
-            for idx in np.split(
-                full_idx, self.replay_buffer.size // self.mini_batch_size
-            ):
+            for idx in np.split(full_idx, self.replay_buffer.size // self.batch_size):
                 # critic loss
                 values = self.critic(states[idx])
                 critic_loss = F.mse_loss(Rs[idx], values)
@@ -116,6 +111,21 @@ class PPOAgent(BaseAgent):
                 nn.utils.clip_grad_norm_(self.actor.parameters(), self.max_grad_norm)
                 nn.utils.clip_grad_norm_(self.critic.parameters(), self.max_grad_norm)
                 self.optim.step()
+                np.append(all_loss, loss.item())
 
         # clear buffer
         self.replay_buffer.clear()
+
+        return {
+            "mean_loss": np.mean(all_loss),
+        }
+
+    def learn(self, state, action, next_state, reward, done):
+        # collect transitions
+        self.replay_buffer.add(state, action, next_state, reward, done)
+        if self.replay_buffer.size < self.rollout_steps:
+            return None
+
+        # update parameters
+        states, actions, next_states, rewards, not_dones = self.replay_buffer.sample()
+        return self.update_param(states, actions, next_states, rewards, not_dones)

@@ -1,6 +1,5 @@
 import os
 import gym
-import torch
 import numpy as np
 import h5py
 from algo import ALGOS
@@ -37,7 +36,6 @@ def eval(agent, env_name, seed, eval_episodes):
 
 def train(configs, result_dir="out"):
     global state_normalizer, logger
-
     # init environment
     env = gym.make(configs["env_name"])
     configs["state_dim"] = env.observation_space.shape[0]
@@ -45,11 +43,9 @@ def train(configs, result_dir="out"):
     configs["action_high"] = float(env.action_space.high[0])
     if configs["norm_state"]:
         state_normalizer = Normalizer()
-
     # fix all the seeds
     seed = configs["seed"]
     set_random_seed(seed, env)
-
     # prepare training
     broadcast_warning.enabled = True  # for safety
     keepdim_warning.enabled = True
@@ -64,7 +60,7 @@ def train(configs, result_dir="out"):
     # init agent
     agent = ALGOS[configs["algo_name"]](configs)
     model_path = os.path.join(exp_path, "model.pt")
-    if os.path.exists(model_path):
+    if configs["load_model"] and os.path.exists(model_path):
         agent.load_model(model_path)
         logger.info(f"Successfully load model: {model_path}")
 
@@ -73,7 +69,6 @@ def train(configs, result_dir="out"):
         eval(agent, configs["env_name"], seed, 10),
         global_step=0,
     )  # evaluate before update, to get baseline
-
     # train agent
     episode_timesteps = 0
     episode_reward = 0
@@ -101,7 +96,10 @@ def train(configs, result_dir="out"):
         real_done = (
             done if episode_timesteps < env._max_episode_steps else False
         )  # during training, exceed the env's max steps does not really mean end
-        agent.learn(state, action, next_state, reward, float(real_done))
+        snapshot = agent.learn(state, action, next_state, reward, float(real_done))
+        if snapshot != None:
+            for key, value in snapshot.items():
+                writer.add_scalar(key, value, global_step=t + 1)
         episode_reward += reward  # accumulate reward
         # 4. check env
         if done:

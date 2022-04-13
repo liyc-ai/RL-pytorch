@@ -8,9 +8,10 @@ import torch.nn.functional as F
 import copy
 import numpy as np
 from algo.base import BaseAgent
-from network.actor import DeterministicActor
-from network.critic import Critic
+from net.actor import DeterministicActor
+from net.critic import Critic
 from utils.net import soft_update
+from utils.buffer import SimpleReplayBuffer
 
 
 class DDPGAgent(BaseAgent):
@@ -18,9 +19,9 @@ class DDPGAgent(BaseAgent):
 
     def __init__(self, configs):
         super().__init__(configs)
+        self.gamma = configs["gamma"]
         self.rho = configs["rho"]
         self.expl_std = configs["expl_std"] * self.action_high
-
         # actor
         self.actor = DeterministicActor(
             self.state_dim, configs["actor_hidden_size"], self.action_dim
@@ -37,7 +38,9 @@ class DDPGAgent(BaseAgent):
         self.critic_optim = torch.optim.Adam(
             self.critic.parameters(), lr=configs["critic_lr"]
         )
-
+        self.replay_buffer = SimpleReplayBuffer(
+            self.state_dim, self.action_dim, self.device, self.configs["buffer_size"]
+        )
         self.models = {
             "actor": self.actor,
             "actor_target": self.actor_target,
@@ -57,18 +60,7 @@ class DDPGAgent(BaseAgent):
                 ).clip(-self.action_high, self.action_high)
         return action
 
-    def learn(self, state, action, next_state, reward, done):
-        # update buffer
-        self.replay_buffer.add(state, action, next_state, reward, done)
-
-        if self.replay_buffer.size < self.configs["start_timesteps"]:
-            return  # warm buffer
-
-        # sample replay buffer
-        states, actions, next_states, rewards, not_dones = self.replay_buffer.sample(
-            self.configs["batch_size"]
-        )
-
+    def update_param(self, states, actions, next_states, rewards, not_dones):
         # compute the target Q value
         with torch.no_grad():
             target_Q = self.critic_target(
@@ -102,3 +94,18 @@ class DDPGAgent(BaseAgent):
         # update the frozen target models
         soft_update(self.rho, self.critic, self.critic_target)
         soft_update(self.rho, self.actor, self.actor_target)
+
+        return {"actor_loss": actor_loss.item(), "critic_loss": critic_loss.item()}
+
+    def learn(self, state, action, next_state, reward, done):
+        # update buffer
+        self.replay_buffer.add(state, action, next_state, reward, done)
+
+        if self.replay_buffer.size < self.configs["start_timesteps"]:
+            return None  # warm buffer
+
+        states, actions, next_states, rewards, not_dones = self.replay_buffer.sample(
+            self.configs["batch_size"]
+        )
+
+        return self.update_param(states, actions, next_states, rewards, not_dones)

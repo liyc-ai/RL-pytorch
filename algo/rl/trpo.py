@@ -7,9 +7,10 @@ from torch.nn.utils.convert_parameters import parameters_to_vector
 from torch.distributions.normal import Normal
 from torch.distributions.kl import kl_divergence
 from algo.base import BaseAgent
-from network.actor import StochasticActor
-from network.critic import Critic
+from net.actor import StochasticActor
+from net.critic import Critic
 from utils.gae import GAE
+from utils.buffer import SimpleReplayBuffer
 
 
 class TRPOAgent(BaseAgent):
@@ -17,7 +18,7 @@ class TRPOAgent(BaseAgent):
 
     def __init__(self, configs):
         super().__init__(configs)
-
+        self.gamma = configs["gamma"]
         self.rollout_steps = configs["rollout_steps"]
         self.lambda_ = configs["lambda"]
         self.residual_tol = configs["residual_tol"]
@@ -40,6 +41,10 @@ class TRPOAgent(BaseAgent):
             self.critic.parameters(),
             configs["critic_lr"],
             weight_decay=configs["weight_decay"],
+        )
+
+        self.replay_buffer = SimpleReplayBuffer(
+            self.state_dim, self.action_dim, self.device, self.configs["buffer_size"]
         )
 
         self.models = {
@@ -125,14 +130,8 @@ class TRPOAgent(BaseAgent):
                 action = action_mean
         return action.cpu().data.numpy().flatten()
 
-    def learn(self, state, action, next_state, reward, done):
-        # collect transitions
-        self.replay_buffer.add(state, action, next_state, reward, done)
-        if self.replay_buffer.size < self.rollout_steps:
-            return
-
+    def update_param(self, states, actions, next_states, rewards, not_dones):
         # estimate advantage
-        states, actions, next_states, rewards, not_dones = self.replay_buffer.sample()
         with torch.no_grad():
             Rs, self.advantages = self.gae(
                 self.critic, states, rewards, not_dones, next_states
@@ -209,12 +208,29 @@ class TRPOAgent(BaseAgent):
         self._apply_update(real_step_size * update_dir)  # update actor
 
         # update critic
+        all_critic_loss = np.array([])
         for _ in range(self.n_critic_update):
             values = self.critic(states)
             critic_loss = F.mse_loss(Rs, values)
             self.critic_optim.zero_grad()
             critic_loss.backward()
             self.critic_optim.step()
+            np.append(all_critic_loss, critic_loss.item())
 
         # clear buffer
         self.replay_buffer.clear()
+
+        return {
+            "surrogate_loss": loss.item(),
+            "critic_loss": np.mean(critic_loss),
+        }
+
+    def learn(self, state, action, next_state, reward, done):
+        # collect transitions
+        self.replay_buffer.add(state, action, next_state, reward, done)
+        if self.replay_buffer.size < self.rollout_steps:
+            return None
+
+        states, actions, next_states, rewards, not_dones = self.replay_buffer.sample()
+
+        return self.update_param(states, actions, next_states, rewards, not_dones)

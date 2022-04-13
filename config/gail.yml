@@ -1,24 +1,25 @@
 # algo param
-algo_name: bc
-max_iters: 100_000
-eval_freq: 500
+algo_name: gail
 batch_size: 128
-expert_traj_num: 25
-expert_buffer_size: 25_000
-max_grad_norm: 10.
+expert_traj_num: 20
+expert_dbuffer_size: 30_000
+max_iters: 100_000
+
+update_disc_times: 10
+
 load_model: false
 norm_state: false
-loss_fn: mse
 
 # net param
 actor_hidden_size: [100, 100]
 actor_lr: !!float 3e-4
+discriminator_hidden_size: [100, 100]
+discriminator_lr: !!float 3e-4
 
 # env param
 use_d4rl: true  # whether to use d4rl dataset
 d4rl_task_name: halfcheetah-expert-v2
-# dataset_name: halfcheetah_expert-v3  # use manually generated expert data if not use d4rl
 
 # others
 seed: 0
-device: cuda:0
+device: "cuda:0"

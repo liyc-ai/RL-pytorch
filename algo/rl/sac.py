@@ -5,10 +5,11 @@ import torch.nn as nn
 import torch.nn.functional as F
 import itertools
 from algo.base import BaseAgent
-from network.critic import Critic
-from network.actor import StochasticActor
+from net.critic import Critic
+from net.actor import StochasticActor
 from torch.distributions.normal import Normal
 from utils.net import soft_update
+from utils.buffer import SimpleReplayBuffer
 
 
 class SACAgent(BaseAgent):
@@ -16,6 +17,7 @@ class SACAgent(BaseAgent):
 
     def __init__(self, configs):
         super().__init__(configs)
+        self.gamma = configs["gamma"]
         self.env_steps = configs["env_steps"]
         self.start_timesteps = configs["start_timesteps"]
         self.rho = configs["rho"]
@@ -32,7 +34,7 @@ class SACAgent(BaseAgent):
             else:
                 self.alpha = self.log_alpha.exp().item()
 
-        # policy
+        # actor
         self.actor = StochasticActor(
             self.state_dim, configs["actor_hidden_size"], self.action_dim, nn.ReLU
         ).to(self.device)
@@ -57,6 +59,10 @@ class SACAgent(BaseAgent):
             self.critic_params, lr=configs["critic_lr"]
         )
 
+        self.replay_buffer = SimpleReplayBuffer(
+            self.state_dim, self.action_dim, self.device, self.configs["buffer_size"]
+        )
+
         self.models = {
             "actor": self.actor,
             "actor_optim": self.actor_optim,
@@ -68,6 +74,12 @@ class SACAgent(BaseAgent):
             "log_alpha": self.log_alpha,
             "alpha_optim": self.alpha_optim,
         }
+
+        self.all_actor_loss, self.all_critic_loss, self.all_alpha_loss = (
+            np.array([]),
+            np.array([]),
+            np.array([]),
+        )
 
     def __call__(self, state, training=False, calcu_log_prob=False):
         if not calcu_log_prob:  # just get and excute action
@@ -95,13 +107,81 @@ class SACAgent(BaseAgent):
             action = self.action_high * torch.tanh(action)
             return action, logp_pi
 
+    def update_param(self, states, actions, next_states, rewards, not_dones):
+        # calculate target q value
+        with torch.no_grad():
+            next_actions, next_log_pis = self(
+                next_states, training=True, calcu_log_prob=True
+            )
+            target_Q1, target_Q2 = self.critic_target_1(
+                next_states, next_actions
+            ), self.critic_target_2(next_states, next_actions)
+            target_Q = torch.min(target_Q1, target_Q2) - self.alpha * next_log_pis
+            target_Q = rewards + not_dones * self.gamma * target_Q
+
+        # update critic
+        current_Q1, current_Q2 = self.critic_1(states, actions), self.critic_2(
+            states, actions
+        )
+        critic_loss = F.mse_loss(current_Q1, target_Q) + F.mse_loss(
+            current_Q2, target_Q
+        )
+        self.critic_optim.zero_grad()
+        critic_loss.backward()
+        self.critic_optim.step()
+
+        # update actor
+        self.critic_1.eval(), self.critic_2.eval()  # Freeze Q-networks to save computational effort
+
+        pred_actions, pred_log_pis = self(states, training=True, calcu_log_prob=True)
+        current_Q1, current_Q2 = self.critic_1(states, pred_actions), self.critic_2(
+            states, pred_actions
+        )
+        actor_loss = (
+            self.alpha * pred_log_pis - torch.min(current_Q1, current_Q2)
+        ).mean()
+
+        self.actor_optim.zero_grad()
+        actor_loss.backward()
+        self.actor_optim.step()
+
+        self.critic_1.train(), self.critic_2.train()
+
+        # update alpha
+        if not self.fixed_alpha:
+            pred_log_pis += self.entropy_target
+            alpha_loss = -(self.log_alpha * pred_log_pis.detach()).mean()
+            self.alpha_optim.zero_grad()
+            alpha_loss.backward()
+            self.alpha_optim.step()
+            self.models[
+                "log_alpha"
+            ].data = self.log_alpha.data  # update log_alpha in self.models
+            self.alpha = self.log_alpha.clone().detach().exp().item()
+
+        # update target critic
+        soft_update(self.rho, self.critic_1, self.critic_target_1)
+        soft_update(self.rho, self.critic_2, self.critic_target_2)
+
+        return {
+            "actor_loss": actor_loss.item(),
+            "critic_loss": critic_loss.item(),
+            "alpha_loss": alpha_loss.item() if not self.fixed_alpha else 0.0,
+        }
+
     def learn(self, state, action, next_state, reward, done):
         self.replay_buffer.add(state, action, next_state, reward, done)
         if (
             self.replay_buffer.size < self.start_timesteps
             or (self.replay_buffer.size - self.start_timesteps) % self.env_steps != 0
         ):
-            return  # update model after every env steps
+            return None  # update model after every env steps
+
+        all_actor_loss, all_critic_loss, all_alpha_loss = (
+            np.array([]),
+            np.array([]),
+            np.array([]),
+        )
 
         for _ in range(self.configs["env_steps"]):
             (
@@ -111,62 +191,19 @@ class SACAgent(BaseAgent):
                 rewards,
                 not_dones,
             ) = self.replay_buffer.sample(self.configs["batch_size"])
-            # calculate target q value
-            with torch.no_grad():
-                next_actions, next_log_pis = self(
-                    next_states, training=True, calcu_log_prob=True
-                )
-                target_Q1, target_Q2 = self.critic_target_1(
-                    next_states, next_actions
-                ), self.critic_target_2(next_states, next_actions)
-                target_Q = torch.min(target_Q1, target_Q2) - self.alpha * next_log_pis
-                target_Q = rewards + not_dones * self.gamma * target_Q
 
-            # update critic
-            current_Q1, current_Q2 = self.critic_1(states, actions), self.critic_2(
-                states, actions
+            actor_loss, critic_loss, alpha_loss = self.update_param(
+                states, actions, next_states, rewards, not_dones
             )
-            critic_loss = F.mse_loss(current_Q1, target_Q) + F.mse_loss(
-                current_Q2, target_Q
-            )
-            self.critic_optim.zero_grad()
-            critic_loss.backward()
-            self.critic_optim.step()
+            np.append(all_actor_loss, actor_loss)
+            np.append(all_critic_loss, critic_loss)
+            np.append(all_alpha_loss, alpha_loss)
 
-            # update actor
-            self.critic_1.eval(), self.critic_2.eval()  # Freeze Q-networks to save computational effort
-
-            pred_actions, pred_log_pis = self(
-                states, training=True, calcu_log_prob=True
-            )
-            current_Q1, current_Q2 = self.critic_1(states, pred_actions), self.critic_2(
-                states, pred_actions
-            )
-
-            actor_loss = (
-                self.alpha * pred_log_pis - torch.min(current_Q1, current_Q2)
-            ).mean()
-            self.actor_optim.zero_grad()
-            actor_loss.backward()
-            self.actor_optim.step()
-
-            self.critic_1.train(), self.critic_2.train()
-
-            # update alpha
-            if not self.fixed_alpha:
-                pred_log_pis += self.entropy_target
-                alpha_loss = -(self.log_alpha * pred_log_pis.detach()).mean()
-                self.alpha_optim.zero_grad()
-                alpha_loss.backward()
-                self.alpha_optim.step()
-                self.models[
-                    "log_alpha"
-                ].data = self.log_alpha.data  # update log_alpha in self.models
-                self.alpha = self.log_alpha.clone().detach().exp().item()
-
-            # update target critic
-            soft_update(self.rho, self.critic_1, self.critic_target_1)
-            soft_update(self.rho, self.critic_2, self.critic_target_2)
+        return {
+            "mean_actor_loss": np.mean(all_actor_loss),
+            "mean_critic_loss": np.mean(all_critic_loss),
+            "mean_alpha_loss": np.mean(all_alpha_loss),
+        }
 
     def load_model(self, model_path):
         """Overload the super load_model, due to log_alpha"""

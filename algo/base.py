@@ -1,37 +1,26 @@
 import os
 import torch
-from abc import ABCMeta, abstractmethod
-from utils.buffer import SimpleReplayBuffer
-from utils.data import get_trajectory
 
 
-class BaseAgent(metaclass=ABCMeta):
+class BaseAgent:
     def __init__(self, configs):
         self.configs = configs
-        self.gamma = configs["gamma"]
-
         self.state_dim = int(configs["state_dim"])
         self.action_dim = int(configs["action_dim"])
         self.action_high = float(configs["action_high"])
         self.device = torch.device(
             configs["device"] if torch.cuda.is_available() else "cpu"
         )
-
-        self.replay_buffer = SimpleReplayBuffer(
-            self.state_dim, self.action_dim, self.device, self.configs["buffer_size"]
-        )
         self.models = dict()
 
-    @abstractmethod
-    def __call__(self, state, training=False):
-        pass
+    def __call__(self):
+        raise NotImplementedError
 
-    @abstractmethod
     def learn(self):
-        pass
+        raise NotImplementedError
 
-    def rollout(self):
-        pass
+    def update_param(self):
+        raise NotImplementedError
 
     def squash_action(self, action):
         return self.action_high * torch.tanh(action)  # squash and rescale output action
@@ -59,11 +48,3 @@ class BaseAgent(metaclass=ABCMeta):
             else:
                 state_dicts[model] = self.models[model].state_dict()
         torch.save(state_dicts, model_path)
-
-    def load_expert_traj(self, dataset, expert_traj):
-        for i, (start_idx, end_idx) in enumerate(expert_traj):
-            new_traj = get_trajectory(dataset, start_idx, end_idx)
-            observations, actions = new_traj["observations"], new_traj["actions"]
-            traj_len = actions.shape[0]
-            for i in range(traj_len):
-                self.replay_buffer.add(observations[i], actions[i])

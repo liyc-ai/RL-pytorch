@@ -11,14 +11,14 @@ class DAggerAgent(BCAgent):
 
         self.env = gym.make(configs["env_name"])
         self.env.seed(configs["seed"])
-        self.rollout_step = configs["rollout_step"]
+        self.rollout_steps = configs["rollout_steps"]
 
     def rollout(self, expert):
         done = True
-        for _ in range(self.rollout_step):
+        for _ in range(self.rollout_steps):
             if done:
                 state = self.env.reset()
             action = expert(state)
             next_state, _, done, _ = self.env.step(action)
-            self.replay_buffer.add(state, action)
+            self.expert_buffer.add(state, action)
             state = next_state

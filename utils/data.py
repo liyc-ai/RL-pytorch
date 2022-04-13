@@ -110,3 +110,12 @@ def get_trajectory(dataset, start_idx, end_idx):
         "terminals": dataset["terminals"][start_idx:end_idx],
     }
     return new_traj
+
+
+def load_expert_traj(agent, dataset, expert_traj):
+    for i, (start_idx, end_idx) in enumerate(expert_traj):
+        new_traj = get_trajectory(dataset, start_idx, end_idx)
+        observations, actions = new_traj["observations"], new_traj["actions"]
+        traj_len = actions.shape[0]
+        for i in range(traj_len):
+            agent.expert_buffer.add(observations[i], actions[i])

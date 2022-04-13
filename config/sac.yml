@@ -2,7 +2,7 @@
 algo_name: sac
 rho: .005  # target network update rate
 env_steps: 1  # update model after every env_steps
-start_timesteps: 10000  # time steps initial random policy is used
+start_timesteps: 10_000  # time steps initial random policy is used
 gamma: 0.99  # discount factor
 buffer_size: 1000_000
 max_timesteps: 1000_000
@@ -12,6 +12,7 @@ fixed_alpha: false  # whether to fine-tune alpha
 alpha: 1.0
 alpha_lr: !!float 3e-4
 norm_state: false
+load_model: false
 
 # env param
 actor_hidden_size: [256, 256]

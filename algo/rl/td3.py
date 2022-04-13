@@ -4,9 +4,10 @@ import copy
 import numpy as np
 import itertools
 from algo.base import BaseAgent
-from network.actor import DeterministicActor
-from network.critic import Critic
+from net.actor import DeterministicActor
+from net.critic import Critic
 from utils.net import soft_update
+from utils.buffer import SimpleReplayBuffer
 
 
 class TD3Agent(BaseAgent):
@@ -17,15 +18,15 @@ class TD3Agent(BaseAgent):
 
     def __init__(self, configs):
         super().__init__(configs)
+        self.gamma = configs["gamma"]
         self.policy_delay = configs["policy_delay"]
         self.rho = configs["rho"]
-
         # noise injection
         self.c = configs["c"] * self.action_high
         self.sigma = configs["sigma"] * self.action_high
         self.expl_std = configs["expl_std"] * self.action_high
         self.total_it = 0
-
+        # actor
         self.actor = DeterministicActor(
             self.state_dim, configs["actor_hidden_size"], self.action_dim
         ).to(self.device)
@@ -33,7 +34,6 @@ class TD3Agent(BaseAgent):
         self.actor_optim = torch.optim.Adam(
             self.actor.parameters(), lr=configs["actor_lr"]
         )
-
         # Q1
         self.critic_1 = Critic(
             self.state_dim, configs["critic_hidden_size"], self.action_dim
@@ -50,6 +50,10 @@ class TD3Agent(BaseAgent):
         )
         self.critic_optim = torch.optim.Adam(
             self.critic_params, lr=configs["critic_lr"]
+        )
+
+        self.replay_buffer = SimpleReplayBuffer(
+            self.state_dim, self.action_dim, self.device, self.configs["buffer_size"]
         )
 
         self.models = {
@@ -73,18 +77,7 @@ class TD3Agent(BaseAgent):
                 ).clip(-self.action_high, self.action_high)
         return action
 
-    def learn(self, state, action, next_state, reward, done):
-        self.total_it += 1
-        self.replay_buffer.add(state, action, next_state, reward, done)
-
-        if self.replay_buffer.size < self.configs["start_timesteps"]:
-            return
-
-        # sample replay buffer
-        states, actions, next_states, rewards, not_dones = self.replay_buffer.sample(
-            self.configs["batch_size"]
-        )
-
+    def update_param(self, states, actions, next_states, rewards, not_dones):
         with torch.no_grad():
             # select action according to policy and add clipped noise
             noises = (torch.randn_like(actions) * self.sigma).clamp(-self.c, self.c)
@@ -134,3 +127,24 @@ class TD3Agent(BaseAgent):
             soft_update(self.rho, self.critic_1, self.critic_target_1)
             soft_update(self.rho, self.critic_2, self.critic_target_2)
             soft_update(self.rho, self.actor, self.actor_target)
+
+        return (
+            {"critic_loss": critic_loss.item(), "actor_loss": actor_loss.item()}
+            if self.total_it % self.policy_delay == 0
+            else {
+                "critic_loss": critic_loss.item(),
+            }
+        )
+
+    def learn(self, state, action, next_state, reward, done):
+        self.total_it += 1
+        self.replay_buffer.add(state, action, next_state, reward, done)
+
+        if self.replay_buffer.size < self.configs["start_timesteps"]:
+            return None
+
+        # sample replay buffer
+        states, actions, next_states, rewards, not_dones = self.replay_buffer.sample(
+            self.configs["batch_size"]
+        )
+        return self.update_param(states, actions, next_states, rewards, not_dones)

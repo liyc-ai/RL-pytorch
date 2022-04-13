@@ -3,7 +3,7 @@ from torch.optim import Adam
 import torch.nn as nn
 from torch.distributions.normal import Normal
 from algo.base import BaseAgent
-from network.actor import StochasticActor
+from net.actor import StochasticActor
 from utils.buffer import ImitationReplayBuffer
 
 
@@ -20,8 +20,8 @@ class BCAgent(BaseAgent):
         ).to(self.device)
         self.actor_optim = Adam(self.actor.parameters(), lr=configs["actor_lr"])
 
-        self.replay_buffer = ImitationReplayBuffer(
-            self.state_dim, self.action_dim, self.device, configs["buffer_size"]
+        self.expert_buffer = ImitationReplayBuffer(
+            self.state_dim, self.action_dim, self.device, configs["expert_buffer_size"]
         )
 
         self.models = {
@@ -29,7 +29,7 @@ class BCAgent(BaseAgent):
             "optim": self.actor_optim,
         }
 
-        # Note: in oue experiment, mse loss works better than mle loss in BC
+        # Note: we observe that mse loss works better than mle loss in BC
         self.mse_loss_fn = None
         if configs["loss_fn"] == "mse":
             self.mse_loss_fn = nn.MSELoss()
@@ -44,8 +44,8 @@ class BCAgent(BaseAgent):
                 action = action_mean
         return action.cpu().data.numpy().flatten()
 
-    def _get_loss(self):
-        states, actions = self.replay_buffer.sample(self.batch_size)
+    def _bc_loss(self):
+        states, actions = self.expert_buffer.sample(self.batch_size)
         action_means, action_stds = self.actor(states)
         if self.mse_loss_fn != None:
             loss = self.mse_loss_fn(action_means, actions)
@@ -58,9 +58,8 @@ class BCAgent(BaseAgent):
             loss = -log_prob.mean()
         return loss
 
-    def learn(self):
-        # train actor
-        loss = self._get_loss()
+    def update_param(self):
+        loss = self._bc_loss()
         self.actor_optim.zero_grad()
         loss.backward()
         nn.utils.clip_grad_norm_(self.actor.parameters(), self.max_grad_norm)
@@ -69,3 +68,6 @@ class BCAgent(BaseAgent):
         return {
             "loss": loss.item(),
         }
+
+    def learn(self):
+        return self.update_param()

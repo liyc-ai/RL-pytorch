@@ -1,15 +1,13 @@
 import os
 import gym
 import d4rl  # To register environments
-import torch
 import numpy as np
 import random
 from algo import ALGOS
-from algo.base import BaseAgent
 from utils.transform import Normalizer
 from utils.config import parse_args, load_yml_config, write_config
 from utils.logger import get_logger, get_writer
-from utils.data import read_hdf5_dataset, split_dataset
+from utils.data import read_hdf5_dataset, split_dataset, load_expert_traj
 from utils.exp import set_random_seed, add_env_info
 from torch.utils.backcompat import broadcast_warning, keepdim_warning
 from train_expert import train
@@ -19,10 +17,11 @@ logger = None
 
 
 def get_expert(configs):
+    """Train expert if necessary"""
     expert_configs = load_yml_config(configs["expert_config"])
     env = gym.make(configs["env_name"])
     configs = add_env_info(configs, env=env)  # update env info
-    if configs["expert_model"]:
+    if configs.get("expert_model") and os.path.exists(configs["expert_model"]):
         expert_configs = add_env_info(expert_configs, env=env)
         expert = ALGOS[configs["expert_name"]](expert_configs)
         expert.load_model(configs["expert_model"])
@@ -31,7 +30,7 @@ def get_expert(configs):
     return expert, configs
 
 
-def eval(agent: BaseAgent, env_name, seed, eval_episodes):
+def eval(agent, env_name, seed, eval_episodes):
     global state_normalizer, logger
 
     eval_env = gym.make(env_name)
@@ -77,7 +76,7 @@ def train_imitator(configs, result_dir="out", data_dir="data/expert_data"):
         env = gym.make(configs["d4rl_task_name"])
         dataset = env.get_dataset()
         configs = add_env_info(configs, env=env)
-    elif configs.get("dataset_name"):  # self-generated dataset
+    elif configs.get("dataset_name"):  # self generated dataset
         data_file_path = os.path.join(data_dir, configs["dataset_name"] + ".hdf5")
         dataset = read_hdf5_dataset(data_file_path)
         configs = add_env_info(configs, env_info=dataset["env_info"])
@@ -99,7 +98,7 @@ def train_imitator(configs, result_dir="out", data_dir="data/expert_data"):
         if len(traj_pair) < expert_traj_num:
             raise ValueError("Not enough expert trajectories!")
         expert_traj = random.sample(traj_pair, expert_traj_num)
-        agent.load_expert_traj(dataset, expert_traj)
+        load_expert_traj(agent, dataset, expert_traj)
 
     # train agent
     writer.add_scalar(
@@ -117,9 +116,10 @@ def train_imitator(configs, result_dir="out", data_dir="data/expert_data"):
                 f"Asking for new expert data, currently have {expert_traj_num} expert trajectories"
             )
         # 2. update
-        losses = agent.learn()
-        for key, value in losses.items():
-            writer.add_scalar(key, value, global_step=i + 1)
+        snapshot = agent.learn()
+        if snapshot != None:
+            for key, value in snapshot.items():
+                writer.add_scalar(key, value, global_step=i + 1)
         # 3. evaluate
         if (i + 1) % configs["eval_freq"] == 0:
             avg_reward = eval(agent, configs["env_name"], configs["seed"], 10)
