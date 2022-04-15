@@ -14,6 +14,7 @@ from train_expert import train
 logger = None
 eval_num = 0
 
+
 def get_expert(configs):
     """Train expert if necessary"""
     expert_configs = load_yml_config(configs["expert_config"])
@@ -28,12 +29,11 @@ def get_expert(configs):
     return expert, configs
 
 
-
 def eval(agent, env_name, seed, eval_episodes):
     global logger, eval_num
-    
+
     eval_num += 1
-    
+
     eval_env = gym.make(env_name)
     eval_env.seed(seed + 100)
 
@@ -46,7 +46,9 @@ def eval(agent, env_name, seed, eval_episodes):
             avg_reward += reward
 
     avg_reward /= eval_episodes
-    logger.info(f"Evaluation times: {eval_num} Evaluation over {eval_episodes} episodes: {avg_reward:.3f}")
+    logger.info(
+        f"Evaluation times: {eval_num} Evaluation over {eval_episodes} episodes: {avg_reward:.3f}"
+    )
 
     return avg_reward
 

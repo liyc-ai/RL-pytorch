@@ -35,9 +35,9 @@ class TRPOAgent(BaseAgent):
         self.actor = StochasticActor(
             self.state_dim, configs["actor_hidden_size"], self.action_dim
         ).to(self.device)
-        self.critic = Critic(
-            self.state_dim, configs["critic_hidden_size"]
-        ).to(self.device)
+        self.critic = Critic(self.state_dim, configs["critic_hidden_size"]).to(
+            self.device
+        )
         self.critic_optim = Adam(
             self.critic.parameters(),
             configs["critic_lr"],
@@ -219,7 +219,6 @@ class TRPOAgent(BaseAgent):
             self.critic_optim.step()
             all_critic_loss = np.append(all_critic_loss, critic_loss.item())
 
-
         return {
             "surrogate_loss": loss.item(),
             "critic_loss": np.mean(all_critic_loss),
@@ -233,8 +232,8 @@ class TRPOAgent(BaseAgent):
 
         states, actions, next_states, rewards, not_dones = self.replay_buffer.sample()
         snapshot = self.update_param(states, actions, next_states, rewards, not_dones)
-        
+
         # clear buffer
         self.replay_buffer.clear()
-        
+
         return snapshot

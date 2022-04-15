@@ -35,11 +35,13 @@ class GAILAgent(BaseAgent):
             }
         self.policy = PPOAgent(expert_config)
         self.gamma = self.policy.gamma
-        
+
         # discriminator
         self.disc = GAILDiscrim(
             self.state_dim, configs["discriminator_hidden_size"], self.action_dim
-        ).to(self.device)  # output the probability of beign expert decision of (s, a)
+        ).to(
+            self.device
+        )  # output the probability of beign expert decision of (s, a)
         self.disc_optim = Adam(self.disc.parameters(), lr=configs["discriminator_lr"])
 
         self.expert_buffer = ImitationReplayBuffer(
@@ -49,7 +51,7 @@ class GAILAgent(BaseAgent):
         self.models = {
             "disc": self.disc,
             "disc_optim": self.disc_optim,
-            **self.policy.models
+            **self.policy.models,
         }
 
     def rollout(self):
@@ -61,7 +63,9 @@ class GAILAgent(BaseAgent):
             action = self.policy(state, training=True)
             next_state, reward, done, _ = self.env.step(action)
             real_done = done if i < self.env._max_episode_steps else False
-            self.policy.replay_buffer.add(state, action, next_state, reward, float(real_done))
+            self.policy.replay_buffer.add(
+                state, action, next_state, reward, float(real_done)
+            )
 
     def __call__(self, state, training=False):
         return self.policy(state, training=training)
@@ -74,10 +78,12 @@ class GAILAgent(BaseAgent):
         all_disc_loss = np.array([])
         for _ in range(self.update_disc_times):
             # Discriminator is to maximize E_{\pi} [log(1 - D)] + E_{exp} [log(D)].
-            pi_states, pi_actions = self.policy.replay_buffer.sample(self.batch_size)[:2]
+            pi_states, pi_actions = self.policy.replay_buffer.sample(self.batch_size)[
+                :2
+            ]
             d_pi = self.disc(pi_states, pi_actions)
             loss_pi = -F.logsigmoid(-d_pi).mean()
-            
+
             exp_states, exp_actions = self.expert_buffer.sample(self.batch_size)
             d_exp = self.disc(exp_states, exp_actions)
             loss_exp = -F.logsigmoid(d_exp).mean()
@@ -88,7 +94,7 @@ class GAILAgent(BaseAgent):
             self.disc_optim.step()
 
             all_disc_loss = np.append(all_disc_loss, disc_loss.item())
-                
+
         # update generator
         (
             states,
@@ -101,13 +107,10 @@ class GAILAgent(BaseAgent):
         policy_snapshot = self.policy.update_param(
             states, actions, next_states, rewards, not_dones
         )
-                
+
         self.policy.replay_buffer.clear()
-        
-        return {
-            "disc_loss": np.mean(all_disc_loss),
-            **policy_snapshot
-        }
+
+        return {"disc_loss": np.mean(all_disc_loss), **policy_snapshot}
 
     def learn(self):
         return self.update_param()

@@ -103,15 +103,15 @@ class Normalizer:
     def __call__(self, data_array: np.ndarray):
         self.rms.update(data_array)
         return (data_array - self.rms.mean) / (np.sqrt(self.rms.var) + 1e-8)
-    
+
     @property
     def mean(self):
         return self.rms.mean
-    
+
     @property
     def var(self):
         return self.rms.var
-    
+
     @property
     def std(self):
         return np.sqrt(self.rms.var)

@@ -61,6 +61,8 @@ class GAE:
         # Calculate gae recursively from behind.
         advantages[-1] = deltas[-1]
         for t in reversed(range(rewards.size(0) - 1)):
-            advantages[t] = deltas[t] + self.gamma * self.lambda_ * not_dones[t] * advantages[t + 1]
+            advantages[t] = (
+                deltas[t] + self.gamma * self.lambda_ * not_dones[t] * advantages[t + 1]
+            )
 
         return advantages + values, advantages

@@ -32,9 +32,9 @@ class PPOAgent(BaseAgent):
             self.action_dim,
             state_std_independent=True,
         ).to(self.device)
-        self.critic = Critic(
-            self.state_dim, configs["critic_hidden_size"]
-        ).to(self.device)
+        self.critic = Critic(self.state_dim, configs["critic_hidden_size"]).to(
+            self.device
+        )
         self.optim = Adam(
             [
                 {"params": self.actor.parameters(), "lr": configs["actor_lr"]},
@@ -44,7 +44,7 @@ class PPOAgent(BaseAgent):
         self.replay_buffer = SimpleReplayBuffer(
             self.state_dim, self.action_dim, self.device, self.configs["buffer_size"]
         )
-        
+
         self.models = {
             "actor": self.actor,
             "critic": self.critic,
@@ -110,7 +110,7 @@ class PPOAgent(BaseAgent):
                 nn.utils.clip_grad_norm_(self.critic.parameters(), self.max_grad_norm)
                 self.optim.step()
                 all_loss = np.append(all_loss, loss.item())
-        
+
         return {
             "mean_loss": np.mean(all_loss),
         }
@@ -126,4 +126,3 @@ class PPOAgent(BaseAgent):
         # clear buffer
         self.replay_buffer.clear()
         return snapshot
-    

@@ -7,9 +7,7 @@ LOG_STD_MAX = 2
 
 
 class DeterministicActor(nn.Module):
-    def __init__(
-        self, state_dim, hidden_size, action_dim, activation_fn=nn.ReLU
-    ):
+    def __init__(self, state_dim, hidden_size, action_dim, activation_fn=nn.ReLU):
         super().__init__()
         self.feature_extractor = nn.Sequential(
             *build_mlp_extractor(state_dim, hidden_size, activation_fn)
@@ -21,9 +19,9 @@ class DeterministicActor(nn.Module):
             input_dim = state_dim
 
         self.output_head = nn.Linear(input_dim, action_dim)
-        
+
         self.apply(weights_init_)
-        
+
         self.output_head.weight.data.mul_(0.01)
         self.output_head.bias.data.mul_(0.0)
 
@@ -52,7 +50,7 @@ class StochasticActor(nn.Module):
             input_dim = hidden_size[-1]
         else:
             input_dim = state_dim
-            
+
         # mean and log std
         self.mu = nn.Linear(input_dim, action_dim)
         if state_std_independent:
@@ -61,7 +59,7 @@ class StochasticActor(nn.Module):
             self.log_std = nn.Linear(input_dim, action_dim)
 
         self.apply(weights_init_)
-        
+
         self.mu.weight.data.mul_(0.01)
         self.mu.bias.data.mul_(0.0)
 
