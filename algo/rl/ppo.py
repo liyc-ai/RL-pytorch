@@ -80,7 +80,7 @@ class PPOAgent(BaseAgent):
             for idx in np.split(full_idx, self.replay_buffer.size // self.batch_size):
                 # critic loss
                 values = self.critic(states[idx])
-                critic_loss = F.mse_loss(Rs[idx], values)
+                critic_loss = F.mse_loss(values, Rs[idx])
                 # actor loss
                 action_mean, action_std = self.actor(states[idx])
                 action_distribution = Normal(action_mean, action_std)

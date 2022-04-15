@@ -21,5 +21,8 @@ class DAggerAgent(BCAgent):
             state = next_state
             action = self.actor(state, training=True)
             next_state, _, done, _ = self.env.step(action)
+            
             action = expert(state, training=False)
-            self.expert_buffer.add(state, action)
+            real_done = done if _ < self.env._max_episode_steps else False
+            
+            self.expert_buffer.add(state, action, next_state, real_done)

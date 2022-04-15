@@ -45,7 +45,7 @@ class BCAgent(BaseAgent):
         return action.cpu().data.numpy().flatten()
 
     def _bc_loss(self):
-        states, actions = self.expert_buffer.sample(self.batch_size)
+        states, actions = self.expert_buffer.sample(self.batch_size)[:2]
         action_means, action_stds = self.actor(states)
         if self.mse_loss_fn != None:
             loss = self.mse_loss_fn(action_means, actions)

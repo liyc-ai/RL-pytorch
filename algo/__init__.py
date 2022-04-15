@@ -6,6 +6,7 @@ from .rl.ddpg import DDPGAgent
 from .imitation.bc import BCAgent
 from .imitation.dagger import DAggerAgent
 from .imitation.gail import GAILAgent
+from .imitation.airl import AIRLAgent
 
 ALGOS = {
     # Reinforcement Learning
@@ -18,4 +19,5 @@ ALGOS = {
     "bc": BCAgent,
     "dagger": DAggerAgent,
     "gail": GAILAgent,
+    "airl": AIRLAgent,
 }
