@@ -17,8 +17,9 @@ class DAggerAgent(BCAgent):
         done = True
         for _ in range(self.rollout_steps):
             if done:
-                state = self.env.reset()
-            action = expert(state)
-            next_state, _, done, _ = self.env.step(action)
-            self.expert_buffer.add(state, action)
+                next_state = self.env.reset()
             state = next_state
+            action = self.actor(state, training=True)
+            next_state, _, done, _ = self.env.step(action)
+            action = expert(state, training=False)
+            self.expert_buffer.add(state, action)

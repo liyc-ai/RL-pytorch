@@ -28,11 +28,7 @@ def soft_update(rho, net, target_net):
 
 # Initialize Policy weights
 def weights_init_(m):
-    if isinstance(m, nn.Linear):
-        torch.nn.init.xavier_uniform_(m.weight, gain=nn.init.calculate_gain("relu"))
-        torch.nn.init.constant_(m.bias, 0)
-
-
-def set_grad(net_params, require_grad):
-    for p in net_params:
-        p.requires_grad = require_grad
+    if isinstance(m, torch.nn.Linear):
+        # orthogonal initialization
+        torch.nn.init.orthogonal_(m.weight, gain=np.sqrt(2))
+        torch.nn.init.zeros_(m.bias)

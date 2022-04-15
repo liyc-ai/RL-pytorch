@@ -7,7 +7,6 @@ expert_traj_num: 25
 expert_buffer_size: 25_000
 max_grad_norm: 10.
 load_model: false
-norm_state: false
 loss_fn: mse
 
 # net param

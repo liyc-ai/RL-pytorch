@@ -26,6 +26,7 @@ delta: !!float 1e-2
 actor_hidden_size: [64, 64]
 critic_hidden_size: [64, 64]
 weight_decay: !!float 1e-3
+critic_lr: !!float 3e-4
 n_critic_update: 5
 
 # others

@@ -11,7 +11,6 @@ class Critic(nn.Module):
         action_dim=None,
         activation_fn=nn.Tanh,
         output_dim=1,
-        init=False,
     ):
         super().__init__()
         self.action_dim = action_dim
@@ -28,19 +27,14 @@ class Critic(nn.Module):
             output_dim,
         )
 
-        if init:
-            value_head.weight.data.mul_(0.1)
-            value_head.bias.data.mul_(0.0)
-
         # concat all the layer
         model = feature_extractor + [value_head]
         self.net = nn.Sequential(*model)
 
-        # self.apply(weights_init_)
+        self.apply(weights_init_)
 
     def forward(self, state, action=None):
-        if self.action_dim != None:
-            assert action != None
+        if self.action_dim != None and action != None:
             x = torch.cat([state, action], dim=1)
         else:
             x = state

@@ -60,7 +60,7 @@ def train(configs, result_dir="out"):
     # init agent
     agent = ALGOS[configs["algo_name"]](configs)
     model_path = os.path.join(exp_path, "model.pt")
-    if configs["load_model"] and os.path.exists(model_path):
+    if configs.get("load_model") and os.path.exists(model_path):
         agent.load_model(model_path)
         logger.info(f"Successfully load model: {model_path}")
 

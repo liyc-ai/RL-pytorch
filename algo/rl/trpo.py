@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import torch.nn as nn
 from torch.autograd import grad
 import torch.nn.functional as F
 from torch.optim import Adam
@@ -32,10 +33,10 @@ class TRPOAgent(BaseAgent):
 
         self.gae = GAE(self.gamma, self.lambda_)
         self.actor = StochasticActor(
-            self.state_dim, configs["actor_hidden_size"], self.action_dim, init=True
+            self.state_dim, configs["actor_hidden_size"], self.action_dim
         ).to(self.device)
         self.critic = Critic(
-            self.state_dim, configs["critic_hidden_size"], init=True
+            self.state_dim, configs["critic_hidden_size"]
         ).to(self.device)
         self.critic_optim = Adam(
             self.critic.parameters(),
@@ -211,18 +212,17 @@ class TRPOAgent(BaseAgent):
         all_critic_loss = np.array([])
         for _ in range(self.n_critic_update):
             values = self.critic(states)
-            critic_loss = F.mse_loss(Rs, values)
+            critic_loss = F.mse_loss(values, Rs)
             self.critic_optim.zero_grad()
             critic_loss.backward()
+            # nn.utils.clip_grad_norm_(self.critic.parameters(), 10.0)
             self.critic_optim.step()
             all_critic_loss = np.append(all_critic_loss, critic_loss.item())
 
-        # clear buffer
-        self.replay_buffer.clear()
 
         return {
             "surrogate_loss": loss.item(),
-            "critic_loss": np.mean(critic_loss),
+            "critic_loss": np.mean(all_critic_loss),
         }
 
     def learn(self, state, action, next_state, reward, done):
@@ -232,5 +232,9 @@ class TRPOAgent(BaseAgent):
             return None
 
         states, actions, next_states, rewards, not_dones = self.replay_buffer.sample()
-
-        return self.update_param(states, actions, next_states, rewards, not_dones)
+        snapshot = self.update_param(states, actions, next_states, rewards, not_dones)
+        
+        # clear buffer
+        self.replay_buffer.clear()
+        
+        return snapshot

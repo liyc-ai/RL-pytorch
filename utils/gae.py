@@ -14,10 +14,10 @@ class GAE:
         self.lambda_ = lambda_
 
     def __call__(
-        self, value_net, states, rewards, not_dones, next_states, bootstrap=True
+        self, value_net, states, rewards, not_dones, next_states, use_td_lambd=True
     ):
         """Here we can use two different methods to calculate Returns"""
-        if bootstrap:
+        if use_td_lambd:
             Rs, advantages = self.td_lambda(
                 value_net, states, rewards, not_dones, next_states
             )
@@ -57,10 +57,10 @@ class GAE:
         # Calculate TD errors.
         deltas = rewards + self.gamma * next_values * not_dones - values
         # Initialize gae.
-        gaes = torch.empty_like(rewards)
+        advantages = torch.empty_like(rewards)
         # Calculate gae recursively from behind.
-        gaes[-1] = deltas[-1]
+        advantages[-1] = deltas[-1]
         for t in reversed(range(rewards.size(0) - 1)):
-            gaes[t] = deltas[t] + self.gamma * self.lambda_ * not_dones[t] * gaes[t + 1]
+            advantages[t] = deltas[t] + self.gamma * self.lambda_ * not_dones[t] * advantages[t + 1]
 
-        return gaes + values, gaes
+        return advantages + values, advantages

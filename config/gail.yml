@@ -1,15 +1,12 @@
 # algo param
 algo_name: gail
-batch_size: 128
-eval_freq: 10
+batch_size: 64
+eval_freq: 5
 expert_traj_num: 20
 expert_buffer_size: 20_000
-max_iters: 1000
-
-update_disc_times: 10
-
+max_iters: 3000
+update_disc_times: 4
 load_model: false
-norm_state: false
 
 # net param
 discriminator_hidden_size: [100, 100]
@@ -17,8 +14,9 @@ discriminator_lr: !!float 3e-4
 
 # env param
 use_d4rl: true  # whether to use d4rl dataset
-d4rl_task_name: halfcheetah-expert-v2
+d4rl_task_name: hopper-expert-v2 # halfcheetah-expert-v2
 
 # others
 seed: 0
 device: "cuda:0"
+expert:

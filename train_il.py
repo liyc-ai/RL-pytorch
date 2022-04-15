@@ -4,7 +4,6 @@ import d4rl  # To register environments
 import numpy as np
 import random
 from algo import ALGOS
-from utils.transform import Normalizer
 from utils.config import parse_args, load_yml_config, write_config
 from utils.logger import get_logger, get_writer
 from utils.data import read_hdf5_dataset, split_dataset, load_expert_traj
@@ -12,9 +11,8 @@ from utils.exp import set_random_seed, add_env_info
 from torch.utils.backcompat import broadcast_warning, keepdim_warning
 from train_expert import train
 
-state_normalizer = lambda x: x
 logger = None
-
+eval_num = 0
 
 def get_expert(configs):
     """Train expert if necessary"""
@@ -30,9 +28,12 @@ def get_expert(configs):
     return expert, configs
 
 
-def eval(agent, env_name, seed, eval_episodes):
-    global state_normalizer, logger
 
+def eval(agent, env_name, seed, eval_episodes):
+    global logger, eval_num
+    
+    eval_num += 1
+    
     eval_env = gym.make(env_name)
     eval_env.seed(seed + 100)
 
@@ -40,20 +41,18 @@ def eval(agent, env_name, seed, eval_episodes):
     for _ in range(eval_episodes):
         state, done = eval_env.reset(), False
         while not done:
-            action = agent(state_normalizer(state))
+            action = agent(state, training=False)
             state, reward, done, _ = eval_env.step(action)
             avg_reward += reward
 
     avg_reward /= eval_episodes
-    logger.info(f"Evaluation over {eval_episodes} episodes: {avg_reward:.3f}")
+    logger.info(f"Evaluation times: {eval_num} Evaluation over {eval_episodes} episodes: {avg_reward:.3f}")
 
     return avg_reward
 
 
 def train_imitator(configs, result_dir="out", data_dir="data/expert_data"):
-    global state_normalizer, logger
-    if configs["norm_state"]:
-        state_normalizer = Normalizer()
+    global logger
 
     # fix all the seeds
     seed = configs["seed"]

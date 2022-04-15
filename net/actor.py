@@ -8,7 +8,7 @@ LOG_STD_MAX = 2
 
 class DeterministicActor(nn.Module):
     def __init__(
-        self, state_dim, hidden_size, action_dim, activation_fn=nn.ReLU, init=False
+        self, state_dim, hidden_size, action_dim, activation_fn=nn.ReLU
     ):
         super().__init__()
         self.feature_extractor = nn.Sequential(
@@ -21,12 +21,11 @@ class DeterministicActor(nn.Module):
             input_dim = state_dim
 
         self.output_head = nn.Linear(input_dim, action_dim)
-
-        if init:
-            self.output_head.weight.data.mul_(0.1)
-            self.output_head.bias.data.mul_(0.0)
-
-        # self.apply(weights_init_)
+        
+        self.apply(weights_init_)
+        
+        self.output_head.weight.data.mul_(0.01)
+        self.output_head.bias.data.mul_(0.0)
 
     def forward(self, state):
         feature = self.feature_extractor(state)
@@ -42,7 +41,6 @@ class StochasticActor(nn.Module):
         action_dim,
         activation_fn=nn.Tanh,
         state_std_independent=False,
-        init=False,
     ):
         super().__init__()
         self.state_std_independent = state_std_independent
@@ -54,6 +52,7 @@ class StochasticActor(nn.Module):
             input_dim = hidden_size[-1]
         else:
             input_dim = state_dim
+            
         # mean and log std
         self.mu = nn.Linear(input_dim, action_dim)
         if state_std_independent:
@@ -61,11 +60,10 @@ class StochasticActor(nn.Module):
         else:
             self.log_std = nn.Linear(input_dim, action_dim)
 
-        if init:
-            self.mu.weight.data.mul_(0.1)
-            self.mu.bias.data.mul_(0.0)
-
-        # self.apply(weights_init_)
+        self.apply(weights_init_)
+        
+        self.mu.weight.data.mul_(0.01)
+        self.mu.bias.data.mul_(0.0)
 
     def forward(self, state):
         feature = self.feature_extractor(state)

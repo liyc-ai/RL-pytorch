@@ -30,6 +30,7 @@ python train_expert.py --config bc.yml --env-name HalfCheetah-v3
 
 1. [BC](https://proceedings.neurips.cc/paper/1990/hash/248e844336797ec98478f85e7626de4a-Abstract.html)
 2. [DAgger](https://arxiv.org/abs/1011.0686)
+3. [GAIL](https://arxiv.org/abs/1606.03476)
 
 ## Acknowledgement
 During my implementation of IL and RL algorithms, a lot of classic open-source materials on the Internet served as good references. And I highly appreciate their author's effort. Below is a detailed list.

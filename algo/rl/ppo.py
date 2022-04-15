@@ -31,10 +31,9 @@ class PPOAgent(BaseAgent):
             configs["actor_hidden_size"],
             self.action_dim,
             state_std_independent=True,
-            init=True,
         ).to(self.device)
         self.critic = Critic(
-            self.state_dim, configs["critic_hidden_size"], init=True
+            self.state_dim, configs["critic_hidden_size"]
         ).to(self.device)
         self.optim = Adam(
             [
@@ -45,6 +44,7 @@ class PPOAgent(BaseAgent):
         self.replay_buffer = SimpleReplayBuffer(
             self.state_dim, self.action_dim, self.device, self.configs["buffer_size"]
         )
+        
         self.models = {
             "actor": self.actor,
             "critic": self.critic,
@@ -67,13 +67,11 @@ class PPOAgent(BaseAgent):
             Rs, advantages = self.gae(
                 self.critic, states, rewards, not_dones, next_states
             )
-
             action_mean, action_std = self.actor(states)
             fixed_action_distribution = Normal(action_mean, action_std)
             fixed_log_action_probs = fixed_action_distribution.log_prob(actions).sum(
                 axis=-1, keepdims=True
             )
-
         # update actor and critic
         all_loss = np.array([])
         full_idx = np.array(list(range(self.replay_buffer.size)))
@@ -112,10 +110,7 @@ class PPOAgent(BaseAgent):
                 nn.utils.clip_grad_norm_(self.critic.parameters(), self.max_grad_norm)
                 self.optim.step()
                 all_loss = np.append(all_loss, loss.item())
-
-        # clear buffer
-        self.replay_buffer.clear()
-
+        
         return {
             "mean_loss": np.mean(all_loss),
         }
@@ -125,8 +120,10 @@ class PPOAgent(BaseAgent):
         self.replay_buffer.add(state, action, next_state, reward, done)
         if self.replay_buffer.size < self.rollout_steps:
             return None
-
         # update parameters
         states, actions, next_states, rewards, not_dones = self.replay_buffer.sample()
-        return self.update_param(states, actions, next_states, rewards, not_dones)
+        snapshot = self.update_param(states, actions, next_states, rewards, not_dones)
+        # clear buffer
+        self.replay_buffer.clear()
+        return snapshot
     
