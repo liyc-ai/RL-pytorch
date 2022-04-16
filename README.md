@@ -1,5 +1,5 @@
 # ILAlgo
-Imitation Learning Algorithms Codebase with Reinforcement Learning Baseline Algorithms with Pytorch backend. All code are tested on Mujoco.
+Baseline Algorithms of Imitation Learning and Reinforcment Learning , written in Pytorch. All code are tested on Mujoco.
 
 **Note**: Code are under development. Issues,  bug reports and PRs are welcome.
 
@@ -16,6 +16,12 @@ pip install -r requirements
 python train_expert.py --config sac.yml --env-name HalfCheetah-v3 --generate-data
 # train imitator
 python train_expert.py --config bc.yml
+```
+
+**Watch Result**
+
+```bash
+tensorboard --log_dir out/[your exp name]
 ```
 
 ## Currently Implemented Algorithms
