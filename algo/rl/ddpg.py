@@ -40,7 +40,10 @@ class DDPGAgent(BaseAgent):
             self.critic.parameters(), lr=configs.get("critic_lr")
         )
         self.replay_buffer = SimpleReplayBuffer(
-            self.state_dim, self.action_dim, self.device, self.configs.get("buffer_size")
+            self.state_dim,
+            self.action_dim,
+            self.device,
+            self.configs.get("buffer_size"),
         )
         self.models = {
             "actor": self.actor,
@@ -52,7 +55,11 @@ class DDPGAgent(BaseAgent):
         }
 
     def __call__(self, state, training=False, calcu_log_prob=False):
-        state = torch.FloatTensor(state.reshape(1, -1)).to(self.device) if type(state) == np.ndarray else state
+        state = (
+            torch.FloatTensor(state.reshape(1, -1)).to(self.device)
+            if type(state) == np.ndarray
+            else state
+        )
         action_mean = self.squash_action(self.actor(state))
         return self.select_action(action_mean, self.expl_std, training, calcu_log_prob)
 

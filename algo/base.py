@@ -17,25 +17,27 @@ class BaseAgent:
 
     def __call__(self):
         raise NotImplementedError
-    
-    def select_action(self, action_mean, action_std, training=False, calcu_log_prob=False):
+
+    def select_action(
+        self, action_mean, action_std, training=False, calcu_log_prob=False
+    ):
         pi_dist = Normal(action_mean, action_std)
         if training:
             action = pi_dist.rsample()
         else:
             action = action_mean
         # clip action
-        if self.configs.get('clip_action'):  # for ddpg and td3
+        if self.configs.get("clip_action"):  # for ddpg and td3
             action = torch.clamp(action, -self.action_high, self.action_high)
         # claculate log_prob
-        log_prob = 0.  # fake log_pi
+        log_prob = 0.0  # fake log_pi
         if calcu_log_prob:
             log_prob = pi_dist.log_prob(action).sum(axis=-1, keepdims=True)
         return action, log_prob
-    
+
     def update_param(self):
         raise NotImplementedError
-    
+
     def learn(self):
         raise NotImplementedError
 

@@ -18,7 +18,7 @@ class PPOAgent(TRPOAgent):
         self.batch_size = configs.get("batch_size")
         self.max_grad_norm = configs.get("max_grad_norm")
         self.epsilon_clip = configs.get("epsilon_clip")
-        
+
         self.optim = Adam(
             [
                 {"params": self.actor.parameters(), "lr": configs.get("actor_lr")},

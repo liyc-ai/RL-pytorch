@@ -4,6 +4,7 @@ import numpy as np
 from tqdm import tqdm
 import torch
 
+
 def _get_reset_data():
     data = dict(
         observations=[],
@@ -63,7 +64,9 @@ def generate_expert_dataset(agent, env_name, seed, max_steps=int(1e6)):
     )
     for k in dataset:
         dataset[k] = dataset[k][:max_steps]  # clip the additional data
-    dataset["infos/action_log_probs"] = np.array(dataset["log_probs"]).astype(np.float32)[:max_steps]
+    dataset["infos/action_log_probs"] = np.array(dataset["log_probs"]).astype(
+        np.float32
+    )[:max_steps]
     # add env info, for learning
     dataset["env_info"] = [
         env.observation_space.shape[0],

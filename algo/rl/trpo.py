@@ -30,13 +30,16 @@ class TRPOAgent(BaseAgent):
         self.max_backtrack = configs.get("max_backtrack")
         self.line_search_accept_ratio = configs.get("line_search_accept_ratio")
         self.n_critic_update = configs.get("n_critic_update")
-        
+
         self.replay_buffer = SimpleReplayBuffer(
-            self.state_dim, self.action_dim, self.device, self.configs.get("buffer_size")
+            self.state_dim,
+            self.action_dim,
+            self.device,
+            self.configs.get("buffer_size"),
         )
-        
+
         self.gae = GAE(self.gamma, self.lambda_)
-        
+
         self.actor = StochasticActor(
             self.state_dim, configs.get("actor_hidden_size"), self.action_dim
         ).to(self.device)
@@ -53,8 +56,6 @@ class TRPOAgent(BaseAgent):
             "critic": self.critic,
             "optim": self.optim,
         }
-        
-    
 
     def _conjugate_gradient(self, Hvp_func, g):
         """To calculate s = H^{-1}g without solving inverse of H
@@ -123,7 +124,11 @@ class TRPOAgent(BaseAgent):
         return Hvp
 
     def __call__(self, state, training=False, calcu_log_prob=False):
-        state = torch.FloatTensor(state.reshape(1, -1)).to(self.device) if type(state) == np.ndarray else state
+        state = (
+            torch.FloatTensor(state.reshape(1, -1)).to(self.device)
+            if type(state) == np.ndarray
+            else state
+        )
         action_mean, action_std = self.actor(state)
         return self.select_action(action_mean, action_std, training, calcu_log_prob)
 

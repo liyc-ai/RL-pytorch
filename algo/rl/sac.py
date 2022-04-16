@@ -82,14 +82,18 @@ class SACAgent(BaseAgent):
         )
 
     def __call__(self, state, training=False, calcu_log_prob=False):
-        state = torch.FloatTensor(state.reshape(1, -1)).to(self.device) if type(state) == np.ndarray else state
+        state = (
+            torch.FloatTensor(state.reshape(1, -1)).to(self.device)
+            if type(state) == np.ndarray
+            else state
+        )
         mu, std = self.actor(state)
         pi_dist = Normal(mu, std)
         if training:
             action = pi_dist.rsample()
         else:
             action = mu
-        log_prob = 0.
+        log_prob = 0.0
         if calcu_log_prob:
             # calculate log pi, which is equivalent to Eq 26 in SAC paper, but more numerically stable
             log_prob = pi_dist.log_prob(action).sum(axis=-1, keepdims=True)
@@ -98,7 +102,6 @@ class SACAgent(BaseAgent):
             )
         action = self.squash_action(action)
         return action, log_prob
-        
 
     def update_param(self, states, actions, rewards, next_states, not_dones):
         # calculate target q value

@@ -26,7 +26,9 @@ def eval(agent, env_name, seed, eval_episodes):
         state, done = eval_env.reset(), False
         while not done:
             with torch.no_grad():
-                action, _ = agent(state_normalizer(state), training=False, calcu_log_prob=False)
+                action, _ = agent(
+                    state_normalizer(state), training=False, calcu_log_prob=False
+                )
                 action = action.cpu().data.numpy().flatten()
             state, reward, done, _ = eval_env.step(action)
             avg_reward += reward

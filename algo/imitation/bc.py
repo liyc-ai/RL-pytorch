@@ -22,7 +22,10 @@ class BCAgent(BaseAgent):
         self.actor_optim = Adam(self.actor.parameters(), lr=configs.get("actor_lr"))
 
         self.expert_buffer = ImitationReplayBuffer(
-            self.state_dim, self.action_dim, self.device, configs.get("expert_buffer_size")
+            self.state_dim,
+            self.action_dim,
+            self.device,
+            configs.get("expert_buffer_size"),
         )
 
         self.models = {
@@ -36,7 +39,11 @@ class BCAgent(BaseAgent):
             self.mse_loss_fn = nn.MSELoss()
 
     def __call__(self, state, training=False, calcu_log_prob=False):
-        state = torch.FloatTensor(state.reshape(1, -1)).to(self.device) if type(state) == np.ndarray else state
+        state = (
+            torch.FloatTensor(state.reshape(1, -1)).to(self.device)
+            if type(state) == np.ndarray
+            else state
+        )
         action_mean, action_std = self.actor(state)
         return self.select_action(action_mean, action_std, training, calcu_log_prob)
 

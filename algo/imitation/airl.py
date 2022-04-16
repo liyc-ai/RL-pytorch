@@ -20,9 +20,7 @@ class AIRLAgent(GAILAgent):
         ).to(
             self.device
         )  # output the probability of beign expert decision of (s, a)
-        self.disc_optim = Adam(
-            self.disc.parameters(), lr=configs["discriminator_lr"]
-        )
+        self.disc_optim = Adam(self.disc.parameters(), lr=configs["discriminator_lr"])
         self.expert_buffer = SimpleReplayBuffer(
             self.state_dim,
             self.action_dim,
@@ -34,7 +32,7 @@ class AIRLAgent(GAILAgent):
             **{
                 "disc": self.disc,
                 "disc_optim": self.disc_optim,
-            }
+            },
         }
 
     def _get_log_pis(self, states, actions):
