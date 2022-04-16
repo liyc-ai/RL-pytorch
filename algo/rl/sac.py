@@ -82,30 +82,23 @@ class SACAgent(BaseAgent):
         )
 
     def __call__(self, state, training=False, calcu_log_prob=False):
-        if not calcu_log_prob:  # just get and excute action
-            state = torch.FloatTensor(state.reshape(1, -1)).to(self.device)
-            with torch.no_grad():
-                mu, std = self.actor(state)
-                pi_distribution = Normal(mu, std)
-                if not training:
-                    action = mu
-                else:
-                    action = pi_distribution.rsample()
-                action = self.action_high * torch.tanh(action)
-                return action.cpu().data.numpy().flatten()
+        state = torch.FloatTensor(state.reshape(1, -1)).to(self.device) if type(state) == np.ndarray else state
+        mu, std = self.actor(state)
+        pi_dist = Normal(mu, std)
+        if training:
+            action = pi_dist.rsample()
         else:
-            mu, std = self.actor(state)
-            pi_distribution = Normal(mu, std)
-            action = pi_distribution.rsample()
-
+            action = mu
+        log_prob = 0.
+        if calcu_log_prob:
             # calculate log pi, which is equivalent to Eq 26 in SAC paper, but more numerically stable
-            logp_pi = pi_distribution.log_prob(action).sum(axis=-1, keepdims=True)
-            logp_pi -= (2 * (np.log(2) - action - F.softplus(-2 * action))).sum(
+            log_prob = pi_dist.log_prob(action).sum(axis=-1, keepdims=True)
+            log_prob -= (2 * (np.log(2) - action - F.softplus(-2 * action))).sum(
                 axis=1, keepdims=True
             )
-
-            action = self.action_high * torch.tanh(action)
-            return action, logp_pi
+        action = self.squash_action(action)
+        return action, log_prob
+        
 
     def update_param(self, states, actions, rewards, next_states, not_dones):
         # calculate target q value
@@ -192,12 +185,12 @@ class SACAgent(BaseAgent):
                 not_dones,
             ) = self.replay_buffer.sample(self.configs["batch_size"])
 
-            actor_loss, critic_loss, alpha_loss = self.update_param(
+            snapshot = self.update_param(
                 states, actions, rewards, next_states, not_dones
             )
-            all_actor_loss = np.append(all_actor_loss, actor_loss)
-            all_critic_loss = np.append(all_critic_loss, critic_loss)
-            all_alpha_loss = np.append(all_alpha_loss, alpha_loss)
+            all_actor_loss = np.append(all_actor_loss, snapshot["actor_loss"])
+            all_critic_loss = np.append(all_critic_loss, snapshot["critic_loss"])
+            all_alpha_loss = np.append(all_alpha_loss, snapshot["alpha_loss"])
 
         return {
             "mean_actor_loss": np.mean(all_actor_loss),

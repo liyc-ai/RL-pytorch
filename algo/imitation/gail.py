@@ -12,14 +12,13 @@ from utils.buffer import ImitationReplayBuffer, SimpleReplayBuffer
 
 
 class GAILAgent(BaseAgent):
-    def __init__(self, configs, disc_type="gail"):
+    def __init__(self, configs):
         super().__init__(configs)
-        assert disc_type in ["gail", "airl"]
 
-        self.update_disc_times = configs["update_disc_times"]
-        self.batch_size = configs["batch_size"]
-        self.env = gym.make(configs["env_name"])
-        self.env.seed(configs["seed"])
+        self.update_disc_times = configs.get("update_disc_times")
+        self.batch_size = configs.get("batch_size")
+        self.env = gym.make(configs.get("env_name"))
+        self.env.seed(configs.get("seed"))
 
         # use ppo to train generator
         expert_config = load_yml_config("ppo.yml")
@@ -28,50 +27,28 @@ class GAILAgent(BaseAgent):
             expert_config["action_dim"],
             expert_config["action_high"],
         ) = (self.state_dim, self.action_dim, self.action_high)
-        if configs["expert"] is not None:
+        if configs.get("expert") is not None:
             expert_config = {
                 **expert_config,
-                **configs["expert"],
+                **configs.get("expert"),
             }
         self.policy = PPOAgent(expert_config)
         self.gamma = self.policy.gamma
-
-        if disc_type == "gail":
-            # discriminator
-            self.disc = GAILDiscrim(
-                self.state_dim, configs["discriminator_hidden_size"], self.action_dim
-            ).to(
-                self.device
-            )  # output the probability of beign expert decision of (s, a)
-            self.disc_optim = Adam(
-                self.disc.parameters(), lr=configs["discriminator_lr"]
-            )
-            self.expert_buffer = ImitationReplayBuffer(
-                self.state_dim,
-                self.action_dim,
-                self.device,
-                configs["expert_buffer_size"],
-            )
-        else:
-            # discriminator
-            self.disc = AIRLDiscrim(
-                self.state_dim,
-                configs["discriminator_hidden_size"],
-                gamma=self.gamma,
-                activation_fn=nn.ReLU,
-            ).to(
-                self.device
-            )  # output the probability of beign expert decision of (s, a)
-            self.disc_optim = Adam(
-                self.disc.parameters(), lr=configs["discriminator_lr"]
-            )
-            self.expert_buffer = SimpleReplayBuffer(
-                self.state_dim,
-                self.action_dim,
-                self.device,
-                configs["expert_buffer_size"],
-            )
-
+        # discriminator
+        self.disc = GAILDiscrim(
+            self.state_dim, configs.get("discriminator_hidden_size"), self.action_dim
+        ).to(
+            self.device
+        )  # output the probability of beign expert decision of (s, a)
+        self.disc_optim = Adam(
+            self.disc.parameters(), lr=configs.get("discriminator_lr")
+        )
+        self.expert_buffer = ImitationReplayBuffer(
+            self.state_dim,
+            self.action_dim,
+            self.device,
+            configs["expert_buffer_size"],
+        )
         self.models = {
             "disc": self.disc,
             "disc_optim": self.disc_optim,
@@ -84,7 +61,9 @@ class GAILAgent(BaseAgent):
             if done:
                 next_state = self.env.reset()
             state = next_state
-            action = self.policy(state, training=True)
+            with torch.no_grad():
+                action, _ = self.policy(state, training=True, calcu_log_prob=False)
+                action = action.cpu().data.numpy().flatten()
             next_state, reward, done, _ = self.env.step(action)
             real_done = done if i < self.env._max_episode_steps else False
             self.policy.replay_buffer.add(
@@ -127,8 +106,8 @@ class GAILAgent(BaseAgent):
             states, actions, rewards, next_states, not_dones
         )
 
-    def __call__(self, state, training=False):
-        return self.policy(state, training=training)
+    def __call__(self, state, training=False, calcu_log_prob=False):
+        return self.policy(state, training=training, calcu_log_prob=calcu_log_prob)
 
     def update_param(self):
         # sample trajectories

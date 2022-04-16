@@ -13,6 +13,7 @@ batch_size: 64
 max_grad_norm: 0.5
 norm_state: true
 update_times: 10
+weight_decay: 0.
 
 # net param
 actor_hidden_size: [64, 64]

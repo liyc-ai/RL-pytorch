@@ -5,6 +5,7 @@
 """
 import torch
 import torch.nn.functional as F
+from torch.distributions import Normal
 import copy
 import numpy as np
 from algo.base import BaseAgent
@@ -19,27 +20,27 @@ class DDPGAgent(BaseAgent):
 
     def __init__(self, configs):
         super().__init__(configs)
-        self.gamma = configs["gamma"]
-        self.rho = configs["rho"]
-        self.expl_std = configs["expl_std"] * self.action_high
+        self.gamma = configs.get("gamma")
+        self.rho = configs.get("rho")
+        self.expl_std = configs.get("expl_std") * self.action_high
         # actor
         self.actor = DeterministicActor(
-            self.state_dim, configs["actor_hidden_size"], self.action_dim
+            self.state_dim, configs.get("actor_hidden_size"), self.action_dim
         ).to(self.device)
         self.actor_target = copy.deepcopy(self.actor)
         self.actor_optim = torch.optim.Adam(
-            self.actor.parameters(), lr=configs["actor_lr"]
+            self.actor.parameters(), lr=configs.get("actor_lr")
         )
         # critic
         self.critic = Critic(
-            self.state_dim, configs["critic_hidden_size"], self.action_dim
+            self.state_dim, configs.get("critic_hidden_size"), self.action_dim
         ).to(self.device)
         self.critic_target = copy.deepcopy(self.critic)
         self.critic_optim = torch.optim.Adam(
-            self.critic.parameters(), lr=configs["critic_lr"]
+            self.critic.parameters(), lr=configs.get("critic_lr")
         )
         self.replay_buffer = SimpleReplayBuffer(
-            self.state_dim, self.action_dim, self.device, self.configs["buffer_size"]
+            self.state_dim, self.action_dim, self.device, self.configs.get("buffer_size")
         )
         self.models = {
             "actor": self.actor,
@@ -50,15 +51,10 @@ class DDPGAgent(BaseAgent):
             "critic_optim": self.critic_optim,
         }
 
-    def __call__(self, state, training=False):
-        state = torch.FloatTensor(state.reshape(1, -1)).to(self.device)
-        with torch.no_grad():
-            action = self.squash_action(self.actor(state)).cpu().data.numpy().flatten()
-            if training:
-                action = (
-                    action + np.random.normal(0, self.expl_std, size=self.action_dim)
-                ).clip(-self.action_high, self.action_high)
-        return action
+    def __call__(self, state, training=False, calcu_log_prob=False):
+        state = torch.FloatTensor(state.reshape(1, -1)).to(self.device) if type(state) == np.ndarray else state
+        action_mean = self.squash_action(self.actor(state))
+        return self.select_action(action_mean, self.expl_std, training, calcu_log_prob)
 
     def update_param(self, states, actions, next_states, rewards, not_dones):
         # compute the target Q value

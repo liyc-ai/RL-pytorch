@@ -1,16 +1,14 @@
+import copy
+import itertools
 import torch
 import torch.nn.functional as F
-import copy
-import numpy as np
-import itertools
-from algo.base import BaseAgent
+from algo.rl.ddpg import DDPGAgent
 from net.actor import DeterministicActor
 from net.critic import Critic
 from utils.net import soft_update
-from utils.buffer import SimpleReplayBuffer
 
 
-class TD3Agent(BaseAgent):
+class TD3Agent(DDPGAgent):
     """Twin Delayed Deep Deterministic Policy Gradient
 
     Code modified from: https://github.com/sfujim/TD3
@@ -18,30 +16,27 @@ class TD3Agent(BaseAgent):
 
     def __init__(self, configs):
         super().__init__(configs)
-        self.gamma = configs["gamma"]
         self.policy_delay = configs["policy_delay"]
-        self.rho = configs["rho"]
         # noise injection
-        self.c = configs["c"] * self.action_high
-        self.sigma = configs["sigma"] * self.action_high
-        self.expl_std = configs["expl_std"] * self.action_high
+        self.c = configs.get("c") * self.action_high
+        self.sigma = configs.get("sigma") * self.action_high
         self.total_it = 0
         # actor
         self.actor = DeterministicActor(
-            self.state_dim, configs["actor_hidden_size"], self.action_dim
+            self.state_dim, configs.get("actor_hidden_size"), self.action_dim
         ).to(self.device)
         self.actor_target = copy.deepcopy(self.actor)
         self.actor_optim = torch.optim.Adam(
-            self.actor.parameters(), lr=configs["actor_lr"]
+            self.actor.parameters(), lr=configs.get("actor_lr")
         )
         # Q1
         self.critic_1 = Critic(
-            self.state_dim, configs["critic_hidden_size"], self.action_dim
+            self.state_dim, configs.get("critic_hidden_size"), self.action_dim
         ).to(self.device)
         self.critic_target_1 = copy.deepcopy(self.critic_1)
         # Q2
         self.critic_2 = Critic(
-            self.state_dim, configs["critic_hidden_size"], self.action_dim
+            self.state_dim, configs.get("critic_hidden_size"), self.action_dim
         ).to(self.device)
         self.critic_target_2 = copy.deepcopy(self.critic_2)
 
@@ -49,11 +44,7 @@ class TD3Agent(BaseAgent):
             self.critic_1.parameters(), self.critic_2.parameters()
         )
         self.critic_optim = torch.optim.Adam(
-            self.critic_params, lr=configs["critic_lr"]
-        )
-
-        self.replay_buffer = SimpleReplayBuffer(
-            self.state_dim, self.action_dim, self.device, self.configs["buffer_size"]
+            self.critic_params, lr=configs.get("critic_lr")
         )
 
         self.models = {
@@ -66,16 +57,6 @@ class TD3Agent(BaseAgent):
             "critic_target_2": self.critic_target_2,
             "critic_optim": self.critic_optim,
         }
-
-    def __call__(self, state, training=False):
-        state = torch.FloatTensor(state.reshape(1, -1)).to(self.device)
-        with torch.no_grad():
-            action = self.squash_action(self.actor(state)).cpu().data.numpy().flatten()
-            if training:
-                action = (
-                    action + np.random.normal(0, self.expl_std, size=self.action_dim)
-                ).clip(-self.action_high, self.action_high)
-        return action
 
     def update_param(self, states, actions, rewards, next_states, not_dones):
         with torch.no_grad():
@@ -135,16 +116,3 @@ class TD3Agent(BaseAgent):
                 "critic_loss": critic_loss.item(),
             }
         )
-
-    def learn(self, state, action, reward, next_state, done):
-        self.total_it += 1
-        self.replay_buffer.add(state, action, reward, next_state, done)
-
-        if self.replay_buffer.size < self.configs["start_timesteps"]:
-            return None
-
-        # sample replay buffer
-        states, actions, rewards, next_states, not_dones = self.replay_buffer.sample(
-            self.configs["batch_size"]
-        )
-        return self.update_param(states, actions, rewards, next_states, not_dones)

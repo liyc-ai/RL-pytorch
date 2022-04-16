@@ -1,13 +1,41 @@
 import numpy as np
 import torch
+import torch.nn as nn
 import torch.nn.functional as F
-from algo.imitation.gail import GAILAgent
+from torch.optim import Adam
 from torch.distributions import Normal
+from algo.imitation.gail import GAILAgent
+from net.discriminator import AIRLDiscrim
+from utils.buffer import SimpleReplayBuffer
 
 
 class AIRLAgent(GAILAgent):
     def __init__(self, configs):
-        super().__init__(configs, disc_type="airl")
+        super().__init__(configs)
+        self.disc = AIRLDiscrim(
+            self.state_dim,
+            configs["discriminator_hidden_size"],
+            gamma=self.gamma,
+            activation_fn=nn.ReLU,
+        ).to(
+            self.device
+        )  # output the probability of beign expert decision of (s, a)
+        self.disc_optim = Adam(
+            self.disc.parameters(), lr=configs["discriminator_lr"]
+        )
+        self.expert_buffer = SimpleReplayBuffer(
+            self.state_dim,
+            self.action_dim,
+            self.device,
+            configs["expert_buffer_size"],
+        )
+        self.models = {
+            **self.models,
+            **{
+                "disc": self.disc,
+                "disc_optim": self.disc_optim,
+            }
+        }
 
     def _get_log_pis(self, states, actions):
         mu, std = self.policy.actor(states)

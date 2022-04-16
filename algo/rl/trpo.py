@@ -19,40 +19,42 @@ class TRPOAgent(BaseAgent):
 
     def __init__(self, configs):
         super().__init__(configs)
-        self.gamma = configs["gamma"]
-        self.rollout_steps = configs["rollout_steps"]
-        self.lambda_ = configs["lambda"]
-        self.residual_tol = configs["residual_tol"]
-        self.cg_steps = configs["cg_steps"]
-        self.damping = configs["damping"]
-        self.delta = configs["delta"]
-        self.beta = configs["beta"]
-        self.max_backtrack = configs["max_backtrack"]
-        self.line_search_accept_ratio = configs["line_search_accept_ratio"]
-        self.n_critic_update = configs["n_critic_update"]
-
+        self.gamma = configs.get("gamma")
+        self.rollout_steps = configs.get("rollout_steps")
+        self.lambda_ = configs.get("lambda")
+        self.residual_tol = configs.get("residual_tol")
+        self.cg_steps = configs.get("cg_steps")
+        self.damping = configs.get("damping")
+        self.delta = configs.get("delta")
+        self.beta = configs.get("beta")
+        self.max_backtrack = configs.get("max_backtrack")
+        self.line_search_accept_ratio = configs.get("line_search_accept_ratio")
+        self.n_critic_update = configs.get("n_critic_update")
+        
+        self.replay_buffer = SimpleReplayBuffer(
+            self.state_dim, self.action_dim, self.device, self.configs.get("buffer_size")
+        )
+        
         self.gae = GAE(self.gamma, self.lambda_)
+        
         self.actor = StochasticActor(
-            self.state_dim, configs["actor_hidden_size"], self.action_dim
+            self.state_dim, configs.get("actor_hidden_size"), self.action_dim
         ).to(self.device)
-        self.critic = Critic(self.state_dim, configs["critic_hidden_size"]).to(
+        self.critic = Critic(self.state_dim, configs.get("critic_hidden_size")).to(
             self.device
         )
-        self.critic_optim = Adam(
+        self.optim = Adam(
             self.critic.parameters(),
-            configs["critic_lr"],
-            weight_decay=configs["weight_decay"],
+            configs.get("critic_lr"),
+            weight_decay=configs.get("weight_decay"),
         )
-
-        self.replay_buffer = SimpleReplayBuffer(
-            self.state_dim, self.action_dim, self.device, self.configs["buffer_size"]
-        )
-
         self.models = {
             "actor": self.actor,
             "critic": self.critic,
-            "critic_optim": self.critic_optim,
+            "optim": self.optim,
         }
+        
+    
 
     def _conjugate_gradient(self, Hvp_func, g):
         """To calculate s = H^{-1}g without solving inverse of H
@@ -120,16 +122,10 @@ class TRPOAgent(BaseAgent):
         Hvp += self.damping * v
         return Hvp
 
-    def __call__(self, state, training=False):
-        state = np.array(state)
-        state = torch.FloatTensor(state.reshape(1, -1)).to(self.device)
-        with torch.no_grad():  # action follows normal distribution
-            action_mean, action_std = self.actor(state)
-            if training:
-                action = torch.normal(action_mean, action_std)
-            else:
-                action = action_mean
-        return action.cpu().data.numpy().flatten()
+    def __call__(self, state, training=False, calcu_log_prob=False):
+        state = torch.FloatTensor(state.reshape(1, -1)).to(self.device) if type(state) == np.ndarray else state
+        action_mean, action_std = self.actor(state)
+        return self.select_action(action_mean, action_std, training, calcu_log_prob)
 
     def update_param(self, states, actions, rewards, next_states, not_dones):
         # estimate advantage
@@ -213,10 +209,10 @@ class TRPOAgent(BaseAgent):
         for _ in range(self.n_critic_update):
             values = self.critic(states)
             critic_loss = F.mse_loss(values, Rs)
-            self.critic_optim.zero_grad()
+            self.optim.zero_grad()
             critic_loss.backward()
             # nn.utils.clip_grad_norm_(self.critic.parameters(), 10.0)
-            self.critic_optim.step()
+            self.optim.step()
             all_critic_loss = np.append(all_critic_loss, critic_loss.item())
 
         return {

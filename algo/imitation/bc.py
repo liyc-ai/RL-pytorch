@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 from torch.optim import Adam
 import torch.nn as nn
@@ -12,16 +13,16 @@ class BCAgent(BaseAgent):
 
     def __init__(self, configs):
         super().__init__(configs)
-        self.batch_size = configs["batch_size"]
-        self.max_grad_norm = configs["max_grad_norm"]
+        self.batch_size = configs.get("batch_size")
+        self.max_grad_norm = configs.get("max_grad_norm")
 
         self.actor = StochasticActor(
-            self.state_dim, configs["actor_hidden_size"], self.action_dim
+            self.state_dim, configs.get("actor_hidden_size"), self.action_dim
         ).to(self.device)
-        self.actor_optim = Adam(self.actor.parameters(), lr=configs["actor_lr"])
+        self.actor_optim = Adam(self.actor.parameters(), lr=configs.get("actor_lr"))
 
         self.expert_buffer = ImitationReplayBuffer(
-            self.state_dim, self.action_dim, self.device, configs["expert_buffer_size"]
+            self.state_dim, self.action_dim, self.device, configs.get("expert_buffer_size")
         )
 
         self.models = {
@@ -31,18 +32,13 @@ class BCAgent(BaseAgent):
 
         # Note: we observe that mse loss works better than mle loss in BC
         self.mse_loss_fn = None
-        if configs["loss_fn"] == "mse":
+        if configs.get("loss_fn") == "mse":
             self.mse_loss_fn = nn.MSELoss()
 
-    def __call__(self, state, training=False):
-        with torch.no_grad():
-            state = torch.FloatTensor(state.reshape(1, -1)).to(self.device)
-            action_mean, action_std = self.actor(state)
-            if training:
-                action = torch.normal(action_mean, action_std)
-            else:
-                action = action_mean
-        return action.cpu().data.numpy().flatten()
+    def __call__(self, state, training=False, calcu_log_prob=False):
+        state = torch.FloatTensor(state.reshape(1, -1)).to(self.device) if type(state) == np.ndarray else state
+        action_mean, action_std = self.actor(state)
+        return self.select_action(action_mean, action_std, training, calcu_log_prob)
 
     def _bc_loss(self):
         states, actions = self.expert_buffer.sample(self.batch_size)[:2]
@@ -50,12 +46,12 @@ class BCAgent(BaseAgent):
         if self.mse_loss_fn != None:
             loss = self.mse_loss_fn(action_means, actions)
         else:
-            log_prob = (
+            log_probs = (
                 Normal(action_means, action_stds)
                 .log_prob(actions)
                 .sum(axis=-1, keepdims=True)
             )
-            loss = -log_prob.mean()
+            loss = -log_probs.mean()
         return loss
 
     def update_param(self):

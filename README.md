@@ -42,7 +42,7 @@ tensorboard --log_dir out/[your exp name]
 4. [AIRL](https://arxiv.org/abs/1710.11248)
 
 ## Acknowledgement
-During my implementation of IL and RL algorithms, a lot of classic open-source materials on the Internet served as good references. And I highly appreciate their author's effort. Below is a detailed list.
+During my implementation of IL and RL algorithms, a lot of classic open-source materials on the Internet served as good references. And I highly appreciate their author's effort. Below is a detailed list. By the way, thanks to my friends from [LAMDA-RL](https://github.com/LAMDA-RL) for their helpful discussions.
 
 **RL Library**
 

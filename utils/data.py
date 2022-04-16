@@ -2,14 +2,15 @@ import gym
 import h5py
 import numpy as np
 from tqdm import tqdm
-
+import torch
 
 def _get_reset_data():
     data = dict(
         observations=[],
-        next_observations=[],
         actions=[],
+        log_probs=[],
         rewards=[],
+        next_observations=[],
         terminals=[],
         timeouts=[],
     )
@@ -25,7 +26,10 @@ def generate_expert_dataset(agent, env_name, seed, max_steps=int(1e6)):
     obs = env.reset()
     while len(dataset["rewards"]) < max_steps:
         t += 1
-        action = agent.select_action(obs, training=False)
+        with torch.no_grad():
+            action, log_pi = agent(obs, training=False, calcu_log_pi=True)
+            action = action.cpu().data.numpy().flatten()
+            log_pi = log_pi.cpu().data.numpy().flatten()
         next_obs, reward, done, _ = env.step(action)
         timeout, terminal = False, False
         if t == env._max_episode_steps:
@@ -35,8 +39,9 @@ def generate_expert_dataset(agent, env_name, seed, max_steps=int(1e6)):
         # insert transition
         traj_data["observations"].append(obs)
         traj_data["actions"].append(action)
-        traj_data["next_observations"].append(next_obs)
+        traj_data["log_probs"].append(log_pi)
         traj_data["rewards"].append(reward)
+        traj_data["next_observations"].append(next_obs)
         traj_data["terminals"].append(terminal)
         traj_data["timeouts"].append(timeout)
 
@@ -58,6 +63,7 @@ def generate_expert_dataset(agent, env_name, seed, max_steps=int(1e6)):
     )
     for k in dataset:
         dataset[k] = dataset[k][:max_steps]  # clip the additional data
+    dataset["infos/action_log_probs"] = np.array(dataset["log_probs"]).astype(np.float32)[:max_steps]
     # add env info, for learning
     dataset["env_info"] = [
         env.observation_space.shape[0],
@@ -105,10 +111,10 @@ def get_trajectory(dataset, start_idx, end_idx):
     new_traj = {
         "observations": dataset["observations"][start_idx:end_idx],
         "actions": dataset["actions"][start_idx:end_idx],
-        "next_observations": dataset["next_observations"][start_idx:end_idx],
-        "rewards": dataset["rewards"][start_idx:end_idx],
-        "terminals": dataset["terminals"][start_idx:end_idx],
         "log_probs": dataset["infos/action_log_probs"][start_idx:end_idx],
+        "rewards": dataset["rewards"][start_idx:end_idx],
+        "next_observations": dataset["next_observations"][start_idx:end_idx],
+        "terminals": dataset["terminals"][start_idx:end_idx],
     }
     return new_traj
 

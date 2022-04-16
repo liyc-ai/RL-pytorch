@@ -4,62 +4,28 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.optim import Adam
 from torch.distributions.normal import Normal
-from algo.base import BaseAgent
-from net.actor import StochasticActor
-from net.critic import Critic
-from utils.gae import GAE
-from utils.buffer import SimpleReplayBuffer
+from algo.rl.trpo import TRPOAgent
 
 
-class PPOAgent(BaseAgent):
+class PPOAgent(TRPOAgent):
     """Proximal Policy Optimization"""
 
     def __init__(self, configs):
         super().__init__(configs)
-        self.gamma = configs["gamma"]
-        self.rollout_steps = configs["rollout_steps"]
-        self.lambda_ = configs["lambda"]
-        self.epsilon_clip = configs["epsilon_clip"]
-        self.value_coef = configs["value_coef"]
-        self.entropy_coef = configs["entropy_coef"]
-        self.update_times = configs["update_times"]
-        self.batch_size = configs["batch_size"]
-        self.max_grad_norm = configs["max_grad_norm"]
-        self.gae = GAE(self.gamma, self.lambda_)
-        self.actor = StochasticActor(
-            self.state_dim,
-            configs["actor_hidden_size"],
-            self.action_dim,
-            state_std_independent=True,
-        ).to(self.device)
-        self.critic = Critic(self.state_dim, configs["critic_hidden_size"]).to(
-            self.device
-        )
+        self.value_coef = configs.get("value_coef")
+        self.entropy_coef = configs.get("entropy_coef")
+        self.update_times = configs.get("update_times")
+        self.batch_size = configs.get("batch_size")
+        self.max_grad_norm = configs.get("max_grad_norm")
+        self.epsilon_clip = configs.get("epsilon_clip")
+        
         self.optim = Adam(
             [
-                {"params": self.actor.parameters(), "lr": configs["actor_lr"]},
-                {"params": self.critic.parameters(), "lr": configs["critic_lr"]},
+                {"params": self.actor.parameters(), "lr": configs.get("actor_lr")},
+                {"params": self.critic.parameters(), "lr": configs.get("critic_lr")},
             ]
         )
-        self.replay_buffer = SimpleReplayBuffer(
-            self.state_dim, self.action_dim, self.device, self.configs["buffer_size"]
-        )
-
-        self.models = {
-            "actor": self.actor,
-            "critic": self.critic,
-            "optim": self.optim,
-        }
-
-    def __call__(self, state, training=False):
-        state = torch.FloatTensor(state.reshape(1, -1)).to(self.device)
-        with torch.no_grad():
-            action_mean, action_std = self.actor(state)
-            if training:
-                action = torch.normal(action_mean, action_std)
-            else:
-                action = action_mean
-        return action.cpu().data.numpy().flatten()
+        self.models["optim"] = self.optim
 
     def update_param(self, states, actions, rewards, next_states, not_dones):
         # estimate advantage
@@ -114,15 +80,3 @@ class PPOAgent(BaseAgent):
         return {
             "mean_loss": np.mean(all_loss),
         }
-
-    def learn(self, state, action, reward, next_state, done):
-        # collect transitions
-        self.replay_buffer.add(state, action, reward, next_state, done)
-        if self.replay_buffer.size < self.rollout_steps:
-            return None
-        # update parameters
-        states, actions, rewards, next_states, not_dones = self.replay_buffer.sample()
-        snapshot = self.update_param(states, actions, rewards, next_states, not_dones)
-        # clear buffer
-        self.replay_buffer.clear()
-        return snapshot

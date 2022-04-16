@@ -3,6 +3,7 @@ import gym
 import d4rl  # To register environments
 import numpy as np
 import random
+import torch
 from algo import ALGOS
 from utils.config import parse_args, load_yml_config, write_config
 from utils.logger import get_logger, get_writer
@@ -41,7 +42,9 @@ def eval(agent, env_name, seed, eval_episodes):
     for _ in range(eval_episodes):
         state, done = eval_env.reset(), False
         while not done:
-            action = agent(state, training=False)
+            with torch.no_grad():
+                action, _ = agent(state, training=False, calcu_log_prob=False)
+                action = action.cpu().data.numpy().flatten()
             state, reward, done, _ = eval_env.step(action)
             avg_reward += reward
 
