@@ -14,21 +14,21 @@ class GAE:
         self.lambda_ = lambda_
 
     def __call__(
-        self, value_net, states, rewards, not_dones, next_states, use_td_lambd=True
+        self, value_net, states, rewards, next_states, not_dones, use_td_lambd=True
     ):
         """Here we can use two different methods to calculate Returns"""
         if use_td_lambd:
             Rs, advantages = self.td_lambda(
-                value_net, states, rewards, not_dones, next_states
+                value_net, states, rewards, next_states, not_dones
             )
         else:
             Rs, advantages = self.gae(
-                value_net, states, rewards, not_dones, next_states
+                value_net, states, rewards, next_states, not_dones
             )
 
         return Rs, (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
-    def gae(self, value_net, states, rewards, not_dones, next_states):
+    def gae(self, value_net, states, rewards, next_states, not_dones):
         Rs = torch.empty_like(rewards)  # reward-to-go R_t
         advantages = torch.empty_like(rewards)  # advantage
         values = value_net(states)
@@ -51,7 +51,7 @@ class GAE:
             last_return = Rs[t].clone()
         return Rs, advantages
 
-    def td_lambda(self, value_net, states, rewards, not_dones, next_states):
+    def td_lambda(self, value_net, states, rewards, next_states, not_dones):
         # Calcultae value
         values, next_values = value_net(states), value_net(next_states)
         # Calculate TD errors.

@@ -13,6 +13,12 @@ def set_random_seed(seed, env=None):
         env.action_space.seed(seed)
 
 
+def get_env_name(d4rl_task_name):
+    env_info = d4rl_task_name.split("-")
+    env_name, env_version = env_info[0], env_info[2]
+    return env_name.title() + "-" + env_version
+
+
 def add_env_info(configs, env=None, env_info=None):
     if env != None:
         configs["state_dim"], configs["action_dim"], configs["action_high"] = (

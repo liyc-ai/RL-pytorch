@@ -1,5 +1,4 @@
 import os
-import torch
 from yaml import load, dump, FullLoader
 import argparse
 
@@ -18,8 +17,8 @@ def parse_args():
     # read config from CLI
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str, default="sac.yml")
-    parser.add_argument("--env-name", type=str, default="HalfCheetah-v3")
     parser.add_argument("--generate-data", dest="g", action="store_true", default=False)
+    parser.add_argument("--env-name", type=str, default="HalfCheetah-v3")
     args = parser.parse_args()
     return args
 

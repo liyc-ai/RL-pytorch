@@ -61,15 +61,15 @@ class PPOAgent(BaseAgent):
                 action = action_mean
         return action.cpu().data.numpy().flatten()
 
-    def update_param(self, states, actions, next_states, rewards, not_dones):
+    def update_param(self, states, actions, rewards, next_states, not_dones):
         # estimate advantage
         with torch.no_grad():
             Rs, advantages = self.gae(
-                self.critic, states, rewards, not_dones, next_states
+                self.critic, states, rewards, next_states, not_dones
             )
             action_mean, action_std = self.actor(states)
-            fixed_action_distribution = Normal(action_mean, action_std)
-            fixed_log_action_probs = fixed_action_distribution.log_prob(actions).sum(
+            old_action_distribution = Normal(action_mean, action_std)
+            old_log_action_probs = old_action_distribution.log_prob(actions).sum(
                 axis=-1, keepdims=True
             )
         # update actor and critic
@@ -88,7 +88,7 @@ class PPOAgent(BaseAgent):
                     axis=-1, keepdims=True
                 )
 
-                ratio = torch.exp(log_action_probs - fixed_log_action_probs[idx])
+                ratio = torch.exp(log_action_probs - old_log_action_probs[idx])
                 surr1 = ratio * advantages[idx]
                 surr2 = (
                     torch.clamp(ratio, 1.0 - self.epsilon_clip, 1.0 + self.epsilon_clip)
@@ -115,14 +115,14 @@ class PPOAgent(BaseAgent):
             "mean_loss": np.mean(all_loss),
         }
 
-    def learn(self, state, action, next_state, reward, done):
+    def learn(self, state, action, reward, next_state, done):
         # collect transitions
-        self.replay_buffer.add(state, action, next_state, reward, done)
+        self.replay_buffer.add(state, action, reward, next_state, done)
         if self.replay_buffer.size < self.rollout_steps:
             return None
         # update parameters
-        states, actions, next_states, rewards, not_dones = self.replay_buffer.sample()
-        snapshot = self.update_param(states, actions, next_states, rewards, not_dones)
+        states, actions, rewards, next_states, not_dones = self.replay_buffer.sample()
+        snapshot = self.update_param(states, actions, rewards, next_states, not_dones)
         # clear buffer
         self.replay_buffer.clear()
         return snapshot

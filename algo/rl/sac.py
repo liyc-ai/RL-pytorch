@@ -107,7 +107,7 @@ class SACAgent(BaseAgent):
             action = self.action_high * torch.tanh(action)
             return action, logp_pi
 
-    def update_param(self, states, actions, next_states, rewards, not_dones):
+    def update_param(self, states, actions, rewards, next_states, not_dones):
         # calculate target q value
         with torch.no_grad():
             next_actions, next_log_pis = self(
@@ -169,8 +169,8 @@ class SACAgent(BaseAgent):
             "alpha_loss": alpha_loss.item() if not self.fixed_alpha else 0.0,
         }
 
-    def learn(self, state, action, next_state, reward, done):
-        self.replay_buffer.add(state, action, next_state, reward, done)
+    def learn(self, state, action, reward, next_state, done):
+        self.replay_buffer.add(state, action, reward, next_state, done)
         if (
             self.replay_buffer.size < self.start_timesteps
             or (self.replay_buffer.size - self.start_timesteps) % self.env_steps != 0
@@ -187,13 +187,13 @@ class SACAgent(BaseAgent):
             (
                 states,
                 actions,
-                next_states,
                 rewards,
+                next_states,
                 not_dones,
             ) = self.replay_buffer.sample(self.configs["batch_size"])
 
             actor_loss, critic_loss, alpha_loss = self.update_param(
-                states, actions, next_states, rewards, not_dones
+                states, actions, rewards, next_states, not_dones
             )
             all_actor_loss = np.append(all_actor_loss, actor_loss)
             all_critic_loss = np.append(all_critic_loss, critic_loss)

@@ -1,5 +1,6 @@
 import gym
 import numpy as np
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.optim import Adam
@@ -13,8 +14,8 @@ from utils.buffer import ImitationReplayBuffer, SimpleReplayBuffer
 class GAILAgent(BaseAgent):
     def __init__(self, configs, disc_type="gail"):
         super().__init__(configs)
-        assert disc_type in ['gail', 'airl']
-        
+        assert disc_type in ["gail", "airl"]
+
         self.update_disc_times = configs["update_disc_times"]
         self.batch_size = configs["batch_size"]
         self.env = gym.make(configs["env_name"])
@@ -35,29 +36,42 @@ class GAILAgent(BaseAgent):
         self.policy = PPOAgent(expert_config)
         self.gamma = self.policy.gamma
 
-        if disc_type == 'gail':
+        if disc_type == "gail":
             # discriminator
             self.disc = GAILDiscrim(
                 self.state_dim, configs["discriminator_hidden_size"], self.action_dim
             ).to(
                 self.device
             )  # output the probability of beign expert decision of (s, a)
-            self.disc_optim = Adam(self.disc.parameters(), lr=configs["discriminator_lr"])
+            self.disc_optim = Adam(
+                self.disc.parameters(), lr=configs["discriminator_lr"]
+            )
             self.expert_buffer = ImitationReplayBuffer(
-                self.state_dim, self.action_dim, self.device, configs["expert_buffer_size"]
+                self.state_dim,
+                self.action_dim,
+                self.device,
+                configs["expert_buffer_size"],
             )
         else:
             # discriminator
             self.disc = AIRLDiscrim(
-                self.state_dim, configs["discriminator_hidden_size"], gamma=self.gamma, activation_fn=nn.ReLU
+                self.state_dim,
+                configs["discriminator_hidden_size"],
+                gamma=self.gamma,
+                activation_fn=nn.ReLU,
             ).to(
                 self.device
             )  # output the probability of beign expert decision of (s, a)
-            self.disc_optim = Adam(self.disc.parameters(), lr=configs["discriminator_lr"])
-            self.expert_buffer = SimpleReplayBuffer(
-                self.state_dim, self.action_dim, self.device, configs["expert_buffer_size"]
+            self.disc_optim = Adam(
+                self.disc.parameters(), lr=configs["discriminator_lr"]
             )
-        
+            self.expert_buffer = SimpleReplayBuffer(
+                self.state_dim,
+                self.action_dim,
+                self.device,
+                configs["expert_buffer_size"],
+            )
+
         self.models = {
             "disc": self.disc,
             "disc_optim": self.disc_optim,
@@ -74,9 +88,9 @@ class GAILAgent(BaseAgent):
             next_state, reward, done, _ = self.env.step(action)
             real_done = done if i < self.env._max_episode_steps else False
             self.policy.replay_buffer.add(
-                state, action, next_state, reward, float(real_done)
+                state, action, reward, next_state, float(real_done)
             )
-            
+
     def _update_disc(self):
         all_disc_loss = np.array([])
         for _ in range(self.update_disc_times):
@@ -91,30 +105,28 @@ class GAILAgent(BaseAgent):
             d_exp = self.disc(exp_states, exp_actions)
             loss_exp = -F.logsigmoid(d_exp).mean()
 
-            disc_loss = loss_exp + loss_pi
+            disc_loss = torch.mean(loss_exp + loss_pi)
             self.disc_optim.zero_grad()
             disc_loss.backward()
             self.disc_optim.step()
-            
+
             all_disc_loss = np.append(all_disc_loss, disc_loss.item())
-            
-        return {
-            "disc_loss": np.mean(all_disc_loss)
-        }
-        
+
+        return {"disc_loss": np.mean(all_disc_loss)}
+
     def _update_gen(self):
         (
             states,
             actions,
-            next_states,
             _,
+            next_states,
             not_dones,
         ) = self.policy.replay_buffer.sample()
         rewards = self.disc.gail_reward(states, actions)
         return self.policy.update_param(
-            states, actions, next_states, rewards, not_dones
-        ) 
-        
+            states, actions, rewards, next_states, not_dones
+        )
+
     def __call__(self, state, training=False):
         return self.policy(state, training=training)
 
@@ -127,7 +139,7 @@ class GAILAgent(BaseAgent):
 
         # update generator
         policy_snapshot = self._update_gen()
-        
+
         # clear replay buffer, for on-policy learning
         self.policy.replay_buffer.clear()
 

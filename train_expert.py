@@ -96,7 +96,7 @@ def train(configs, result_dir="out"):
         real_done = (
             done if episode_timesteps < env._max_episode_steps else False
         )  # during training, exceed the env's max steps does not really mean end
-        snapshot = agent.learn(state, action, next_state, reward, float(real_done))
+        snapshot = agent.learn(state, action, reward, next_state, float(real_done))
         if snapshot != None:
             for key, value in snapshot.items():
                 writer.add_scalar(key, value, global_step=t + 1)

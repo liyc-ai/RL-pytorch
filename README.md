@@ -1,5 +1,7 @@
 # ILAlgo
-Imitation Learning Algorithms Codebase with Reinforcement Learning Baseline Algorithms with Pytorch backend. All code are tested on Mujoco, issues and bug report are welcome.
+Imitation Learning Algorithms Codebase with Reinforcement Learning Baseline Algorithms with Pytorch backend. All code are tested on Mujoco.
+
+**Note**: Code are under development. Issues,  bug reports and PRs are welcome.
 
 ## Install Dependency
 
@@ -13,7 +15,7 @@ pip install -r requirements
 # train expert
 python train_expert.py --config sac.yml --env-name HalfCheetah-v3 --generate-data
 # train imitator
-python train_expert.py --config bc.yml --env-name HalfCheetah-v3
+python train_expert.py --config bc.yml
 ```
 
 ## Currently Implemented Algorithms
@@ -31,6 +33,7 @@ python train_expert.py --config bc.yml --env-name HalfCheetah-v3
 1. [BC](https://proceedings.neurips.cc/paper/1990/hash/248e844336797ec98478f85e7626de4a-Abstract.html)
 2. [DAgger](https://arxiv.org/abs/1011.0686)
 3. [GAIL](https://arxiv.org/abs/1606.03476)
+4. [AIRL](https://arxiv.org/abs/1710.11248)
 
 ## Acknowledgement
 During my implementation of IL and RL algorithms, a lot of classic open-source materials on the Internet served as good references. And I highly appreciate their author's effort. Below is a detailed list.
@@ -46,14 +49,14 @@ During my implementation of IL and RL algorithms, a lot of classic open-source m
 
 **Open Source Code Repo**
 
-+ [pytorch-trpo](https://github.com/ikostrikov/pytorch-trpo)
 + [TD3](https://github.com/sfujim/TD3)
 + [gail-airl-ppo.pytorch](https://github.com/ku2482/gail-airl-ppo.pytorch)
++ [pytorch-a2c-ppo-acktr-gail](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail)
++ [pytorch-trpo](https://github.com/ikostrikov/pytorch-trpo)
 + [imitation](https://github.com/HumanCompatibleAI/imitation)
 + [imitation-learning](https://github.com/Kaixhin/imitation-learning)
 + [ILSwiss](https://github.com/Ericonaldo/ILSwiss)
-+ [gail-airl-ppo.pytorch](https://github.com/ku2482/gail-airl-ppo.pytorch)
-+ [pytorch-a2c-ppo-acktr-gail](https://github.com/ikostrikov/pytorch-a2c-ppo-acktr-gail)
++ [unstable_baselines](https://github.com/x35f/unstable_baselines)
 + [Code-for-Error-Bounds-of-Imitating-Policies-and-Environments](https://github.com/tianxusky/Code-for-Error-Bounds-of-Imitating-Policies-and-Environments)
 
 **Blog**

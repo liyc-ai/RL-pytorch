@@ -97,14 +97,14 @@ class DDPGAgent(BaseAgent):
 
         return {"actor_loss": actor_loss.item(), "critic_loss": critic_loss.item()}
 
-    def learn(self, state, action, next_state, reward, done):
+    def learn(self, state, action, reward, next_state, done):
         # update buffer
-        self.replay_buffer.add(state, action, next_state, reward, done)
+        self.replay_buffer.add(state, action, reward, next_state, done)
 
         if self.replay_buffer.size < self.configs["start_timesteps"]:
             return None  # warm buffer
 
-        states, actions, next_states, rewards, not_dones = self.replay_buffer.sample(
+        states, actions, rewards, next_states, not_dones = self.replay_buffer.sample(
             self.configs["batch_size"]
         )
 

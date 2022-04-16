@@ -116,8 +116,19 @@ def get_trajectory(dataset, start_idx, end_idx):
 def load_expert_traj(agent, dataset, expert_traj):
     for i, (start_idx, end_idx) in enumerate(expert_traj):
         new_traj = get_trajectory(dataset, start_idx, end_idx)
-        observations, actions, next_observations, terminals, log_pis = \
-            new_traj["observations"], new_traj["actions"], new_traj["next_observations"], new_traj["terminals"], new_traj["log_probs"]
+        observations, actions, log_pis, next_observations, terminals = (
+            new_traj["observations"],
+            new_traj["actions"],
+            new_traj["log_probs"],
+            new_traj["next_observations"],
+            new_traj["terminals"],
+        )
         traj_len = actions.shape[0]
         for i in range(traj_len):
-            agent.expert_buffer.add(observations[i], actions[i], next_observations[i], terminals[i], log_pis[i])
+            agent.expert_buffer.add(
+                observations[i],
+                actions[i],
+                log_pis[i],
+                next_observations[i],
+                terminals[i],
+            )

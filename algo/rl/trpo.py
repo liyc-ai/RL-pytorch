@@ -78,13 +78,13 @@ class TRPOAgent(BaseAgent):
 
     def _calcu_surrogate_loss(self, log_action_probs):
         return torch.mean(
-            torch.exp(log_action_probs - self.fixed_log_action_probs) * self.advantages
+            torch.exp(log_action_probs - self.old_log_action_probs) * self.advantages
         )
 
     def _calcu_sample_average_kl(self, mus, stds):
         action_distribution = Normal(mus, stds)
         return torch.mean(
-            kl_divergence(self.fixed_action_distribution, action_distribution)
+            kl_divergence(self.old_action_distribution, action_distribution)
         )  # sample average kl-divergence
 
     def _line_search(self, update_dir, full_step_size, check_constraints_satisfied):
@@ -131,11 +131,11 @@ class TRPOAgent(BaseAgent):
                 action = action_mean
         return action.cpu().data.numpy().flatten()
 
-    def update_param(self, states, actions, next_states, rewards, not_dones):
+    def update_param(self, states, actions, rewards, next_states, not_dones):
         # estimate advantage
         with torch.no_grad():
             Rs, self.advantages = self.gae(
-                self.critic, states, rewards, not_dones, next_states
+                self.critic, states, rewards, next_states, not_dones
             )
 
         # estimate actor gradient
@@ -145,12 +145,12 @@ class TRPOAgent(BaseAgent):
             axis=-1, keepdims=True
         )  # sum(axis=-1, keepdims=True)
 
-        self.fixed_action_distribution = Normal(
+        self.old_action_distribution = Normal(
             action_mean.clone().detach(), action_std.clone().detach()
         )
-        self.fixed_log_action_probs = self.fixed_action_distribution.log_prob(
-            actions
-        ).sum(axis=-1, keepdims=True)
+        self.old_log_action_probs = self.old_action_distribution.log_prob(actions).sum(
+            axis=-1, keepdims=True
+        )
 
         loss = self._calcu_surrogate_loss(log_action_probs)
         g = (
@@ -224,14 +224,14 @@ class TRPOAgent(BaseAgent):
             "critic_loss": np.mean(all_critic_loss),
         }
 
-    def learn(self, state, action, next_state, reward, done):
+    def learn(self, state, action, reward, next_state, done):
         # collect transitions
-        self.replay_buffer.add(state, action, next_state, reward, done)
+        self.replay_buffer.add(state, action, reward, next_state, done)
         if self.replay_buffer.size < self.rollout_steps:
             return None
 
-        states, actions, next_states, rewards, not_dones = self.replay_buffer.sample()
-        snapshot = self.update_param(states, actions, next_states, rewards, not_dones)
+        states, actions, rewards, next_states, not_dones = self.replay_buffer.sample()
+        snapshot = self.update_param(states, actions, rewards, next_states, not_dones)
 
         # clear buffer
         self.replay_buffer.clear()

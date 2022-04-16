@@ -77,7 +77,7 @@ class TD3Agent(BaseAgent):
                 ).clip(-self.action_high, self.action_high)
         return action
 
-    def update_param(self, states, actions, next_states, rewards, not_dones):
+    def update_param(self, states, actions, rewards, next_states, not_dones):
         with torch.no_grad():
             # select action according to policy and add clipped noise
             noises = (torch.randn_like(actions) * self.sigma).clamp(-self.c, self.c)
@@ -136,15 +136,15 @@ class TD3Agent(BaseAgent):
             }
         )
 
-    def learn(self, state, action, next_state, reward, done):
+    def learn(self, state, action, reward, next_state, done):
         self.total_it += 1
-        self.replay_buffer.add(state, action, next_state, reward, done)
+        self.replay_buffer.add(state, action, reward, next_state, done)
 
         if self.replay_buffer.size < self.configs["start_timesteps"]:
             return None
 
         # sample replay buffer
-        states, actions, next_states, rewards, not_dones = self.replay_buffer.sample(
+        states, actions, rewards, next_states, not_dones = self.replay_buffer.sample(
             self.configs["batch_size"]
         )
-        return self.update_param(states, actions, next_states, rewards, not_dones)
+        return self.update_param(states, actions, rewards, next_states, not_dones)

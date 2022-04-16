@@ -7,7 +7,7 @@ from algo import ALGOS
 from utils.config import parse_args, load_yml_config, write_config
 from utils.logger import get_logger, get_writer
 from utils.data import read_hdf5_dataset, split_dataset, load_expert_traj
-from utils.exp import set_random_seed, add_env_info
+from utils.exp import set_random_seed, add_env_info, get_env_name
 from torch.utils.backcompat import broadcast_warning, keepdim_warning
 from train_expert import train
 
@@ -63,6 +63,9 @@ def train_imitator(configs, result_dir="out", data_dir="data/expert_data"):
     # prepare training
     broadcast_warning.enabled = True
     keepdim_warning.enabled = True
+
+    if configs.get("use_d4rl") and configs.get("d4rl_task_name"):
+        configs["env_name"] = get_env_name(configs["d4rl_task_name"])
 
     exp_name = f"{configs['algo_name']}_{configs['env_name']}_{seed}"
     exp_path = os.path.join(result_dir, exp_name)
@@ -138,6 +141,5 @@ if __name__ == "__main__":
     # read configs
     args = parse_args()
     configs = load_yml_config(args.config)
-    configs["env_name"] = args.env_name
     # train imitator
     train_imitator(configs)

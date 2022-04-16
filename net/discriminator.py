@@ -15,23 +15,24 @@ class GAILDiscrim(Critic):
         # PPO(GAIL) is to maximize E_{\pi} [-log(1 - D(s,a))].
         with torch.no_grad():
             return -F.logsigmoid(-self.forward(state, action))
-        
+
+
 class AIRLDiscrim(nn.Module):
     def __init__(self, state_dim, hidden_size, gamma, activation_fn=nn.Tanh):
         super().__init__()
-        self.g = Critic(state_dim, hidden_size, activation_fn = activation_fn)
-        self.h = Critic(state_dim, hidden_size, activation_fn = activation_fn)
+        self.g = Critic(state_dim, hidden_size, activation_fn=activation_fn)
+        self.h = Critic(state_dim, hidden_size, activation_fn=activation_fn)
         self.gamma = gamma
-        
+
     def f(self, states, next_states, not_dones):
         rs = self.g(states)
         vs = self.h(states)
         next_vs = self.h(next_states)
         return rs + self.gamma * not_dones * next_vs - vs
-    
+
     def forward(self, states, next_states, not_dones, log_pis):
         return self.f(states, next_states, not_dones) - log_pis
-        
+
     def airl_reward(self, states, next_states, not_dones, log_pis):
         # Discriminator's output is sigmoid(f - log_pi).
         with torch.no_grad():
