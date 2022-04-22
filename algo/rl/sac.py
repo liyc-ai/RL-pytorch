@@ -15,40 +15,40 @@ from utils.buffer import SimpleReplayBuffer
 class SACAgent(BaseAgent):
     """Soft Actor Critic"""
 
-    def __init__(self, configs):
+    def __init__(self, configs: dict):
         super().__init__(configs)
-        self.gamma = configs["gamma"]
-        self.env_steps = configs["env_steps"]
-        self.start_timesteps = configs["start_timesteps"]
-        self.rho = configs["rho"]
-        self.fixed_alpha = configs["fixed_alpha"]
+        self.gamma = configs.get("gamma")
+        self.env_steps = configs.get("env_steps")
+        self.start_timesteps = configs.get("start_timesteps")
+        self.rho = configs.get("rho")
+        self.fixed_alpha = configs.get("fixed_alpha")
         self.entropy_target = -self.action_dim
 
         self.log_alpha = torch.zeros(
             1, device=self.device, requires_grad=True
         )  # We optimize log(alpha) because alpha should always be bigger than 0.
-        self.alpha_optim = torch.optim.Adam([self.log_alpha], lr=configs["alpha_lr"])
+        self.alpha_optim = torch.optim.Adam([self.log_alpha], lr=configs.get("alpha_lr"))
         with torch.no_grad():
             if self.fixed_alpha:
-                self.alpha = configs["alpha"]  # entropy coefficient
+                self.alpha = configs.get("alpha")  # entropy coefficient
             else:
                 self.alpha = self.log_alpha.exp().item()
 
         # actor
         self.actor = StochasticActor(
-            self.state_dim, configs["actor_hidden_size"], self.action_dim, nn.ReLU
+            self.state_dim, configs.get("actor_hidden_size"), self.action_dim, nn.ReLU
         ).to(self.device)
         self.actor_optim = torch.optim.Adam(
-            self.actor.parameters(), lr=configs["actor_lr"]
+            self.actor.parameters(), lr=configs.get("actor_lr")
         )
         # Q1
         self.critic_1 = Critic(
-            self.state_dim, configs["critic_hidden_size"], self.action_dim, nn.ReLU
+            self.state_dim, configs.get("critic_hidden_size"), self.action_dim, nn.ReLU
         ).to(self.device)
         self.critic_target_1 = copy.deepcopy(self.critic_1)
         # Q2
         self.critic_2 = Critic(
-            self.state_dim, configs["critic_hidden_size"], self.action_dim, nn.ReLU
+            self.state_dim, configs.get("critic_hidden_size"), self.action_dim, nn.ReLU
         ).to(self.device)
         self.critic_target_2 = copy.deepcopy(self.critic_2)
 
@@ -56,11 +56,11 @@ class SACAgent(BaseAgent):
             self.critic_1.parameters(), self.critic_2.parameters()
         )
         self.critic_optim = torch.optim.Adam(
-            self.critic_params, lr=configs["critic_lr"]
+            self.critic_params, lr=configs.get("critic_lr")
         )
 
         self.replay_buffer = SimpleReplayBuffer(
-            self.state_dim, self.action_dim, self.device, self.configs["buffer_size"]
+            self.state_dim, self.action_dim, self.device, self.configs.get("buffer_size")
         )
 
         self.models = {
@@ -74,12 +74,6 @@ class SACAgent(BaseAgent):
             "log_alpha": self.log_alpha,
             "alpha_optim": self.alpha_optim,
         }
-
-        self.all_actor_loss, self.all_critic_loss, self.all_alpha_loss = (
-            np.array([]),
-            np.array([]),
-            np.array([]),
-        )
 
     def __call__(self, state, training=False, calcu_log_prob=False):
         state = (
@@ -96,10 +90,8 @@ class SACAgent(BaseAgent):
         log_prob = 0.0
         if calcu_log_prob:
             # calculate log pi, which is equivalent to Eq 26 in SAC paper, but more numerically stable
-            log_prob = pi_dist.log_prob(action).sum(axis=-1, keepdims=True)
-            log_prob -= (2 * (np.log(2) - action - F.softplus(-2 * action))).sum(
-                axis=1, keepdims=True
-            )
+            log_prob = torch.sum(pi_dist.log_prob(action), axis=-1, keepdims=True)
+            log_prob -= torch.sum(2 * (np.log(2) - action - F.softplus(-2 * action)), axis=-1, keepdims=True)
         action = self.squash_action(action)
         return action, log_prob
 

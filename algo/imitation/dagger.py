@@ -7,7 +7,7 @@ from algo.imitation.bc import BCAgent
 class DAggerAgent(BCAgent):
     """Dataset Aggregation"""
 
-    def __init__(self, configs):
+    def __init__(self, configs: dict):
         super().__init__(configs)
 
         self.env = gym.make(configs.get("env_name"))

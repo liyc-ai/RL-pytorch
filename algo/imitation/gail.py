@@ -12,7 +12,7 @@ from utils.buffer import ImitationReplayBuffer, SimpleReplayBuffer
 
 
 class GAILAgent(BaseAgent):
-    def __init__(self, configs):
+    def __init__(self, configs: dict):
         super().__init__(configs)
 
         self.update_disc_times = configs.get("update_disc_times")

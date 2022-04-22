@@ -11,7 +11,7 @@ from utils.buffer import ImitationReplayBuffer
 class BCAgent(BaseAgent):
     """Behavioral Cloning"""
 
-    def __init__(self, configs):
+    def __init__(self, configs: dict):
         super().__init__(configs)
         self.batch_size = configs.get("batch_size")
         self.max_grad_norm = configs.get("max_grad_norm")
@@ -53,12 +53,10 @@ class BCAgent(BaseAgent):
         if self.mse_loss_fn != None:
             loss = self.mse_loss_fn(action_means, actions)
         else:
-            log_probs = (
+            log_probs = torch.sum(
                 Normal(action_means, action_stds)
-                .log_prob(actions)
-                .sum(axis=-1, keepdims=True)
-            )
-            loss = -log_probs.mean()
+                .log_prob(actions), axis=-1, keepdims=True)
+            loss = -torch.mean(log_probs)
         return loss
 
     def update_param(self):

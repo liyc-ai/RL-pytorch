@@ -14,7 +14,7 @@ class TD3Agent(DDPGAgent):
     Code modified from: https://github.com/sfujim/TD3
     """
 
-    def __init__(self, configs):
+    def __init__(self, configs: dict):
         super().__init__(configs)
         self.policy_delay = configs["policy_delay"]
         # noise injection

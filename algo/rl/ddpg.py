@@ -18,7 +18,7 @@ from utils.buffer import SimpleReplayBuffer
 class DDPGAgent(BaseAgent):
     """Deep Deterministic Policy Gradient"""
 
-    def __init__(self, configs):
+    def __init__(self, configs: dict):
         super().__init__(configs)
         self.gamma = configs.get("gamma")
         self.rho = configs.get("rho")
@@ -43,7 +43,7 @@ class DDPGAgent(BaseAgent):
             self.state_dim,
             self.action_dim,
             self.device,
-            self.configs.get("buffer_size"),
+            configs.get("buffer_size"),
         )
         self.models = {
             "actor": self.actor,

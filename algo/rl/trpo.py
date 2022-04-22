@@ -17,7 +17,7 @@ from utils.buffer import SimpleReplayBuffer
 class TRPOAgent(BaseAgent):
     """Trust Region Policy Optimization"""
 
-    def __init__(self, configs):
+    def __init__(self, configs: dict):
         super().__init__(configs)
         self.gamma = configs.get("gamma")
         self.rollout_steps = configs.get("rollout_steps")
@@ -35,7 +35,7 @@ class TRPOAgent(BaseAgent):
             self.state_dim,
             self.action_dim,
             self.device,
-            self.configs.get("buffer_size"),
+            configs.get("buffer_size"),
         )
 
         self.gae = GAE(self.gamma, self.lambda_)
@@ -142,16 +142,12 @@ class TRPOAgent(BaseAgent):
         # estimate actor gradient
         action_mean, action_std = self.actor(states)
         action_distribution = Normal(action_mean, action_std)
-        log_action_probs = action_distribution.log_prob(actions).sum(
-            axis=-1, keepdims=True
-        )  # sum(axis=-1, keepdims=True)
+        log_action_probs = torch.sum(action_distribution.log_prob(actions),axis=-1, keepdims=True)
 
         self.old_action_distribution = Normal(
             action_mean.clone().detach(), action_std.clone().detach()
         )
-        self.old_log_action_probs = self.old_action_distribution.log_prob(actions).sum(
-            axis=-1, keepdims=True
-        )
+        self.old_log_action_probs = torch.sum(self.old_action_distribution.log_prob(actions),axis=-1, keepdims=True)
 
         loss = self._calcu_surrogate_loss(log_action_probs)
         g = (
@@ -183,9 +179,7 @@ class TRPOAgent(BaseAgent):
                     new_action_distribution = Normal(new_action_mean, new_action_std)
                 except:
                     raise ValueError("Invalid Gradient!")
-                new_log_action_probs = new_action_distribution.log_prob(actions).sum(
-                    axis=-1, keepdims=True
-                )
+                new_log_action_probs = torch.sum(new_action_distribution.log_prob(actions), axis=-1, keepdims=True)
 
                 new_loss = self._calcu_surrogate_loss(new_log_action_probs)
                 new_mean_kl = self._calcu_sample_average_kl(
