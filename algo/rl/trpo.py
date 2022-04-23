@@ -123,14 +123,14 @@ class TRPOAgent(BaseAgent):
         Hvp += self.damping * v
         return Hvp
 
-    def __call__(self, state, training=False, calcu_log_prob=False):
+    def __call__(self, state, training=False, calcu_log_prob=False, keep_grad=False):
         state = (
             torch.FloatTensor(state.reshape(1, -1)).to(self.device)
             if type(state) == np.ndarray
             else state
         )
         action_mean, action_std = self.actor(state)
-        return self.select_action(action_mean, action_std, training, calcu_log_prob)
+        return self.select_action(action_mean, action_std, training, calcu_log_prob, keep_grad=keep_grad)
 
     def update_param(self, states, actions, rewards, next_states, not_dones):
         # estimate advantage
@@ -142,12 +142,16 @@ class TRPOAgent(BaseAgent):
         # estimate actor gradient
         action_mean, action_std = self.actor(states)
         action_distribution = Normal(action_mean, action_std)
-        log_action_probs = torch.sum(action_distribution.log_prob(actions),axis=-1, keepdims=True)
+        log_action_probs = torch.sum(
+            action_distribution.log_prob(actions), axis=-1, keepdims=True
+        )
 
         self.old_action_distribution = Normal(
             action_mean.clone().detach(), action_std.clone().detach()
         )
-        self.old_log_action_probs = torch.sum(self.old_action_distribution.log_prob(actions),axis=-1, keepdims=True)
+        self.old_log_action_probs = torch.sum(
+            self.old_action_distribution.log_prob(actions), axis=-1, keepdims=True
+        )
 
         loss = self._calcu_surrogate_loss(log_action_probs)
         g = (
@@ -179,7 +183,9 @@ class TRPOAgent(BaseAgent):
                     new_action_distribution = Normal(new_action_mean, new_action_std)
                 except:
                     raise ValueError("Invalid Gradient!")
-                new_log_action_probs = torch.sum(new_action_distribution.log_prob(actions), axis=-1, keepdims=True)
+                new_log_action_probs = torch.sum(
+                    new_action_distribution.log_prob(actions), axis=-1, keepdims=True
+                )
 
                 new_loss = self._calcu_surrogate_loss(new_log_action_probs)
                 new_mean_kl = self._calcu_sample_average_kl(

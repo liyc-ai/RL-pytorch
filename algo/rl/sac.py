@@ -27,7 +27,9 @@ class SACAgent(BaseAgent):
         self.log_alpha = torch.zeros(
             1, device=self.device, requires_grad=True
         )  # We optimize log(alpha) because alpha should always be bigger than 0.
-        self.alpha_optim = torch.optim.Adam([self.log_alpha], lr=configs.get("alpha_lr"))
+        self.alpha_optim = torch.optim.Adam(
+            [self.log_alpha], lr=configs.get("alpha_lr")
+        )
         with torch.no_grad():
             if self.fixed_alpha:
                 self.alpha = configs.get("alpha")  # entropy coefficient
@@ -60,7 +62,10 @@ class SACAgent(BaseAgent):
         )
 
         self.replay_buffer = SimpleReplayBuffer(
-            self.state_dim, self.action_dim, self.device, self.configs.get("buffer_size")
+            self.state_dim,
+            self.action_dim,
+            self.device,
+            self.configs.get("buffer_size"),
         )
 
         self.models = {
@@ -75,13 +80,16 @@ class SACAgent(BaseAgent):
             "alpha_optim": self.alpha_optim,
         }
 
-    def __call__(self, state, training=False, calcu_log_prob=False):
+    def __call__(self, state, training=False, calcu_log_prob=False, keep_grad=False):
         state = (
             torch.FloatTensor(state.reshape(1, -1)).to(self.device)
             if type(state) == np.ndarray
             else state
         )
         mu, std = self.actor(state)
+        if not keep_grad:
+            mu = mu.clone().detach()
+            std = std.clone().detach()      
         pi_dist = Normal(mu, std)
         if training:
             action = pi_dist.rsample()
@@ -91,7 +99,11 @@ class SACAgent(BaseAgent):
         if calcu_log_prob:
             # calculate log pi, which is equivalent to Eq 26 in SAC paper, but more numerically stable
             log_prob = torch.sum(pi_dist.log_prob(action), axis=-1, keepdims=True)
-            log_prob -= torch.sum(2 * (np.log(2) - action - F.softplus(-2 * action)), axis=-1, keepdims=True)
+            log_prob -= torch.sum(
+                2 * (np.log(2) - action - F.softplus(-2 * action)),
+                axis=-1,
+                keepdims=True,
+            )
         action = self.squash_action(action)
         return action, log_prob
 
@@ -121,7 +133,7 @@ class SACAgent(BaseAgent):
         # update actor
         self.critic_1.eval(), self.critic_2.eval()  # Freeze Q-networks to save computational effort
 
-        pred_actions, pred_log_pis = self(states, training=True, calcu_log_prob=True)
+        pred_actions, pred_log_pis = self(states, training=True, calcu_log_prob=True, keep_grad=True)
         current_Q1, current_Q2 = self.critic_1(states, pred_actions), self.critic_2(
             states, pred_actions
         )

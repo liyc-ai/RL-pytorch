@@ -35,7 +35,9 @@ class PPOAgent(TRPOAgent):
             )
             action_mean, action_std = self.actor(states)
             old_action_distribution = Normal(action_mean, action_std)
-            old_log_action_probs = torch.sum(old_action_distribution.log_prob(actions), axis=-1, keepdims=True)
+            old_log_action_probs = torch.sum(
+                old_action_distribution.log_prob(actions), axis=-1, keepdims=True
+            )
         # update actor and critic
         all_loss = np.array([])
         full_idx = np.array(list(range(self.replay_buffer.size)))
@@ -48,7 +50,9 @@ class PPOAgent(TRPOAgent):
                 # actor loss
                 action_mean, action_std = self.actor(states[idx])
                 action_distribution = Normal(action_mean, action_std)
-                log_action_probs = torch.sum(action_distribution.log_prob(actions[idx]), axis=-1, keepdims=True)
+                log_action_probs = torch.sum(
+                    action_distribution.log_prob(actions[idx]), axis=-1, keepdims=True
+                )
 
                 ratio = torch.exp(log_action_probs - old_log_action_probs[idx])
                 surr1 = ratio * advantages[idx]

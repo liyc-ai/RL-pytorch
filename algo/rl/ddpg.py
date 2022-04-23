@@ -54,14 +54,14 @@ class DDPGAgent(BaseAgent):
             "critic_optim": self.critic_optim,
         }
 
-    def __call__(self, state, training=False, calcu_log_prob=False):
+    def __call__(self, state, training=False, calcu_log_prob=False, keep_grad=False):
         state = (
             torch.FloatTensor(state.reshape(1, -1)).to(self.device)
             if type(state) == np.ndarray
             else state
         )
         action_mean = self.squash_action(self.actor(state))
-        return self.select_action(action_mean, self.expl_std, training, calcu_log_prob)
+        return self.select_action(action_mean, self.expl_std, training, calcu_log_prob, keep_grad=keep_grad)
 
     def update_param(self, states, actions, next_states, rewards, not_dones):
         # compute the target Q value

@@ -38,29 +38,31 @@ class BCAgent(BaseAgent):
         if configs.get("loss_fn") == "mse":
             self.mse_loss_fn = nn.MSELoss()
 
-    def __call__(self, state, training=False, calcu_log_prob=False):
+    def __call__(self, state, training=False, calcu_log_prob=False, keep_grad=False):
         state = (
             torch.FloatTensor(state.reshape(1, -1)).to(self.device)
             if type(state) == np.ndarray
             else state
         )
         action_mean, action_std = self.actor(state)
-        return self.select_action(action_mean, action_std, training, calcu_log_prob)
+        return self.select_action(action_mean, action_std, training, calcu_log_prob, keep_grad=keep_grad)
 
-    def _bc_loss(self):
-        states, actions = self.expert_buffer.sample(self.batch_size)[:2]
+    def _bc_loss(self, buffer):
+        states, actions = buffer.sample(self.batch_size)[:2]
         action_means, action_stds = self.actor(states)
         if self.mse_loss_fn != None:
             loss = self.mse_loss_fn(action_means, actions)
         else:
             log_probs = torch.sum(
-                Normal(action_means, action_stds)
-                .log_prob(actions), axis=-1, keepdims=True)
+                Normal(action_means, action_stds).log_prob(actions),
+                axis=-1,
+                keepdims=True,
+            )
             loss = -torch.mean(log_probs)
         return loss
 
-    def update_param(self):
-        loss = self._bc_loss()
+    def update_param(self, buffer):
+        loss = self._bc_loss(buffer)
         self.actor_optim.zero_grad()
         loss.backward()
         nn.utils.clip_grad_norm_(self.actor.parameters(), self.max_grad_norm)
@@ -71,4 +73,4 @@ class BCAgent(BaseAgent):
         }
 
     def learn(self):
-        return self.update_param()
+        return self.update_param(self.expert_buffer)

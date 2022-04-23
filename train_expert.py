@@ -2,13 +2,13 @@ import os
 import gym
 import numpy as np
 import h5py
-import torch
 from algo import ALGOS
 from utils.config import parse_args, load_yml_config, write_config
 from utils.transform import Normalizer
 from utils.logger import get_logger, get_writer
 from utils.data import generate_expert_dataset
 from utils.exp import set_random_seed
+from utils.env import ConvertActionWrapper
 from torch.utils.backcompat import broadcast_warning, keepdim_warning
 
 state_normalizer = lambda x: x
@@ -18,18 +18,16 @@ logger = None
 def eval(agent, env_name, seed, eval_episodes):
     global state_normalizer, logger
 
-    eval_env = gym.make(env_name)
+    eval_env = ConvertActionWrapper(gym.make(env_name))
     eval_env.seed(seed + 100)
 
     avg_reward = 0.0
     for _ in range(eval_episodes):
         state, done = eval_env.reset(), False
         while not done:
-            with torch.no_grad():
-                action, _ = agent(
-                    state_normalizer(state), training=False, calcu_log_prob=False
-                )
-                action = action.cpu().data.numpy().flatten()
+            action, _ = agent(
+                state_normalizer(state), training=False, calcu_log_prob=False, keep_grad=False
+            )
             state, reward, done, _ = eval_env.step(action)
             avg_reward += reward
 
@@ -42,7 +40,7 @@ def eval(agent, env_name, seed, eval_episodes):
 def train(configs, result_dir="out"):
     global state_normalizer, logger
     # init environment
-    env = gym.make(configs["env_name"])
+    env = ConvertActionWrapper(gym.make(configs["env_name"]))
     configs["state_dim"] = env.observation_space.shape[0]
     configs["action_dim"] = env.action_space.shape[0]
     configs["action_high"] = float(env.action_space.high[0])
@@ -93,9 +91,7 @@ def train(configs, result_dir="out"):
         ):
             action = env.action_space.sample()
         else:
-            with torch.no_grad():
-                action, _ = agent(state, training=True, calcu_log_prob=False)
-                action = action.cpu().data.numpy().flatten()
+            action, _ = agent(state, training=True, calcu_log_prob=False, keep_grad=False)
         # 2. conduct action
         next_state, reward, done, _ = env.step(action)
         next_state = state_normalizer(next_state)
@@ -137,12 +133,11 @@ if __name__ == "__main__":
     configs = load_yml_config(args.config)
     configs["env_name"] = args.env_name
     # train agent
-    configs["max_timesteps"] = 15_000
     expert = train(configs)
     if args.g:
         # generate expert dataset
         dataset = generate_expert_dataset(
-            expert, configs["env_name"], configs["seed"] + 100, max_steps=3000
+            expert, configs["env_name"], configs["seed"] + 100
         )
         # save expert dataset, where the file name follows from d4rl
         data_dir = "data/expert_data"
