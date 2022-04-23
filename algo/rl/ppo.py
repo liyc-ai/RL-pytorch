@@ -10,7 +10,7 @@ from algo.rl.trpo import TRPOAgent
 class PPOAgent(TRPOAgent):
     """Proximal Policy Optimization"""
 
-    def __init__(self, configs):
+    def __init__(self, configs: dict):
         super().__init__(configs)
         self.value_coef = configs.get("value_coef")
         self.entropy_coef = configs.get("entropy_coef")
@@ -35,8 +35,8 @@ class PPOAgent(TRPOAgent):
             )
             action_mean, action_std = self.actor(states)
             old_action_distribution = Normal(action_mean, action_std)
-            old_log_action_probs = old_action_distribution.log_prob(actions).sum(
-                axis=-1, keepdims=True
+            old_log_action_probs = torch.sum(
+                old_action_distribution.log_prob(actions), axis=-1, keepdims=True
             )
         # update actor and critic
         all_loss = np.array([])
@@ -50,8 +50,8 @@ class PPOAgent(TRPOAgent):
                 # actor loss
                 action_mean, action_std = self.actor(states[idx])
                 action_distribution = Normal(action_mean, action_std)
-                log_action_probs = action_distribution.log_prob(actions[idx]).sum(
-                    axis=-1, keepdims=True
+                log_action_probs = torch.sum(
+                    action_distribution.log_prob(actions[idx]), axis=-1, keepdims=True
                 )
 
                 ratio = torch.exp(log_action_probs - old_log_action_probs[idx])

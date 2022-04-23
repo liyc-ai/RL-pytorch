@@ -19,4 +19,4 @@ d4rl_task_name: hopper-expert-v2 # halfcheetah-expert-v2
 # others
 seed: 0
 device: "cuda:0"
-expert:
+rl:

@@ -1,14 +1,13 @@
 import os
 import gym
-import d4rl  # To register environments
 import numpy as np
 import random
-import torch
 from algo import ALGOS
 from utils.config import parse_args, load_yml_config, write_config
 from utils.logger import get_logger, get_writer
 from utils.data import read_hdf5_dataset, split_dataset, load_expert_traj
-from utils.exp import set_random_seed, add_env_info, get_env_name
+from utils.exp import set_random_seed
+from utils.env import add_env_info, ConvertActionWrapper
 from torch.utils.backcompat import broadcast_warning, keepdim_warning
 from train_expert import train
 
@@ -35,16 +34,14 @@ def eval(agent, env_name, seed, eval_episodes):
 
     eval_num += 1
 
-    eval_env = gym.make(env_name)
+    eval_env = ConvertActionWrapper(gym.make(env_name))
     eval_env.seed(seed + 100)
 
     avg_reward = 0.0
     for _ in range(eval_episodes):
         state, done = eval_env.reset(), False
         while not done:
-            with torch.no_grad():
-                action, _ = agent(state, training=False, calcu_log_prob=False)
-                action = action.cpu().data.numpy().flatten()
+            action, _ = agent(state, training=False, calcu_log_prob=False, keep_grad=False)
             state, reward, done, _ = eval_env.step(action)
             avg_reward += reward
 
@@ -68,7 +65,7 @@ def train_imitator(configs, result_dir="out", data_dir="data/expert_data"):
     keepdim_warning.enabled = True
 
     if configs.get("use_d4rl") and configs.get("d4rl_task_name"):
-        configs["env_name"] = get_env_name(configs["d4rl_task_name"])
+        configs["env_name"] = configs["d4rl_task_name"]
 
     exp_name = f"{configs['algo_name']}_{configs['env_name']}_{seed}"
     exp_path = os.path.join(result_dir, exp_name)

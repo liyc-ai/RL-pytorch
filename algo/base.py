@@ -19,8 +19,11 @@ class BaseAgent:
         raise NotImplementedError
 
     def select_action(
-        self, action_mean, action_std, training=False, calcu_log_prob=False
+        self, action_mean, action_std, training=False, calcu_log_prob=False, keep_grad=False
     ):
+        if not keep_grad:
+            action_mean = action_mean.clone().detach()
+            action_std = action_std.clone().detach()
         pi_dist = Normal(action_mean, action_std)
         if training:
             action = pi_dist.rsample()

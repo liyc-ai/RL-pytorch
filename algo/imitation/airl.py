@@ -10,7 +10,7 @@ from utils.buffer import SimpleReplayBuffer
 
 
 class AIRLAgent(GAILAgent):
-    def __init__(self, configs):
+    def __init__(self, configs: dict):
         super().__init__(configs)
         self.disc = AIRLDiscrim(
             self.state_dim,
@@ -38,7 +38,7 @@ class AIRLAgent(GAILAgent):
     def _get_log_pis(self, states, actions):
         mu, std = self.policy.actor(states)
         pi_dist = Normal(mu, std)
-        log_pis = pi_dist.log_prob(actions).sum(axis=-1, keepdims=True)
+        log_pis = torch.sum(pi_dist.log_prob(actions), axis=-1, keepdims=True)
         return log_pis
 
     def _update_disc(self):
