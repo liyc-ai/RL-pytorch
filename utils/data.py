@@ -2,7 +2,7 @@ import gym
 import h5py
 import numpy as np
 from tqdm import tqdm
-import torch
+import random
 
 
 def _get_reset_data():
@@ -64,12 +64,6 @@ def generate_expert_dataset(agent, env_name, seed, max_steps=int(1e6)):
     dataset["infos/action_log_probs"] = np.array(dataset["log_probs"]).astype(
         np.float32
     )[:max_steps]
-    # add env info, for learning
-    dataset["env_info"] = [
-        env.observation_space.shape[0],
-        env.action_space.shape[0],
-        float(env.action_space.high[0]),
-    ]
     return dataset
 
 
@@ -138,3 +132,20 @@ def load_expert_traj(agent, dataset, expert_traj):
                 next_observations[i],
                 terminals[i],
             )
+
+
+def load_expert_dataset(configs, agent, env):
+    # load dataset
+    if configs["use_d4rl"]:
+        dataset = env.get_dataset()
+    else:  # self generated dataset
+        data_file_path = configs["dataset_path"]
+        dataset = read_hdf5_dataset(data_file_path)
+
+    expert_traj_num = configs["expert_traj_num"]
+    if expert_traj_num != 0:
+        traj_pair = split_dataset(dataset)
+        if len(traj_pair) < expert_traj_num:
+            raise ValueError("Not enough expert trajectories!")
+        expert_traj = random.sample(traj_pair, expert_traj_num)
+        load_expert_traj(agent, dataset, expert_traj)

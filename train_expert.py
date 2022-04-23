@@ -9,18 +9,12 @@ from utils.exp import eval, preprare_training
 from utils.transform import Normalizer
 
 
-def train(configs, env, exp_path, logger, writer, seed):
+def train(configs, agent, env, logger, writer, seed, model_path):
     # init state normalizer
     if configs["norm_state"]:
         state_normalizer = Normalizer()
     else:
         state_normalizer = lambda x: x
-    # init agent
-    agent = ALGOS[configs["algo_name"]](configs)
-    model_path = os.path.join(exp_path, "model.pt")
-    if configs.get("load_model") and os.path.exists(model_path):
-        agent.load_model(model_path)
-        logger.info(f"Successfully load model: {model_path}")
 
     # evaluate before update, to get baseline
     writer.add_scalar(

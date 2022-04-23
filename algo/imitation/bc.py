@@ -9,7 +9,7 @@ from utils.buffer import ImitationReplayBuffer
 
 
 class BCAgent(BaseAgent):
-    """Behavioral Cloning"""
+    """Behavior Cloning"""
 
     def __init__(self, configs: dict):
         super().__init__(configs)
@@ -33,7 +33,6 @@ class BCAgent(BaseAgent):
             "optim": self.actor_optim,
         }
 
-        # Note: we observe that mse loss works better than mle loss in BC
         self.mse_loss_fn = None
         if configs.get("loss_fn") == "mse":
             self.mse_loss_fn = nn.MSELoss()
