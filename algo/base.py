@@ -19,24 +19,24 @@ class BaseAgent:
         raise NotImplementedError
 
     def select_action(
-        self, action_mean, action_std, training=False, calcu_log_prob=False, keep_grad=False
+        self, action_mean, action_std, training=False, calcu_log_prob=False
     ):
-        if not keep_grad:
-            action_mean = action_mean.clone().detach()
-            action_std = action_std.clone().detach()
-        pi_dist = Normal(action_mean, action_std)
-        if training:
-            action = pi_dist.rsample()
-        else:
-            action = action_mean
-        # clip action
-        if self.configs.get("clip_action"):  # for ddpg and td3
-            action = torch.clamp(action, -self.action_high, self.action_high)
-        # claculate log_prob
-        log_prob = 0.0  # fake log_pi
-        if calcu_log_prob:
-            log_prob = pi_dist.log_prob(action).sum(axis=-1, keepdims=True)
-        return action, log_prob
+        with torch.no_grad():
+            pi_dist = Normal(action_mean, action_std)
+            if training:
+                action = pi_dist.sample()
+            else:
+                action = action_mean
+            # clip action
+            if self.configs.get("clip_action"):  # for ddpg and td3
+                action = torch.clamp(action, -self.action_high, self.action_high)
+            if calcu_log_prob:
+                log_prob = pi_dist.log_prob(action).sum(axis=-1, keepdims=True)
+                return (
+                    action.cpu().data.numpy().flatten(),
+                    log_prob.cpu().data.numpy().flatten(),
+                )
+            return action.cpu().data.numpy().flatten()
 
     def update_param(self):
         raise NotImplementedError

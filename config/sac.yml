@@ -14,11 +14,14 @@ alpha_lr: !!float 3e-4
 norm_state: false
 load_model: false
 
-# env param
+# net param
 actor_hidden_size: [256, 256]
 critic_hidden_size: [256, 256]
 actor_lr: !!float 3e-4
 critic_lr: !!float 3e-4
+
+# env param
+env_name: Walker2d-v3
 
 # others
 seed: 0

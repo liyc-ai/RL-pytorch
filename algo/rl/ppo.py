@@ -77,6 +77,9 @@ class PPOAgent(TRPOAgent):
                 self.optim.step()
                 all_loss = np.append(all_loss, loss.item())
 
+        # clear buffer
+        self.replay_buffer.clear()
+
         return {
             "mean_loss": np.mean(all_loss),
         }

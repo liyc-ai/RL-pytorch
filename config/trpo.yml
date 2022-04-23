@@ -29,6 +29,9 @@ weight_decay: !!float 1e-3
 critic_lr: !!float 3e-4
 n_critic_update: 5
 
+# env param
+env_name: Walker2d-v3
+
 # others
 seed: 0
 device: cuda:0

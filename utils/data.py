@@ -3,7 +3,6 @@ import h5py
 import numpy as np
 from tqdm import tqdm
 import torch
-from utils.env import ConvertActionWrapper
 
 
 def _get_reset_data():
@@ -20,7 +19,7 @@ def _get_reset_data():
 
 
 def generate_expert_dataset(agent, env_name, seed, max_steps=int(1e6)):
-    env = ConvertActionWrapper(gym.make(env_name))
+    env = gym.make(env_name)
     env.seed(seed)
     dataset, traj_data = _get_reset_data(), _get_reset_data()
     print("Start to rollout...")
@@ -28,7 +27,7 @@ def generate_expert_dataset(agent, env_name, seed, max_steps=int(1e6)):
     obs = env.reset()
     while len(dataset["rewards"]) < max_steps:
         t += 1
-        action, log_pi = agent(obs, training=False, calcu_log_pi=True, keep_grad=False)
+        action, log_pi = agent(obs, training=False, calcu_log_pi=True)
         next_obs, reward, done, _ = env.step(action)
         timeout, terminal = False, False
         if t == env._max_episode_steps:

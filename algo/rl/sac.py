@@ -80,22 +80,20 @@ class SACAgent(BaseAgent):
             "alpha_optim": self.alpha_optim,
         }
 
-    def __call__(self, state, training=False, calcu_log_prob=False, keep_grad=False):
+    def __call__(self, state, training=False, calcu_log_prob=False, keep_tensor=False):
         state = (
             torch.FloatTensor(state.reshape(1, -1)).to(self.device)
             if type(state) == np.ndarray
             else state
         )
         mu, std = self.actor(state)
-        if not keep_grad:
-            mu = mu.clone().detach()
-            std = std.clone().detach()      
         pi_dist = Normal(mu, std)
         if training:
             action = pi_dist.rsample()
         else:
             action = mu
-        log_prob = 0.0
+
+        log_prob = None
         if calcu_log_prob:
             # calculate log pi, which is equivalent to Eq 26 in SAC paper, but more numerically stable
             log_prob = torch.sum(pi_dist.log_prob(action), axis=-1, keepdims=True)
@@ -105,13 +103,20 @@ class SACAgent(BaseAgent):
                 keepdims=True,
             )
         action = self.squash_action(action)
-        return action, log_prob
+
+        if keep_tensor:
+            return action, log_prob
+
+        action = action.cpu().data.numpy().flatten()
+        if calcu_log_prob:
+            return action, log_prob.cpu().data.numpy().flatten()
+        return action
 
     def update_param(self, states, actions, rewards, next_states, not_dones):
         # calculate target q value
         with torch.no_grad():
             next_actions, next_log_pis = self(
-                next_states, training=True, calcu_log_prob=True
+                next_states, training=True, calcu_log_prob=True, keep_tensor=True
             )
             target_Q1, target_Q2 = self.critic_target_1(
                 next_states, next_actions
@@ -133,7 +138,9 @@ class SACAgent(BaseAgent):
         # update actor
         self.critic_1.eval(), self.critic_2.eval()  # Freeze Q-networks to save computational effort
 
-        pred_actions, pred_log_pis = self(states, training=True, calcu_log_prob=True, keep_grad=True)
+        pred_actions, pred_log_pis = self(
+            states, training=True, calcu_log_prob=True, keep_tensor=True
+        )
         current_Q1, current_Q2 = self.critic_1(states, pred_actions), self.critic_2(
             states, pred_actions
         )

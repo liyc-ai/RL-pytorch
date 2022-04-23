@@ -34,7 +34,8 @@ class Critic(nn.Module):
         self.apply(weights_init_)
 
     def forward(self, state, action=None):
-        if self.action_dim != None and action != None:
+        if self.action_dim != None:
+            assert action is not None
             x = torch.cat([state, action], dim=1)
         else:
             x = state

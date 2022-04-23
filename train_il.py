@@ -3,16 +3,11 @@ import gym
 import numpy as np
 import random
 from algo import ALGOS
-from utils.config import parse_args, load_yml_config, write_config
-from utils.logger import get_logger, get_writer
+from utils.config import parse_args, load_yml_config
 from utils.data import read_hdf5_dataset, split_dataset, load_expert_traj
-from utils.exp import set_random_seed
-from utils.env import add_env_info, ConvertActionWrapper
-from torch.utils.backcompat import broadcast_warning, keepdim_warning
+from utils.exp import eval, preprare_training
+from utils.env import add_env_info
 from train_expert import train
-
-logger = None
-eval_num = 0
 
 
 def get_expert(configs):
@@ -29,64 +24,17 @@ def get_expert(configs):
     return expert, configs
 
 
-def eval(agent, env_name, seed, eval_episodes):
-    global logger, eval_num
-
-    eval_num += 1
-
-    eval_env = ConvertActionWrapper(gym.make(env_name))
-    eval_env.seed(seed + 100)
-
-    avg_reward = 0.0
-    for _ in range(eval_episodes):
-        state, done = eval_env.reset(), False
-        while not done:
-            action, _ = agent(state, training=False, calcu_log_prob=False, keep_grad=False)
-            state, reward, done, _ = eval_env.step(action)
-            avg_reward += reward
-
-    avg_reward /= eval_episodes
-    logger.info(
-        f"Evaluation times: {eval_num} Evaluation over {eval_episodes} episodes: {avg_reward:.3f}"
-    )
-
-    return avg_reward
-
-
-def train_imitator(configs, result_dir="out", data_dir="data/expert_data"):
-    global logger
-
-    # fix all the seeds
-    seed = configs["seed"]
-    set_random_seed(seed)
-
-    # prepare training
-    broadcast_warning.enabled = True
-    keepdim_warning.enabled = True
-
-    if configs.get("use_d4rl") and configs.get("d4rl_task_name"):
-        configs["env_name"] = configs["d4rl_task_name"]
-
-    exp_name = f"{configs['algo_name']}_{configs['env_name']}_{seed}"
-    exp_path = os.path.join(result_dir, exp_name)
-    os.makedirs(exp_path, exist_ok=True)
-
-    logger = get_logger(os.path.join(exp_path, "log.log"))
-    writer = get_writer(os.path.join(exp_path, "tb"))
-    write_config(configs, os.path.join(exp_path, "config.yml"))  # for reproducibility
-
+def train_imitator(configs, env, exp_path, logger, writer, seed):
     # load dataset
-    if configs["use_d4rl"] and configs.get("d4rl_task_name"):
-        env = gym.make(configs["d4rl_task_name"])
+    if configs.get("use_d4rl"):
+        env = gym.make(configs["env_name"])
         dataset = env.get_dataset()
         configs = add_env_info(configs, env=env)
-    elif configs.get("dataset_name"):  # self generated dataset
-        data_file_path = os.path.join(data_dir, configs["dataset_name"] + ".hdf5")
+    elif configs.get("use_gen_data"):  # self generated dataset
+        data_file_path = configs["dataset_path"]
         dataset = read_hdf5_dataset(data_file_path)
         configs = add_env_info(configs, env_info=dataset["env_info"])
-        logger.info(f"Dataset loaded from {data_file_path}")
-    elif configs.get("query"):
-        # for algo, which actively query expert during training
+    elif configs.get("query"):  # for dagger
         expert, configs = get_expert(configs)
 
     # init agent
@@ -104,12 +52,14 @@ def train_imitator(configs, result_dir="out", data_dir="data/expert_data"):
         expert_traj = random.sample(traj_pair, expert_traj_num)
         load_expert_traj(agent, dataset, expert_traj)
 
-    # train agent
+    # evaluate before update, to get baseline
     writer.add_scalar(
         f"evaluation_averaged_return",
-        eval(agent, configs["env_name"], seed, 10),
+        eval(agent, configs["env_name"], seed, logger),
         global_step=0,
-    )  # evaluate before update, to get baseline
+    )
+
+    # train agent
     best_avg_reward = -np.inf
     for i in range(configs["max_iters"]):
         # 1. ask expert
@@ -126,7 +76,7 @@ def train_imitator(configs, result_dir="out", data_dir="data/expert_data"):
                 writer.add_scalar(key, value, global_step=i + 1)
         # 3. evaluate
         if (i + 1) % configs["eval_freq"] == 0:
-            avg_reward = eval(agent, configs["env_name"], configs["seed"], 10)
+            avg_reward = eval(agent, configs["env_name"], seed, logger)
             writer.add_scalar(
                 f"evaluation_averaged_return",
                 avg_reward,
@@ -142,4 +92,4 @@ if __name__ == "__main__":
     args = parse_args()
     configs = load_yml_config(args.config)
     # train imitator
-    train_imitator(configs)
+    train_imitator(*preprare_training(configs))
