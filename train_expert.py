@@ -3,63 +3,18 @@ import gym
 import numpy as np
 import h5py
 from algo import ALGOS
-from utils.config import parse_args, load_yml_config, write_config
-from utils.transform import Normalizer
-from utils.logger import get_logger, get_writer
+from utils.config import parse_args, load_yml_config
 from utils.data import generate_expert_dataset
-from utils.exp import set_random_seed
-from utils.env import ConvertActionWrapper
-from torch.utils.backcompat import broadcast_warning, keepdim_warning
-
-state_normalizer = lambda x: x
-logger = None
+from utils.exp import eval, preprare_training
+from utils.transform import Normalizer
 
 
-def eval(agent, env_name, seed, eval_episodes):
-    global state_normalizer, logger
-
-    eval_env = ConvertActionWrapper(gym.make(env_name))
-    eval_env.seed(seed + 100)
-
-    avg_reward = 0.0
-    for _ in range(eval_episodes):
-        state, done = eval_env.reset(), False
-        while not done:
-            action, _ = agent(
-                state_normalizer(state), training=False, calcu_log_prob=False, keep_grad=False
-            )
-            state, reward, done, _ = eval_env.step(action)
-            avg_reward += reward
-
-    avg_reward /= eval_episodes
-    logger.info(f"Evaluation over {eval_episodes} episodes: {avg_reward:.3f}")
-
-    return avg_reward
-
-
-def train(configs, result_dir="out"):
-    global state_normalizer, logger
-    # init environment
-    env = ConvertActionWrapper(gym.make(configs["env_name"]))
-    configs["state_dim"] = env.observation_space.shape[0]
-    configs["action_dim"] = env.action_space.shape[0]
-    configs["action_high"] = float(env.action_space.high[0])
+def train(configs, env, exp_path, logger, writer, seed):
+    # init state normalizer
     if configs["norm_state"]:
         state_normalizer = Normalizer()
-    # fix all the seeds
-    seed = configs["seed"]
-    set_random_seed(seed, env)
-    # prepare training
-    broadcast_warning.enabled = True  # for safety
-    keepdim_warning.enabled = True
-
-    exp_name = f"{configs['algo_name']}_{configs['env_name']}_{seed}"
-    exp_path = os.path.join(result_dir, exp_name)
-    os.makedirs(exp_path, exist_ok=True)
-
-    logger = get_logger(os.path.join(exp_path, "log.log"))
-    writer = get_writer(os.path.join(exp_path, "tb"))
-    write_config(configs, os.path.join(exp_path, "config.yml"))  # for reproducibility
+    else:
+        state_normalizer = lambda x: x
     # init agent
     agent = ALGOS[configs["algo_name"]](configs)
     model_path = os.path.join(exp_path, "model.pt")
@@ -67,17 +22,18 @@ def train(configs, result_dir="out"):
         agent.load_model(model_path)
         logger.info(f"Successfully load model: {model_path}")
 
+    # evaluate before update, to get baseline
     writer.add_scalar(
         "evaluation_averaged_return",
-        eval(agent, configs["env_name"], seed, 10),
+        eval(agent, configs["env_name"], seed, logger, state_normalizer),
         global_step=0,
-    )  # evaluate before update, to get baseline
+    )
+
     # train agent
     episode_timesteps = 0
     episode_reward = 0
     episode_num = 0
     best_avg_reward = -np.inf
-
     next_state = state_normalizer(env.reset())
     for t in range(int(configs["max_timesteps"])):
         episode_timesteps += 1
@@ -91,7 +47,7 @@ def train(configs, result_dir="out"):
         ):
             action = env.action_space.sample()
         else:
-            action, _ = agent(state, training=True, calcu_log_prob=False, keep_grad=False)
+            action = agent(state, training=True, calcu_log_prob=False)
         # 2. conduct action
         next_state, reward, done, _ = env.step(action)
         next_state = state_normalizer(next_state)
@@ -117,7 +73,9 @@ def train(configs, result_dir="out"):
             episode_num += 1
         # 5. periodically evaluate learned policy
         if (t + 1) % configs["eval_freq"] == 0:
-            avg_reward = eval(agent, configs["env_name"], seed, 10)
+            avg_reward = eval(
+                agent, configs["env_name"], seed, logger, state_normalizer
+            )
             writer.add_scalar("evaluation_averaged_return", avg_reward, global_step=t)
             if avg_reward > best_avg_reward:
                 best_avg_reward = avg_reward
@@ -131,9 +89,8 @@ if __name__ == "__main__":
     # read configs
     args = parse_args()
     configs = load_yml_config(args.config)
-    configs["env_name"] = args.env_name
     # train agent
-    expert = train(configs)
+    expert = train(*preprare_training(configs))
     if args.g:
         # generate expert dataset
         dataset = generate_expert_dataset(
@@ -146,8 +103,6 @@ if __name__ == "__main__":
         data_file_path = os.path.join(
             data_dir, env_name + "_expert-" + version + ".hdf5"
         )
-
         hfile = h5py.File(data_file_path, "w")
         for k in dataset:
             hfile.create_dataset(k, data=dataset[k], compression="gzip")
-        logger.info(f"Successfully save expert dataset to {data_file_path}")

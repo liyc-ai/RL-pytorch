@@ -12,11 +12,11 @@ class SimpleReplayBuffer:
 
     def add(self, state, action, reward, next_state, done):
         # insert (s, a, r, s', done)
-        self.state_buffer[self.ptr] = torch.FloatTensor(state).to(self.device)
-        self.action_buffer[self.ptr] = torch.FloatTensor(action).to(self.device)
-        self.reward_buffer[self.ptr] = torch.as_tensor(reward).to(self.device)
-        self.next_state_buffer[self.ptr] = torch.FloatTensor(next_state).to(self.device)
-        self.not_done_buffer[self.ptr] = torch.as_tensor(1.0 - done).to(self.device)
+        self.state_buffer[self.ptr] = state
+        self.action_buffer[self.ptr] = action
+        self.reward_buffer[self.ptr] = reward
+        self.next_state_buffer[self.ptr] = next_state
+        self.not_done_buffer[self.ptr] = 1.0 - done
 
         # update pointer and size
         self.ptr = (self.ptr + 1) % self.buffer_size
@@ -30,31 +30,21 @@ class SimpleReplayBuffer:
             idx = np.array(idx)
 
         return (
-            self.state_buffer[idx],
-            self.action_buffer[idx],
-            self.reward_buffer[idx],
-            self.next_state_buffer[idx],
-            self.not_done_buffer[idx],
+            torch.FloatTensor(self.state_buffer[idx]).to(self.device),
+            torch.FloatTensor(self.action_buffer[idx]).to(self.device),
+            torch.FloatTensor(self.reward_buffer[idx]).to(self.device),
+            torch.FloatTensor(self.next_state_buffer[idx]).to(self.device),
+            torch.FloatTensor(self.not_done_buffer[idx]).to(self.device),
         )
 
     def clear(self):
-        self.state_buffer = torch.zeros(
-            (self.buffer_size, self.state_dim), dtype=torch.float32
-        ).to(self.device)
-        self.action_buffer = torch.zeros(
-            (self.buffer_size, self.action_dim), dtype=torch.float32
-        ).to(self.device)
-        self.reward_buffer = torch.zeros((self.buffer_size, 1), dtype=torch.float32).to(
-            self.device
-        )
-        self.next_state_buffer = torch.zeros(
-            (self.buffer_size, self.state_dim), dtype=torch.float32
-        ).to(self.device)
-        self.not_done_buffer = torch.zeros(
-            (self.buffer_size, 1), dtype=torch.float32
-        ).to(self.device)
-        self.ptr = 0  # position of the next inserted transition
-        self.size = 0  # current num of inserted transitions
+        self.state_buffer = np.zeros((self.buffer_size, self.state_dim))
+        self.action_buffer = np.zeros((self.buffer_size, self.action_dim))
+        self.reward_buffer = np.zeros((self.buffer_size, 1))
+        self.next_state_buffer = np.zeros((self.buffer_size, self.state_dim))
+        self.not_done_buffer = np.zeros((self.buffer_size, 1))
+        self.ptr = 0
+        self.size = 0
 
 
 class ImitationReplayBuffer:
@@ -67,11 +57,11 @@ class ImitationReplayBuffer:
 
     def add(self, state, action, log_pi, next_state, done):
         # insert (s, a, r, s', done)
-        self.state_buffer[self.ptr] = torch.FloatTensor(state).to(self.device)
-        self.action_buffer[self.ptr] = torch.FloatTensor(action).to(self.device)
-        self.log_pi_buffer[self.ptr] = torch.as_tensor(log_pi).to(self.device)
-        self.next_state_buffer[self.ptr] = torch.FloatTensor(next_state).to(self.device)
-        self.not_done_buffer[self.ptr] = torch.as_tensor(1.0 - done).to(self.device)
+        self.state_buffer[self.ptr] = state
+        self.action_buffer[self.ptr] = action
+        self.log_pi_buffer[self.ptr] = log_pi
+        self.next_state_buffer[self.ptr] = next_state
+        self.not_done_buffer[self.ptr] = 1.0 - done
 
         # update pointer and size
         self.ptr = (self.ptr + 1) % self.buffer_size
@@ -85,28 +75,18 @@ class ImitationReplayBuffer:
             idx = np.array(idx)
 
         return (
-            self.state_buffer[idx],
-            self.action_buffer[idx],
-            self.log_pi_buffer[idx],
-            self.next_state_buffer[idx],
-            self.not_done_buffer[idx],
+            torch.FloatTensor(self.state_buffer[idx]).to(self.device),
+            torch.FloatTensor(self.action_buffer[idx]).to(self.device),
+            torch.FloatTensor(self.log_pi_buffer[idx]).to(self.device),
+            torch.FloatTensor(self.next_state_buffer[idx]).to(self.device),
+            torch.FloatTensor(self.not_done_buffer[idx]).to(self.device),
         )
 
     def clear(self):
-        self.state_buffer = torch.zeros(
-            (self.buffer_size, self.state_dim), dtype=torch.float32
-        ).to(self.device)
-        self.action_buffer = torch.zeros(
-            (self.buffer_size, self.action_dim), dtype=torch.float32
-        ).to(self.device)
-        self.log_pi_buffer = torch.zeros((self.buffer_size, 1), dtype=torch.float32).to(
-            self.device
-        )
-        self.next_state_buffer = torch.zeros(
-            (self.buffer_size, self.state_dim), dtype=torch.float32
-        ).to(self.device)
-        self.not_done_buffer = torch.zeros(
-            (self.buffer_size, 1), dtype=torch.float32
-        ).to(self.device)
-        self.ptr = 0  # position of the next inserted transition
-        self.size = 0  # current num of inserted transitions
+        self.state_buffer = np.zeros((self.buffer_size, self.state_dim))
+        self.action_buffer = np.zeros((self.buffer_size, self.action_dim))
+        self.log_pi_buffer = np.zeros((self.buffer_size, 1))
+        self.next_state_buffer = np.zeros((self.buffer_size, self.state_dim))
+        self.not_done_buffer = np.zeros((self.buffer_size, 1))
+        self.ptr = 0
+        self.size = 0

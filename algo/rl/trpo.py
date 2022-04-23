@@ -1,6 +1,5 @@
 import numpy as np
 import torch
-import torch.nn as nn
 from torch.autograd import grad
 import torch.nn.functional as F
 from torch.optim import Adam
@@ -123,14 +122,14 @@ class TRPOAgent(BaseAgent):
         Hvp += self.damping * v
         return Hvp
 
-    def __call__(self, state, training=False, calcu_log_prob=False, keep_grad=False):
+    def __call__(self, state, training=False, calcu_log_prob=False):
         state = (
             torch.FloatTensor(state.reshape(1, -1)).to(self.device)
             if type(state) == np.ndarray
             else state
         )
         action_mean, action_std = self.actor(state)
-        return self.select_action(action_mean, action_std, training, calcu_log_prob, keep_grad=keep_grad)
+        return self.select_action(action_mean, action_std, training, calcu_log_prob)
 
     def update_param(self, states, actions, rewards, next_states, not_dones):
         # estimate advantage
@@ -220,6 +219,9 @@ class TRPOAgent(BaseAgent):
             self.optim.step()
             all_critic_loss = np.append(all_critic_loss, critic_loss.item())
 
+        # clear buffer
+        self.replay_buffer.clear()
+
         return {
             "surrogate_loss": loss.item(),
             "critic_loss": np.mean(all_critic_loss),
@@ -232,9 +234,4 @@ class TRPOAgent(BaseAgent):
             return None
 
         states, actions, rewards, next_states, not_dones = self.replay_buffer.sample()
-        snapshot = self.update_param(states, actions, rewards, next_states, not_dones)
-
-        # clear buffer
-        self.replay_buffer.clear()
-
-        return snapshot
+        return self.update_param(states, actions, rewards, next_states, not_dones)

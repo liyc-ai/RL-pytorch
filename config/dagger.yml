@@ -22,6 +22,7 @@ actor_lr: !!float 3e-4
 
 # env param
 use_d4rl: false
+env_name:  HalfCheetah-v2
 
 # others
 seed: 0

@@ -1,7 +1,6 @@
 import gym
 import numpy as np
 import torch
-import torch.nn as nn
 import torch.nn.functional as F
 from torch.optim import Adam
 from algo.base import BaseAgent
@@ -9,7 +8,6 @@ from net.discriminator import GAILDiscrim
 from algo.rl.ppo import PPOAgent
 from utils.config import load_yml_config
 from utils.buffer import ImitationReplayBuffer
-from utils.env import ConvertActionWrapper
 
 
 class GAILAgent(BaseAgent):
@@ -18,7 +16,7 @@ class GAILAgent(BaseAgent):
 
         self.update_disc_times = configs.get("update_disc_times")
         self.batch_size = configs.get("batch_size")
-        self.env = ConvertActionWrapper(gym.make(configs.get("env_name")))
+        self.env = gym.make(configs.get("env_name"))
         self.env.seed(configs.get("seed"))
 
         # use ppo to train generator
@@ -62,10 +60,12 @@ class GAILAgent(BaseAgent):
             if done:
                 next_state = self.env.reset()
             state = next_state
-            action, _ = self.policy(state, training=True, calcu_log_prob=False, keep_grad=False)
+            action, _ = self.policy(
+                state, training=True, calcu_log_prob=False, keep_grad=False
+            )
             next_state, reward, done, _ = self.env.step(action)
             real_done = done if i < self.env._max_episode_steps else False
-            
+
             action = action.cpu()
             self.policy.replay_buffer.add(
                 state, action, reward, next_state, float(real_done)
@@ -107,8 +107,8 @@ class GAILAgent(BaseAgent):
             states, actions, rewards, next_states, not_dones
         )
 
-    def __call__(self, state, training=False, calcu_log_prob=False, keep_grad=False):
-        return self.policy(state, training=training, calcu_log_prob=calcu_log_prob, keep_grad=keep_grad)
+    def __call__(self, state, training=False, calcu_log_prob=False):
+        return self.policy(state, training=training, calcu_log_prob=calcu_log_prob)
 
     def update_param(self):
         # sample trajectories

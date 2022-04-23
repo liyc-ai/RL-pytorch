@@ -21,6 +21,9 @@ critic_hidden_size: [64, 64]
 actor_lr: !!float 3e-4
 critic_lr: !!float 3e-4
 
+# env param
+env_name: Walker2d-v3
+
 # others
 seed: 0
 device: cuda:0

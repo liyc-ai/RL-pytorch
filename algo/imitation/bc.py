@@ -38,14 +38,14 @@ class BCAgent(BaseAgent):
         if configs.get("loss_fn") == "mse":
             self.mse_loss_fn = nn.MSELoss()
 
-    def __call__(self, state, training=False, calcu_log_prob=False, keep_grad=False):
+    def __call__(self, state, training=False, calcu_log_prob=False):
         state = (
             torch.FloatTensor(state.reshape(1, -1)).to(self.device)
             if type(state) == np.ndarray
             else state
         )
         action_mean, action_std = self.actor(state)
-        return self.select_action(action_mean, action_std, training, calcu_log_prob, keep_grad=keep_grad)
+        return self.select_action(action_mean, action_std, training, calcu_log_prob)
 
     def _bc_loss(self, buffer):
         states, actions = buffer.sample(self.batch_size)[:2]
