@@ -12,10 +12,12 @@ pip install -r requirements
 ## Run experiment
 
 ```bash
-# train expert
-python train_expert.py --config sac.yml --env-name HalfCheetah-v3 --generate-data
-# train imitator
-python train_expert.py --config bc.yml
+# train RL agent
+python train_expert.py --config sac.yml --generate-data
+# train non-active imitator
+python train_il.py --config bc.yml
+# train active imitator
+python train_active_il.py --config dagger.yml
 ```
 
 **Watch Result**

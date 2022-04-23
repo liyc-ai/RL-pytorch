@@ -4,6 +4,7 @@ import gym
 import torch
 import numpy as np
 from torch.utils.backcompat import broadcast_warning, keepdim_warning
+from algo import ALGOS
 from utils.logger import get_logger, get_writer
 from utils.config import write_config
 
@@ -69,4 +70,11 @@ def preprare_training(configs, result_dir="out"):
     writer = get_writer(os.path.join(exp_path, "tb"))
     write_config(configs, os.path.join(exp_path, "config.yml"))  # for reproducibility
 
-    return [configs, env, exp_path, logger, writer, seed]
+    # init agent
+    agent = ALGOS[configs["algo_name"]](configs)
+    model_path = os.path.join(exp_path, "model.pt")
+    if configs["load_model"] and os.path.exists(model_path):
+        agent.load_model(model_path)
+        logger.info(f"Successfully load model: {model_path}")
+
+    return [configs, agent, env, logger, writer, seed, model_path]

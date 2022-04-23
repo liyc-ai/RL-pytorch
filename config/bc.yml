@@ -16,7 +16,6 @@ actor_lr: !!float 3e-4
 # env param
 use_d4rl: true  # whether to use d4rl dataset
 env_name:  halfcheetah-expert-v2  # walker2d-expert-v2, is more easy
-# use_gen_data: true  # use manually generated expert data if not use d4rl
 # dataset_path: ./data/expert_data/ant_expert-v2.hdf5
 
 # others
