@@ -1,7 +1,7 @@
 # ILAlgo
-Baseline Algorithms of Imitation Learning and Reinforcment Learning , written in Pytorch. All code are tested on Mujoco.
+Baseline algorithms of imitation learning and reinforcment learning , written in Pytorch. Code is tested on Mujoco.
 
-**Note**: Code are under development. Issues,  bug reports and PRs are welcome.
+**Note**: Code is under development. Issues,  bug reports and PRs are welcome.
 
 ## Install Dependency
 
