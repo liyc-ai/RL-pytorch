@@ -1,0 +1,26 @@
+algo: ppo
+gamma: 0.99
+batch_size: 256
+rollout_steps: 2048
+lambda_: 0.97
+norm_adv: true
+use_td_lambda: true
+epsilon: 0.1
+buffer_size: -1
+entropy_coef: 0.
+
+actor:
+  net_arch: [64, 64]
+  activation_fn: ReLU
+  state_std_independent: False
+  optimizer: Adam
+  lr: !!float 1e-3
+  n_update: 5
+  clip: 0.5
+
+value_net:
+  net_arch: [64, 64]
+  activation_fn: ReLU
+  optimizer: Adam
+  lr: !!float 1e-3
+  n_update: 5

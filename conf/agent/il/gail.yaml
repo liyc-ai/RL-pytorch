@@ -1,0 +1,15 @@
+algo: gail
+batch_size: 256
+rollout_steps: 2048
+
+expert:
+  buffer_size: -1
+
+discriminator:
+  net_arch: [50, 50]
+  activation_fn: Tanh
+  optimizer: Adam
+  lr: !!float 3e-4
+  n_update: 1
+
+generator: conf/agent/rl/ppo.yaml

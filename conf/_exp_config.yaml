@@ -1,0 +1,65 @@
+root_dir: 
+seed: 3407
+device: "cuda:0"
+description: ""
+
+# env:
+env:
+  id: Hopper-v4
+  train:
+  eval:
+  reset_env:
+  state_shape: 
+  action_shape: 
+  action_dtype: 
+
+# nni
+hpo: false  # hyper-parameter optimization
+
+# Note: All paths below are absolute paths or relative paths to project dir
+model_path: ""
+
+# log
+log:
+  setup_log: true
+  rla_config: conf/_rla_config.yaml
+  log_dir: logs
+  task_name: ilkit_example
+  print_time_interval: 100
+  backup_file:
+    - example/train_agent.py
+  record_param:
+    - seed
+    - agent.algo
+    - env.id
+
+# train
+train:
+  learn: true
+  max_steps: 1000_000
+  eval_interval: 5_000
+
+# collect demonstration
+collect:
+  n_traj: 0
+  n_step: 1000_000
+  save_dir: ckpt
+  save_name: ""
+
+# imitation learning
+expert_dataset:
+  dataset_file_path: "ckpt/cartpole_expert-v1.hdf5"
+  d4rl_env_id: # hopper-expert-v2
+  n_expert_traj: 10
+
+# algo
+defaults:
+  - agent: rl/ddpg
+  - override hydra/hydra_logging: disabled  
+  - override hydra/job_logging: disabled
+  - _self_
+  
+hydra:  
+  output_subdir: null
+  run:
+    dir: .

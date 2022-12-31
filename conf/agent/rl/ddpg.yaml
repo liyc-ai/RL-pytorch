@@ -1,0 +1,21 @@
+algo: ddpg
+gamma: 0.99
+batch_size: 256
+expl_std: 0.1
+warmup_steps: 10_000
+buffer_size: 1000_000
+env_steps: 1
+
+actor:
+  net_arch: [256, 256]
+  activation_fn: ReLU
+  optimizer: Adam
+  lr: !!float 3e-4
+  tau: 0.05
+
+critic:
+  net_arch: [256, 256]
+  activation_fn: ReLU
+  optimizer: Adam
+  lr: !!float 3e-4
+  tau: 0.05

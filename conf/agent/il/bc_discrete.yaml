@@ -1,0 +1,11 @@
+algo: bc_discrete
+batch_size: 256
+
+expert:
+  buffer_size: -1
+
+actor:
+  net_arch: [256, 256]
+  activation_fn: ReLU
+  optimizer: Adam
+  lr: !!float 3e-4

@@ -1,13 +1,7 @@
-# Customized
-.vscode/
-ref/
-data/**
-!data/d4rl_task.md
-out/**
-!out/readme.txt
-test/
-backup/
-cmds.txt
+.ref/
+logs*
+ckpt/
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

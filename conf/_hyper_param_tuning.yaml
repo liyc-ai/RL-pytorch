@@ -1,0 +1,24 @@
+search_space:
+  gamma:
+    _type: uniform
+    _value: [ 0, 1 ]
+  buffer_size:
+    _type: choice
+    _value: [ 1_000, 10_000, 100_000 ]
+  lr:
+    _type: loguniform
+    _value: [ 0.00001,  0.1]
+
+trial_command: python example/train_agent.py agent=rl/dqn hpo=True
+trial_code_directory: .
+
+trial_concurrency: 4
+max_trial_number: 16
+
+tuner:
+  name: TPE
+  class_args:
+    optimize_mode: maximize
+
+training_service:
+  platform: local

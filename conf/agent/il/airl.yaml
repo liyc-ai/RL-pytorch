@@ -1,0 +1,20 @@
+algo: airl
+gamma: 0.99
+rollout_steps: 2048
+batch_size: 256
+
+expert:
+  buffer_size: -1
+
+discriminator:
+  g:
+    net_arch: [50, 50]
+    activation_fn: Tanh
+  h:
+    net_arch: [50, 50]
+    activation_fn: Tanh
+  optimizer: Adam
+  lr: !!float 3e-4
+  n_update: 1
+
+generator: conf/agent/rl/ppo.yaml
