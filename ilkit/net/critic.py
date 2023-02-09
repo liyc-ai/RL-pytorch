@@ -4,13 +4,14 @@ import torch as th
 from torch.nn import Module, ReLU
 
 from ilkit.net.modules import mlp
+from ilkit.util.ptu import orthogonal_init_
 
 
 class MLPCritic(Module):
     def __init__(
         self,
-        input_shape: Tuple[int,], 
-        output_shape: Tuple[int,], 
+        input_shape: Tuple[int,],
+        output_shape: Tuple[int,],
         net_arch: List[int],
         activation_fn: Module = ReLU,
         **kwarg
@@ -19,7 +20,10 @@ class MLPCritic(Module):
         :param input_dim: input dimension (for vector) or input channel (for image)
         """
         super().__init__()
-        self.value_net, _ = mlp(input_shape, output_shape, net_arch, activation_fn, **kwarg)
+        self.value_net, _ = mlp(
+            input_shape, output_shape, net_arch, activation_fn, **kwarg
+        )
+        self.apply(orthogonal_init_)
 
     def forward(self, *input_):
         input_ = th.cat(input_, dim=-1)
@@ -39,6 +43,8 @@ class MLPTwinCritic(Module):
 
         self.Q_1, _ = mlp(input_shape, output_shape, net_arch, activation_fn, **kwarg)
         self.Q_2, _ = mlp(input_shape, output_shape, net_arch, activation_fn, **kwarg)
+
+        self.apply(orthogonal_init_)
 
     def forward(self, twin_value: bool, *input_):
         """
@@ -72,6 +78,8 @@ class MLPDuleQNet(Module):
             feature_shape, output_shape, adv_head, activation_fn, **kwarg
         )
         self.mix_type = mix_type
+
+        self.apply(orthogonal_init_)
 
     def forward(self, state: th.Tensor):
         feature = self.feature_extrator(state)

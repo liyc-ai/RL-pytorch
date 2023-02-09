@@ -1,0 +1,3 @@
+algo: iq_learn_continuous
+batch_size: 256
+gamma: 0.99

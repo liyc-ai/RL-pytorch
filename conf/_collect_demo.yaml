@@ -1,0 +1,60 @@
+work_dir:
+seed: 3407
+device: cuda:0
+description: ""
+
+# env:
+env:
+  id: Hopper-v4
+  state_shape:
+  action_shape:
+  action_dtype:
+
+# Note: All paths below are absolute paths or relative paths to project dir
+model_path: ""
+
+# log
+log:
+  logger_type: tensorboard
+  setup_logger: true
+  print_time_interval: 10_000
+  record_param:
+    - seed
+    - agent.algo
+    - env.id
+  run_file:
+    - example/train_agent.py
+  project: ilkit_example
+  # below is sepcific to TBLogger
+  backup_code_dir:
+  # below is specific to RLALogger
+  rla_config: conf/_rla_config.yaml
+  # below is specific to wandb
+  up2cloud: false
+  api_key_file: conf/_wandb_info.yaml  #! remember to create this
+  entity:  # group name
+
+# collect demonstration
+collect:
+  n_traj: 0
+  n_step: 1000_000
+  save_dir: data
+  save_name: ""
+
+# imitation learning
+expert_dataset:
+  dataset_file_path: # data/cartpole_expert-v1.hdf5
+  d4rl_env_id: # hopper-expert-v2
+  n_expert_traj: 10
+
+# algo
+defaults:
+  - agent: rl/sac
+  - override hydra/hydra_logging: disabled  
+  - override hydra/job_logging: disabled
+  - _self_
+  
+hydra:  
+  output_subdir: null
+  run:
+    dir: .

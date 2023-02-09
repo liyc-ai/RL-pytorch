@@ -1,0 +1,19 @@
+algo: iq_learn_discrete
+batch_size: 256
+
+offline: true
+
+# currently, we only support phi_fn below
+# fkl: Fowrward KL
+# rkl: Reverse KL
+# hellinger: Squared Hellinger
+# chi: Pearson $\chi^2$
+# tv: Total Variation
+# js: Jensen-Shannon
+phi_fn: chi
+
+QNet:
+  net_arch: [64, 64]
+  activation_fn: ELU
+  optimizer: Adam
+  lr: !!float 3e-4

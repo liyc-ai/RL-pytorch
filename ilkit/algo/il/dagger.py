@@ -1,8 +1,9 @@
 import time
 from copy import deepcopy
 from os.path import join
-from typing import Dict, Union
+from typing import Callable, Dict, Tuple, Union
 
+import gym
 import numpy as np
 import torch as th
 import torch.nn.functional as F
@@ -14,6 +15,7 @@ from ilkit.algo.il.bc import BCContinuous
 from ilkit.net.actor import MLPDeterministicActor, MLPGaussianActor
 from ilkit.util.buffer import DAggerBuffer
 from ilkit.util.eval import eval_policy
+from ilkit.util.logger import BaseLogger
 from ilkit.util.ptu import gradient_descent, tensor2ndarray
 
 
@@ -21,22 +23,10 @@ class DAggerContinuous(BCContinuous):
     """Dataset Aggregation (DAgger) for Continuous Control
     """
 
-    def __init__(self, cfg: Dict):
-        super().__init__(cfg)
+    def __init__(self, cfg: Dict, logger: BaseLogger):
+        super().__init__(cfg, logger)
 
-    def load_expert(self):
-        """expert could be anything, as long as it is able to give an action with state input
-        """
-        from ilkit import make
-
-        expert_config = deepcopy(self.cfg)
-        expert_config["agent"] = OmegaConf.to_object(OmegaConf.load(
-            self.parse_path(self.algo_config["expert"]["config"])
-        ))
-        self.expert = make(expert_config)
-        self.expert.load_model(self.algo_config["expert"]["model_path"])
-
-    def init_component(self):
+    def setup_model(self):
         # load expert
         self.load_expert()
 
@@ -46,28 +36,88 @@ class DAggerContinuous(BCContinuous):
             "action_shape": self.action_shape,
             "action_dtype": self.action_dtype,
             "device": self.device,
-            "buffer_size": self.algo_config["buffer_size"],
+            "buffer_size": self.algo_cfg["buffer_size"],
         }
         self.trans_buffer = DAggerBuffer(**buffer_kwarg)
 
         # actor
         actor_kwarg = {
             "state_shape": self.state_shape,
-            "net_arch": self.algo_config["actor"]["net_arch"],
+            "net_arch": self.algo_cfg["actor"]["net_arch"],
             "action_shape": self.action_shape,
-            "state_std_independent": self.algo_config["actor"]["state_std_independent"],
-            "activation_fn": getattr(nn, self.algo_config["actor"]["activation_fn"]),
+            "state_std_independent": self.algo_cfg["actor"]["state_std_independent"],
+            "activation_fn": getattr(nn, self.algo_cfg["actor"]["activation_fn"]),
         }
         self.actor = MLPGaussianActor(**actor_kwarg).to(self.device)
-        self.actor_optim = getattr(optim, self.algo_config["actor"]["optimizer"])(
-            self.actor.parameters(), self.algo_config["actor"]["lr"]
+        self.actor_optim = getattr(optim, self.algo_cfg["actor"]["optimizer"])(
+            self.actor.parameters(), self.algo_cfg["actor"]["lr"]
         )
 
         self.models.update({"actor": self.actor, "actor_optim": self.actor_optim})
 
-    def learn(self):
+    def load_expert(self):
+        """expert could be anything, as long as it is able to give an action with state input
+        """
+        from ilkit import make
+
+        expert_config = deepcopy(self.cfg)
+        expert_config["agent"] = OmegaConf.to_object(
+            OmegaConf.load(self.parse_path(self.algo_cfg["expert"]["config"]))
+        )
+        self.expert = make(expert_config, self.logger)
+        self.expert.load_model(self.algo_cfg["expert"]["model_path"])
+
+    def nni_learn(self, train_env: gym.Env, eval_env: gym.Env, reset_env: Callable):
+        import nni
+
+        train_return = 0
+        best_return = -float("inf")
+        train_steps = self.cfg["train"]["max_steps"]
+        eval_interval = self.cfg["train"]["eval_interval"]
+
+        # start training
+        next_state, _ = reset_env(train_env, self.seed)
+        for t in range(train_steps):
+            state = next_state
+            action = self.select_action(
+                state,
+                keep_dtype_tensor=False,
+                deterministic=False,
+                return_log_prob=False,
+            )
+            next_state, reward, terminated, truncated, _ = train_env.step(action)
+            train_return += reward
+
+            expert_action = self.expert.select_action(
+                state,
+                deterministic=True,
+                keep_dtype_tensor=False,
+                return_log_prob=False,
+            )
+            self.trans_buffer.insert_transition(state, expert_action)
+
+            # update policy
+            self.update()
+
+            # whether this episode ends
+            if terminated or truncated:
+                next_state, _ = reset_env(train_env, self.seed)
+                train_return = 0
+
+            # evaluate
+            if (t + 1) % eval_interval == 0:
+                eval_return = eval_policy(eval_env, reset_env, self, self.seed)
+
+                nni.report_intermediate_result(eval_return)
+
+                if eval_return > best_return:
+                    best_return = eval_return
+
+        nni.report_final_result(best_return)
+
+    def no_nni_learn(self, train_env: gym.Env, eval_env: gym.Env, reset_env: Callable):
         if not self.cfg["train"]["learn"]:
-            self.logger.warn("We did not learn anything!")
+            self.logger.dump2log("We did not learn anything!")
             return
 
         train_return = 0
@@ -78,22 +128,22 @@ class DAggerContinuous(BCContinuous):
         eval_interval = self.cfg["train"]["eval_interval"]
 
         # start training
-        next_state, info = self.reset_env(self.train_env, self.seed)
+        next_state, _ = reset_env(train_env, self.seed)
         for t in range(train_steps):
             last_time = now_time
-            self.exp_manager.time_step_holder.set_time(t)
+            self.logger.set_global_t(t)
 
             state = next_state
-            action = self.get_action(
+            action = self.select_action(
                 state,
                 keep_dtype_tensor=False,
                 deterministic=False,
                 return_log_prob=False,
             )
-            next_state, reward, terminated, truncated, _ = self.train_env.step(action)
+            next_state, reward, terminated, truncated, _ = train_env.step(action)
             train_return += reward
 
-            expert_action = self.expert.get_action(
+            expert_action = self.expert.select_action(
                 state,
                 deterministic=True,
                 keep_dtype_tensor=False,
@@ -107,22 +157,17 @@ class DAggerContinuous(BCContinuous):
 
             # whether this episode ends
             if terminated or truncated:
-                self.logger.logkv("return/train", train_return)
-                next_state, info = self.reset_env(self.train_env, self.seed)
+                self.logger.logkv("return", train_return, "train")
+                next_state, _ = reset_env(train_env, self.seed)
                 train_return = 0
 
             # evaluate
             if (t + 1) % eval_interval == 0:
-                eval_return = eval_policy(self.eval_env, self.reset_env, self, self.seed)
+                eval_return = eval_policy(eval_env, reset_env, self, self.seed)
                 self.logger.logkv("return/eval", eval_return)
 
-                # nni
-                if self.cfg["hpo"]:
-                    import nni
-                    nni.report_intermediate_result(eval_return)
-
                 if eval_return > best_return:
-                    self.save_model(join(self.checkpoint_dir, "best_model.pt"))
+                    self.save_model(join(self.logger.checkpoint_dir, "best_model.pt"))
                     best_return = eval_return
 
             # update time
@@ -131,14 +176,11 @@ class DAggerContinuous(BCContinuous):
             past_time += one_step_time
             if (t + 1) % self.cfg["log"]["print_time_interval"] == 0:
                 remain_time = one_step_time * (train_steps - t - 1)
-                self.logger.info(
+                self.logger.dump2log(
                     f"Run: {past_time/60} min, Remain: {remain_time/60} min"
                 )
 
             self.logger.dumpkvs()
-
-        if self.cfg["hpo"]:
-            nni.report_final_result(best_return)
 
     def update(self):
         log_info = dict()
@@ -160,10 +202,10 @@ class DAggerDiscrete(DAggerContinuous):
     """Dataset Aggregation (DAgger) for Discrete Control
     """
 
-    def __init__(self, cfg: Dict):
-        super().__init__(cfg)
+    def __init__(self, cfg: Dict, logger: BaseLogger):
+        super().__init__(cfg, logger)
 
-    def init_component(self):
+    def setup_model(self):
         # load expert
         self.load_expert()
 
@@ -173,32 +215,32 @@ class DAggerDiscrete(DAggerContinuous):
             "action_shape": self.action_shape,
             "action_dtype": self.action_dtype,
             "device": self.device,
-            "buffer_size": self.algo_config["buffer_size"],
+            "buffer_size": self.algo_cfg["buffer_size"],
         }
         self.trans_buffer = DAggerBuffer(**buffer_kwarg)
 
         # actor
         actor_kwarg = {
             "state_shape": self.state_shape,
-            "net_arch": self.algo_config["actor"]["net_arch"],
+            "net_arch": self.algo_cfg["actor"]["net_arch"],
             "action_shape": self.action_shape,
-            "activation_fn": getattr(nn, self.algo_config["actor"]["activation_fn"]),
+            "activation_fn": getattr(nn, self.algo_cfg["actor"]["activation_fn"]),
         }
         self.actor = MLPDeterministicActor(**actor_kwarg).to(self.device)
-        self.actor_optim = getattr(optim, self.algo_config["actor"]["optimizer"])(
-            self.actor.parameters(), self.algo_config["actor"]["lr"]
+        self.actor_optim = getattr(optim, self.algo_cfg["actor"]["optimizer"])(
+            self.actor.parameters(), self.algo_cfg["actor"]["lr"]
         )
 
         self.models.update({"actor": self.actor, "actor_optim": self.actor_optim})
 
-    def get_action(
+    def select_action(
         self,
         state: Union[np.ndarray, th.Tensor],
         deterministic: bool,
         keep_dtype_tensor: bool,
         return_log_prob: bool,
         **kwarg,
-    ):
+    ) -> Union[Tuple[th.Tensor, th.Tensor], th.Tensor, np.ndarray]:
         state = th.Tensor(state).to(self.device) if type(state) is np.ndarray else state
         prob = F.softmax(self.actor(state), dim=-1)  # unnormalized
 

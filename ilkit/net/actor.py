@@ -6,7 +6,7 @@ from torch.distributions.normal import Normal
 from torch.nn import Module, ReLU
 
 from ilkit.net.modules import mlp, variable
-from ilkit.util.ptu import tensor2ndarray
+from ilkit.util.ptu import orthogonal_init_, tensor2ndarray
 
 LOG_STD_MIN = -20
 LOG_STD_MAX = 2
@@ -19,14 +19,14 @@ class MLPGaussianActor(Module):
 
     def __init__(
         self,
-        state_shape: Tuple[int,...],
-        action_shape: Tuple[int,...],
+        state_shape: Tuple[int, ...],
+        action_shape: Tuple[int, ...],
         net_arch: List[int],
         state_std_independent: bool = False,
         activation_fn: Module = ReLU,
         **kwarg
     ):
-        """ 
+        """
         :param state_std_independent: whether std is a function of state
         """
         super().__init__()
@@ -35,9 +35,7 @@ class MLPGaussianActor(Module):
         self.feature_extractor, feature_shape = mlp(
             state_shape, (-1,), net_arch, activation_fn, **kwarg
         )
-        self.mu, _ = mlp(
-            feature_shape, action_shape, [], activation_fn, **kwarg
-        )
+        self.mu, _ = mlp(feature_shape, action_shape, [], activation_fn, **kwarg)
 
         # to unify self.log_std to be a function
         if state_std_independent:
@@ -45,8 +43,10 @@ class MLPGaussianActor(Module):
             self.log_std = lambda _: self._log_std
         else:
             self.log_std, _ = mlp(
-            feature_shape, action_shape, [], activation_fn, **kwarg
-        )
+                feature_shape, action_shape, [], activation_fn, **kwarg
+            )
+
+        self.apply(orthogonal_init_)
 
     def forward(self, state: th.Tensor):
         feature = self.feature_extractor(state)
@@ -87,7 +87,7 @@ class MLPDeterministicActor(Module):
     def __init__(
         self,
         state_shape: Tuple[int,],
-        action_shape: Tuple[int,], 
+        action_shape: Tuple[int,],
         net_arch: List[int],
         activation_fn: Module = ReLU,
         **kwarg
@@ -100,6 +100,8 @@ class MLPDeterministicActor(Module):
         self.output_head, _ = mlp(
             feature_shape, action_shape, [], activation_fn, **kwarg
         )
+
+        self.apply(orthogonal_init_)
 
     def forward(self, state: th.Tensor):
         feature = self.feature_extractor(state)

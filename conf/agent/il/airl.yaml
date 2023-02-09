@@ -3,9 +3,6 @@ gamma: 0.99
 rollout_steps: 2048
 batch_size: 256
 
-expert:
-  buffer_size: -1
-
 discriminator:
   g:
     net_arch: [50, 50]

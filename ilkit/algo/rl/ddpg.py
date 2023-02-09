@@ -7,52 +7,50 @@ import torch.nn.functional as F
 from stable_baselines3.common.utils import polyak_update
 from torch import nn, optim
 
-from ilkit.algo.rl import OnlineRLPolicy
+from ilkit.algo.base import OnlineRLPolicy
 from ilkit.net.actor import MLPDeterministicActor
 from ilkit.net.critic import MLPCritic
-from ilkit.util.ptu import (freeze_net, gradient_descent, move_device,
-                            tensor2ndarray)
+from ilkit.util.logger import BaseLogger
+from ilkit.util.ptu import freeze_net, gradient_descent, move_device, tensor2ndarray
 
 
 class DDPG(OnlineRLPolicy):
     """Deep Deterministic Policy Gradient (DDPG)
     """
 
-    def __init__(self, cfg: Dict):
-        super().__init__(cfg)
+    def __init__(self, cfg: Dict, logger: BaseLogger):
+        super().__init__(cfg, logger)
 
-    def init_param(self):
+    def setup_model(self):
         # hyper-param
         self.entropy_target = -self.action_shape[0]
-        self.warmup_steps = self.algo_config["warmup_steps"]
-        self.env_steps = self.algo_config["env_steps"]
-        self.action_scale = th.Tensor(self.eval_env.action_space.high).to(self.device)
+        self.warmup_steps = self.algo_cfg["warmup_steps"]
+        self.env_steps = self.algo_cfg["env_steps"]
 
-    def init_component(self):
         # actor
         actor_kwarg = {
             "state_shape": self.state_shape,
-            "net_arch": self.algo_config["actor"]["net_arch"],
+            "net_arch": self.algo_cfg["actor"]["net_arch"],
             "action_shape": self.action_shape,
-            "activation_fn": getattr(nn, self.algo_config["actor"]["activation_fn"]),
+            "activation_fn": getattr(nn, self.algo_cfg["actor"]["activation_fn"]),
         }
         self.actor = MLPDeterministicActor(**actor_kwarg)
         self.actor_target = deepcopy(self.actor)
-        self.actor_optim = getattr(optim, self.algo_config["actor"]["optimizer"])(
-            self.actor.parameters(), self.algo_config["actor"]["lr"]
+        self.actor_optim = getattr(optim, self.algo_cfg["actor"]["optimizer"])(
+            self.actor.parameters(), self.algo_cfg["actor"]["lr"]
         )
 
         # critic
         critic_kwarg = {
-            "input_shape": (self.state_shape[0]+self.action_shape[0],),
+            "input_shape": (self.state_shape[0] + self.action_shape[0],),
             "output_shape": (1,),
-            "net_arch": self.algo_config["critic"]["net_arch"],
-            "activation_fn": getattr(nn, self.algo_config["critic"]["activation_fn"]),
+            "net_arch": self.algo_cfg["critic"]["net_arch"],
+            "activation_fn": getattr(nn, self.algo_cfg["critic"]["activation_fn"]),
         }
         self.critic = MLPCritic(**critic_kwarg)
         self.critic_target = deepcopy(self.critic)
-        self.critic_optim = getattr(optim, self.algo_config["critic"]["optimizer"])(
-            self.critic.parameters(), self.algo_config["critic"]["lr"]
+        self.critic_optim = getattr(optim, self.algo_cfg["critic"]["optimizer"])(
+            self.critic.parameters(), self.algo_cfg["critic"]["lr"]
         )
 
         freeze_net((self.actor_target, self.critic_target))
@@ -72,14 +70,14 @@ class DDPG(OnlineRLPolicy):
             }
         )
 
-    def get_action(
+    def select_action(
         self,
         state: Union[np.ndarray, th.Tensor],
         deterministic: bool,
         keep_dtype_tensor: bool,
         actor: nn.Module = None,
         **kwargs
-    ):
+    ) -> Union[th.Tensor, np.ndarray]:
         state = th.Tensor(state).to(self.device) if type(state) is np.ndarray else state
 
         if actor is None:
@@ -87,14 +85,13 @@ class DDPG(OnlineRLPolicy):
         else:
             action = actor(state)
 
-        action = self.action_scale * th.tanh(action)
+        action = th.tanh(action)
 
         # add explore noise
         if not deterministic:
-            noise = th.randn_like(action) * (
-                self.algo_config["expl_std"] * self.action_scale
-            )
-            action = th.clamp(action + noise, -self.action_scale, self.action_scale)
+            noise = th.randn_like(action) * (self.algo_cfg["expl_std"])
+            # by default, the action scale is [-1.,1.]
+            action = th.clamp(action + noise, -1.0, 1.0)
 
         if not keep_dtype_tensor:
             action, = tensor2ndarray((action,))
@@ -122,12 +119,12 @@ class DDPG(OnlineRLPolicy):
                 polyak_update(
                     self.critic.parameters(),
                     self.critic_target.parameters(),
-                    self.algo_config["critic"]["tau"],
+                    self.algo_cfg["critic"]["tau"],
                 )
                 polyak_update(
                     self.actor.parameters(),
                     self.actor_target.parameters(),
-                    self.algo_config["actor"]["tau"],
+                    self.algo_cfg["actor"]["tau"],
                 )
 
         return self.log_info
@@ -141,7 +138,7 @@ class DDPG(OnlineRLPolicy):
         dones: th.Tensor,
     ):
         with th.no_grad():
-            pred_next_actions = self.get_action(
+            pred_next_actions = self.select_action(
                 next_states,
                 deterministic=True,
                 keep_dtype_tensor=True,
@@ -156,7 +153,7 @@ class DDPG(OnlineRLPolicy):
         )
 
     def _update_actor(self, states: th.Tensor):
-        pred_actions = self.get_action(
+        pred_actions = self.select_action(
             states, deterministic=True, keep_dtype_tensor=True
         )
         Q = self.critic(states, pred_actions)

@@ -5,7 +5,7 @@ buffer_size: -1
 
 expert:
   config: conf/agent/rl/sac.yaml
-  model_path: ckpt/sac_hopper.pt
+  model_path: data/hopper-v4_sac.pt
 
 actor:
   net_arch: [256, 256]

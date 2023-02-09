@@ -4,19 +4,22 @@ import gym
 from gym.spaces import Box, Discrete
 
 
-def _get_space_shape(obj: gym.Space):
+def _get_space_info(obj: gym.Space):
     if isinstance(obj, Box):
         shape = obj.shape
+        type_ = "float"
     elif isinstance(obj, Discrete):
         shape = (obj.n,)
+        type_ = "int"
     else:
         raise TypeError("Currently only Box and Discrete are supported!")
-    return shape
+    return shape, type_
+
 
 def get_env_info(env: gym.Env):
-    state_shape = _get_space_shape(env.observation_space)
-    action_shape = _get_space_shape(env.action_space)
-    action_dtype = env.action_space.dtype
+    state_shape, _ = _get_space_info(env.observation_space)
+    action_shape, action_dtype = _get_space_info(env.action_space)
+
     return {
         "state_shape": state_shape,
         "action_shape": action_shape,
@@ -32,6 +35,7 @@ def make_env(env_id: str) -> gym.Env:
     except:
         try:
             import d4rl
+
             env = gym.make(env_id)
         except:
             raise ValueError("Unsupported env id!")
@@ -39,7 +43,7 @@ def make_env(env_id: str) -> gym.Env:
 
 
 def reset_env(env: gym.Env, seed: int) -> Dict:
-    reset_info = env.reset(seed=seed)
+    next_state, info = env.reset(seed=seed)
     env.action_space.seed(seed)
     env.observation_space.seed(seed)
-    return reset_info
+    return (next_state, info)

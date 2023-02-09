@@ -5,7 +5,7 @@ buffer_size: -1
 
 expert:
   config: conf/agent/rl/dqn.yaml
-  model_path: ckpt/dqn_cartpole.pt
+  model_path: data/cartpole-v1_dqn.pt
 
 actor:
   net_arch: [256, 256]

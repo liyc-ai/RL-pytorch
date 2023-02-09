@@ -1,16 +1,13 @@
 from typing import Callable
 
+import gym
 import numpy as np
 
-from ilkit.algo import BasePolicy
+from ilkit.algo.base import BasePolicy
 
 
 def eval_policy(
-    eval_env, 
-    reset_env: Callable,
-    policy: BasePolicy, 
-    seed: int, 
-    episodes=10
+    eval_env: gym.Env, reset_env: Callable, policy: BasePolicy, seed: int, episodes=10
 ):
     """Evaluate Policy
     """
@@ -20,11 +17,12 @@ def eval_policy(
         (state, _), terminated, truncated = reset_env(eval_env, seed), False, False
         avg_reward = 0.0
         while not (terminated or truncated):
-            action = policy.get_action(
+            action = policy.select_action(
                 state,
                 deterministic=True,
                 keep_dtype_tensor=False,
                 return_log_prob=False,
+                **{"action_space": eval_env.action_space}
             )
             state, reward, terminated, truncated, _ = eval_env.step(action)
             avg_reward += reward

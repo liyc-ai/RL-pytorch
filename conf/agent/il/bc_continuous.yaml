@@ -1,8 +1,5 @@
 algo: bc_continuous
 batch_size: 256
-
-expert:
-  buffer_size: -1
   
 actor:
   net_arch: [256, 256]

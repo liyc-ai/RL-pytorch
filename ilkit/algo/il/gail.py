@@ -2,8 +2,9 @@ import random
 import time
 from copy import deepcopy
 from os.path import exists, join
-from typing import Callable, Dict, Union
+from typing import Callable, Dict, Tuple, Union
 
+import gym
 import numpy as np
 import torch as th
 import torch.nn.functional as F
@@ -11,9 +12,10 @@ from omegaconf import OmegaConf
 from torch import nn, optim
 from torch.utils.data import BatchSampler
 
-from ilkit.algo.il import ILPolicy
+from ilkit.algo.base import ILPolicy
 from ilkit.net.critic import MLPCritic
 from ilkit.util.eval import eval_policy
+from ilkit.util.logger import BaseLogger
 from ilkit.util.ptu import gradient_descent
 
 
@@ -21,14 +23,14 @@ class GAIL(ILPolicy):
     """Generative Adversarial Imitation Learning (GAIL)
     """
 
-    def __init__(self, cfg: Dict):
-        super().__init__(cfg)
+    def __init__(self, cfg: Dict, logger: BaseLogger):
+        super().__init__(cfg, logger)
 
-    def init_param(self):
-        self.batch_size = self.algo_config["batch_size"]
-        self.idx = list(range(self.algo_config["rollout_steps"]))
+    def setup_model(self):
+        # hyper-param
+        self.batch_size = self.algo_cfg["batch_size"]
+        self.idx = list(range(self.algo_cfg["rollout_steps"]))
 
-    def init_component(self):
         # load expert dataset
         self.load_expert()
 
@@ -40,14 +42,16 @@ class GAIL(ILPolicy):
 
     def _init_disc(self):
         disc_kwarg = {
-            "input_shape": (self.state_shape[0]+self.action_shape[0],),
+            "input_shape": (self.state_shape[0] + self.action_shape[0],),
             "output_shape": (1,),
-            "net_arch": self.algo_config["discriminator"]["net_arch"],
-            "activation_fn": getattr(nn, self.algo_config["discriminator"]["activation_fn"]),
+            "net_arch": self.algo_cfg["discriminator"]["net_arch"],
+            "activation_fn": getattr(
+                nn, self.algo_cfg["discriminator"]["activation_fn"]
+            ),
         }
         self.disc = MLPCritic(**disc_kwarg).to(self.device)
-        self.disc_optim = getattr(optim, self.algo_config["discriminator"]["optimizer"])(
-            self.disc.parameters(), self.algo_config["discriminator"]["lr"]
+        self.disc_optim = getattr(optim, self.algo_cfg["discriminator"]["optimizer"])(
+            self.disc.parameters(), self.algo_cfg["discriminator"]["lr"]
         )
         self.models.update({"disc": self.disc, "disc_optim": self.disc_optim})
 
@@ -55,29 +59,75 @@ class GAIL(ILPolicy):
         from ilkit import make
 
         generator_cfg = deepcopy(self.cfg)
-        generator_cfg["agent"] = OmegaConf.to_object(OmegaConf.load(
-            self.parse_path(self.algo_config["generator"])
-        ))
+        generator_cfg["agent"] = OmegaConf.to_object(
+            OmegaConf.load(self.parse_path(self.algo_cfg["generator"]))
+        )
         self.generator = make(generator_cfg)
 
         for key, value in self.generator.models.items():
             self.models.update({"generator_" + key: value})
 
-    def get_action(
+    def select_action(
         self,
         state: Union[np.ndarray, th.Tensor],
         deterministic: bool,
         keep_dtype_tensor: bool,
         return_log_prob: bool,
         **kwarg,
-    ):
-        return self.generator.get_action(
+    ) -> Union[Tuple[th.Tensor, th.Tensor], th.Tensor, np.ndarray]:
+        return self.generator.select_action(
             state, deterministic, keep_dtype_tensor, return_log_prob, **kwarg
         )
 
-    def learn(self):
+    def nni_learn(self, train_env: gym.Env, eval_env: gym.Env, reset_env: Callable):
+        import nni
+
+        train_return = 0
+        best_return = -float("inf")
+        train_steps = self.cfg["train"]["max_steps"]
+        eval_interval = self.cfg["train"]["eval_interval"]
+
+        # start training
+        next_state, _ = reset_env(train_env, self.seed)
+        for t in range(train_steps):
+
+            state = next_state
+            action = self.select_action(
+                state,
+                keep_dtype_tensor=False,
+                deterministic=False,
+                return_log_prob=False,
+            )
+            next_state, reward, terminated, truncated, _ = train_env.step(action)
+            train_return += reward
+
+            # insert transition into buffer
+            self.generator.trans_buffer.insert_transition(
+                state, action, next_state, reward, terminated
+            )
+
+            # update policy
+            self.update()
+
+            # whether this episode ends
+            if terminated or truncated:
+                next_state, _ = reset_env(train_env, self.seed)
+                train_return = 0
+
+            # evaluate
+            if (t + 1) % eval_interval == 0:
+                eval_return = eval_policy(eval_env, reset_env, self, self.seed)
+
+                nni.report_intermediate_result(eval_return)
+
+                if eval_return > best_return:
+                    best_return = eval_return
+
+        nni.report_final_result(best_return)
+
+    def no_nni_learn(self, train_env: gym.Env, eval_env: gym.Env, reset_env: Callable):
         if not self.cfg["train"]["learn"]:
-            self.logger.warn("We did not learn anything!")
+            self.logger.dump2log("We did not learn anything!")
             return
 
         train_return = 0
@@ -88,19 +138,19 @@ class GAIL(ILPolicy):
         eval_interval = self.cfg["train"]["eval_interval"]
 
         # start training
-        next_state, info = self.reset_env(self.train_env, self.seed)
+        next_state, _ = reset_env(train_env, self.seed)
         for t in range(train_steps):
             last_time = now_time
-            self.exp_manager.time_step_holder.set_time(t)
+            self.logger.set_global_t(t)
 
             state = next_state
-            action = self.get_action(
+            action = self.select_action(
                 state,
                 keep_dtype_tensor=False,
                 deterministic=False,
                 return_log_prob=False,
             )
-            next_state, reward, terminated, truncated, _ = self.train_env.step(action)
+            next_state, reward, terminated, truncated, _ = train_env.step(action)
             train_return += reward
 
             # insert transition into buffer
@@ -115,21 +165,16 @@ class GAIL(ILPolicy):
             # whether this episode ends
             if terminated or truncated:
                 self.logger.logkv("return/train", train_return)
-                next_state, info = self.reset_env(self.train_env, self.seed)
+                next_state, info = reset_env(train_env, self.seed)
                 train_return = 0
 
             # evaluate
             if (t + 1) % eval_interval == 0:
-                eval_return = eval_policy(self.eval_env, self.reset_env, self, self.seed)
+                eval_return = eval_policy(eval_env, reset_env, self, self.seed)
                 self.logger.logkv("return/eval", eval_return)
 
-                # nni
-                if self.cfg["hpo"]:
-                    import nni
-                    nni.report_intermediate_result(eval_return)
-
                 if eval_return > best_return:
-                    self.save_model(join(self.checkpoint_dir, "best_model.pt"))
+                    self.save_model(join(self.logger.checkpoint_dir, "best_model.pt"))
                     best_return = eval_return
 
             # update time
@@ -138,19 +183,16 @@ class GAIL(ILPolicy):
             past_time += one_step_time
             if (t + 1) % self.cfg["log"]["print_time_interval"] == 0:
                 remain_time = one_step_time * (train_steps - t - 1)
-                self.logger.info(
+                self.logger.dump2log(
                     f"Run: {past_time/60} min, Remain: {remain_time/60} min"
                 )
 
             self.logger.dumpkvs()
 
-        if self.cfg["hpo"]:
-            nni.report_final_result(best_return)
-
     def update(self):
         self.log_info = dict()
 
-        if self.generator.trans_buffer.size >= self.algo_config["rollout_steps"]:
+        if self.generator.trans_buffer.size >= self.algo_cfg["rollout_steps"]:
             # update discriminator
             self._update_disc()
             # prepare reward
@@ -161,7 +203,7 @@ class GAIL(ILPolicy):
         return self.log_info
 
     def _update_disc(self):
-        for _ in range(self.algo_config["discriminator"]["n_update"]):
+        for _ in range(self.algo_cfg["discriminator"]["n_update"]):
             random.shuffle(self.idx)
             batches = list(
                 BatchSampler(self.idx, batch_size=self.batch_size, drop_last=False)

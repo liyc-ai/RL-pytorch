@@ -7,53 +7,51 @@ import torch.nn.functional as F
 from stable_baselines3.common.utils import polyak_update
 from torch import nn, optim
 
-from ilkit.algo.rl import OnlineRLPolicy
+from ilkit.algo.base import OnlineRLPolicy
 from ilkit.net.actor import MLPDeterministicActor
 from ilkit.net.critic import MLPTwinCritic
-from ilkit.util.ptu import (freeze_net, gradient_descent, move_device,
-                            tensor2ndarray)
+from ilkit.util.logger import BaseLogger
+from ilkit.util.ptu import freeze_net, gradient_descent, move_device, tensor2ndarray
 
 
 class TD3(OnlineRLPolicy):
     """Twin Delayed Deep Deterministic Policy Gradient (TD3)
     """
 
-    def __init__(self, cfg: Dict):
-        super().__init__(cfg)
+    def __init__(self, cfg: Dict, logger: BaseLogger):
+        super().__init__(cfg, logger)
 
-    def init_param(self):
+    def setup_model(self):
         # hyper-param
         self.entropy_target = -self.action_shape[0]
-        self.warmup_steps = self.algo_config["warmup_steps"]
-        self.env_steps = self.algo_config["env_steps"]
+        self.warmup_steps = self.algo_cfg["warmup_steps"]
+        self.env_steps = self.algo_cfg["env_steps"]
         self.total_train_it = 0
-        self.action_scale = th.Tensor(self.eval_env.action_space.high).to(self.device)
 
-    def init_component(self):
         # actor
         actor_kwarg = {
             "state_shape": self.state_shape,
-            "net_arch": self.algo_config["actor"]["net_arch"],
+            "net_arch": self.algo_cfg["actor"]["net_arch"],
             "action_shape": self.action_shape,
-            "activation_fn": getattr(nn, self.algo_config["actor"]["activation_fn"]),
+            "activation_fn": getattr(nn, self.algo_cfg["actor"]["activation_fn"]),
         }
         self.actor = MLPDeterministicActor(**actor_kwarg)
         self.actor_target = deepcopy(self.actor)
-        self.actor_optim = getattr(optim, self.algo_config["actor"]["optimizer"])(
-            self.actor.parameters(), self.algo_config["actor"]["lr"]
+        self.actor_optim = getattr(optim, self.algo_cfg["actor"]["optimizer"])(
+            self.actor.parameters(), self.algo_cfg["actor"]["lr"]
         )
 
         # critic
         critic_kwarg = {
-            "input_shape": (self.state_shape[0]+self.action_shape[0],),
-            "net_arch": self.algo_config["critic"]["net_arch"],
+            "input_shape": (self.state_shape[0] + self.action_shape[0],),
+            "net_arch": self.algo_cfg["critic"]["net_arch"],
             "output_shape": (1,),
-            "activation_fn": getattr(nn, self.algo_config["critic"]["activation_fn"]),
+            "activation_fn": getattr(nn, self.algo_cfg["critic"]["activation_fn"]),
         }
         self.critic = MLPTwinCritic(**critic_kwarg)
         self.critic_target = deepcopy(self.critic)
-        self.critic_optim = getattr(optim, self.algo_config["critic"]["optimizer"])(
-            self.critic.parameters(), self.algo_config["critic"]["lr"]
+        self.critic_optim = getattr(optim, self.algo_cfg["critic"]["optimizer"])(
+            self.critic.parameters(), self.algo_cfg["critic"]["lr"]
         )
 
         freeze_net((self.actor_target, self.critic_target))
@@ -73,14 +71,14 @@ class TD3(OnlineRLPolicy):
             }
         )
 
-    def get_action(
+    def select_action(
         self,
         state: Union[np.ndarray, th.Tensor],
         deterministic: bool,
         keep_dtype_tensor: bool,
         actor: nn.Module = None,
         **kwargs
-    ):
+    ) -> Union[th.Tensor, np.ndarray]:
         state = th.Tensor(state).to(self.device) if type(state) is np.ndarray else state
 
         if actor is None:
@@ -88,16 +86,16 @@ class TD3(OnlineRLPolicy):
         else:
             action = actor(state)
 
-        action = self.action_scale * th.tanh(action)
+        action = th.tanh(action)
 
         # add explore noise
         if not deterministic:
             noise = th.clamp(
-                th.randn_like(action) * (self.algo_config["sigma"] * self.action_scale),
-                -self.algo_config["c"],
-                self.algo_config["c"],
+                th.randn_like(action) * self.algo_cfg["sigma"],
+                -self.algo_cfg["c"],
+                self.algo_cfg["c"],
             )
-            action = th.clamp(action + noise, -self.action_scale, self.action_scale)
+            action = th.clamp(action + noise, -1.0, 1.0)
 
         if not keep_dtype_tensor:
             action, = tensor2ndarray((action,))
@@ -120,18 +118,18 @@ class TD3(OnlineRLPolicy):
             # update params
             for _ in range(self.env_steps):
                 self._update_critic(states, actions, next_states, rewards, dones)
-                if self.total_train_it % self.algo_config["policy_freq"] == 0:
+                if self.total_train_it % self.algo_cfg["policy_freq"] == 0:
                     self._update_actor(states)
 
                     polyak_update(
                         self.critic.parameters(),
                         self.critic_target.parameters(),
-                        self.algo_config["critic"]["tau"],
+                        self.algo_cfg["critic"]["tau"],
                     )
                     polyak_update(
                         self.actor.parameters(),
                         self.actor_target.parameters(),
-                        self.algo_config["actor"]["tau"],
+                        self.algo_cfg["actor"]["tau"],
                     )
 
         return self.log_info
@@ -145,7 +143,7 @@ class TD3(OnlineRLPolicy):
         dones: th.Tensor,
     ):
         with th.no_grad():
-            pred_next_actions = self.get_action(
+            pred_next_actions = self.select_action(
                 next_states,
                 deterministic=True,
                 keep_dtype_tensor=True,
@@ -162,7 +160,7 @@ class TD3(OnlineRLPolicy):
         )
 
     def _update_actor(self, states: th.Tensor):
-        pred_actions = self.get_action(
+        pred_actions = self.select_action(
             states, deterministic=True, keep_dtype_tensor=True
         )
         Q = self.critic(False, states, pred_actions)

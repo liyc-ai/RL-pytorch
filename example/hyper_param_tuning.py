@@ -1,5 +1,6 @@
 import os
 from os.path import join
+from typing import Dict
 
 import hydra
 from omegaconf import DictConfig, OmegaConf
@@ -7,11 +8,21 @@ from stable_baselines3.common.utils import set_random_seed
 
 import ilkit
 from ilkit.util.env import get_env_info, make_env, reset_env
-from ilkit.util.logger import setup_logger
 from ilkit.util.ptu import clean_cuda, set_torch
 
-# get global work dir
+# get global working dir
 WORK_DIR = os.getcwd()
+
+
+def nni_optim_fn(cfg: Dict):
+    """For nni, DQN example
+    """
+    import nni
+
+    optimized_param = nni.get_next_parameter()
+    cfg["agent"]["buffer_size"] = optimized_param["buffer_size"]
+    cfg["agent"]["gamma"] = optimized_param["gamma"]
+    cfg["agent"]["QNet"]["lr"] = optimized_param["lr"]
 
 
 @hydra.main(
@@ -29,18 +40,14 @@ def main(cfg: DictConfig):
     train_env, eval_env = (make_env(cfg["env"]["id"]), make_env(cfg["env"]["id"]))
     cfg["env"].update(get_env_info(eval_env))
 
-    # setup logger
-    logger = setup_logger(cfg)
+    # hyper-param optimization
+    nni_optim_fn(cfg)
 
     # create agent
-    agent = ilkit.make(cfg, logger)
-    agent.load_model()
+    agent = ilkit.make(cfg)
 
     # train agent
     agent.learn(train_env, eval_env, reset_env)
-
-    # save model
-    agent.save_model(join(getattr(logger, "checkpoint_dir"), "final_model.pt"))
 
 
 if __name__ == "__main__":

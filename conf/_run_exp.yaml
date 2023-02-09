@@ -1,37 +1,41 @@
-root_dir: 
+work_dir:
 seed: 3407
-device: "cuda:0"
+device: cuda:0
 description: ""
 
 # env:
 env:
   id: Hopper-v4
-  train:
-  eval:
-  reset_env:
-  state_shape: 
-  action_shape: 
-  action_dtype: 
+  state_shape:
+  action_shape:
+  action_dtype:
 
-# nni
-hpo: false  # hyper-parameter optimization
+# hyper-parameter fine-tuning
+hpf: false
 
 # Note: All paths below are absolute paths or relative paths to project dir
 model_path: ""
 
 # log
 log:
-  setup_log: true
-  rla_config: conf/_rla_config.yaml
-  log_dir: logs
-  task_name: ilkit_example
-  print_time_interval: 100
-  backup_file:
-    - example/train_agent.py
+  logger_type: tensorboard
+  setup_logger: true
+  print_time_interval: 10_000
   record_param:
     - seed
     - agent.algo
     - env.id
+  run_file:
+    - example/train_agent.py
+  project: ilkit_example
+  # below is sepcific to TBLogger
+  backup_code_dir:
+  # below is specific to RLALogger
+  rla_config: conf/_rla_config.yaml
+  # below is specific to wandb
+  up2cloud: false
+  api_key_file: conf/_wandb_info.yaml  #! remember to create this
+  entity:  # group name
 
 # train
 train:
@@ -43,12 +47,12 @@ train:
 collect:
   n_traj: 0
   n_step: 1000_000
-  save_dir: ckpt
+  save_dir: data
   save_name: ""
 
 # imitation learning
 expert_dataset:
-  dataset_file_path: "ckpt/cartpole_expert-v1.hdf5"
+  dataset_file_path: # data/cartpole-v1_expert.hdf5
   d4rl_env_id: # hopper-expert-v2
   n_expert_traj: 10
 

@@ -9,6 +9,7 @@ from torch.utils.data import BatchSampler
 
 from ilkit.algo.il.gail import GAIL
 from ilkit.net.critic import MLPCritic
+from ilkit.util.logger import BaseLogger
 from ilkit.util.ptu import gradient_descent, move_device
 
 
@@ -16,21 +17,22 @@ class AIRL(GAIL):
     """Learning Robust Rewards with Adversarial Inverse Reinforcement Learning (AIRL)
     """
 
-    def __init__(self, cfg: Dict):
-        super().__init__(cfg)
+    def __init__(self, cfg: Dict, logger: BaseLogger):
+        super().__init__(cfg, logger)
 
-    def init_param(self):
-        self.batch_size = self.algo_config["batch_size"]
-        self.idx = list(range(self.algo_config["rollout_steps"]))
-        self.gamma = self.algo_config["gamma"]
+    def setup_model(self):
+        super().setup_model()
+
+        # hyper-param
+        self.gamma = self.algo_cfg["gamma"]
 
     def _init_disc(self):
         g_kwarg = {
-            "input_shape": (self.state_shape[0]+self.action_shape[0],),
+            "input_shape": (self.state_shape[0] + self.action_shape[0],),
             "output_shape": (1,),
-            "net_arch": self.algo_config["discriminator"]["g"]["net_arch"],
+            "net_arch": self.algo_cfg["discriminator"]["g"]["net_arch"],
             "activation_fn": getattr(
-                nn, self.algo_config["discriminator"]["g"]["activation_fn"]
+                nn, self.algo_cfg["discriminator"]["g"]["activation_fn"]
             ),
         }
         self.g = MLPCritic(**g_kwarg)
@@ -38,18 +40,18 @@ class AIRL(GAIL):
         h_kwarg = {
             "input_shape": self.state_shape,
             "output_shape": (1,),
-            "net_arch": self.algo_config["discriminator"]["h"]["net_arch"],
+            "net_arch": self.algo_cfg["discriminator"]["h"]["net_arch"],
             "activation_fn": getattr(
-                nn, self.algo_config["discriminator"]["h"]["activation_fn"]
+                nn, self.algo_cfg["discriminator"]["h"]["activation_fn"]
             ),
         }
         self.h = MLPCritic(**h_kwarg)
 
         move_device((self.g, self.h), self.device)
 
-        self.disc_optim = getattr(optim, self.algo_config["discriminator"]["optimizer"])(
+        self.disc_optim = getattr(optim, self.algo_cfg["discriminator"]["optimizer"])(
             chain(self.g.parameters(), self.h.parameters()),
-            self.algo_config["discriminator"]["lr"],
+            self.algo_cfg["discriminator"]["lr"],
         )
 
         self.models.update({"g": self.g, "h": self.h, "disc_optim": self.disc_optim})
@@ -67,11 +69,11 @@ class AIRL(GAIL):
             - self.h(state)
         )
         with th.no_grad():
-            _, log_prob = self.generator._get_action_dist(state, action)
+            _, log_prob = self.generator._select_action_dist(state, action)
         return f - log_prob
 
     def _update_disc(self):
-        for _ in range(self.algo_config["discriminator"]["n_update"]):
+        for _ in range(self.algo_cfg["discriminator"]["n_update"]):
             random.shuffle(self.idx)
             batches = list(
                 BatchSampler(self.idx, batch_size=self.batch_size, drop_last=False)

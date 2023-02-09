@@ -8,14 +8,14 @@ from torch import nn, optim
 from torch.autograd import grad
 from torch.distributions.kl import kl_divergence
 from torch.distributions.normal import Normal
-from torch.nn.utils.convert_parameters import (parameters_to_vector,
-                                               vector_to_parameters)
+from torch.nn.utils.convert_parameters import parameters_to_vector, vector_to_parameters
 from torch.utils.data import BatchSampler
 
-from ilkit.algo.rl import OnlineRLPolicy
+from ilkit.algo.base import OnlineRLPolicy
 from ilkit.net.actor import MLPGaussianActor
 from ilkit.net.critic import MLPCritic
 from ilkit.util.drls import GAE
+from ilkit.util.logger import BaseLogger
 from ilkit.util.ptu import gradient_descent, move_device
 
 
@@ -23,39 +23,38 @@ class TRPO(OnlineRLPolicy):
     """Trust Region Policy Optimization (TRPO)
     """
 
-    def __init__(self, cfg: Dict):
-        super().__init__(cfg)
+    def __init__(self, cfg: Dict, logger: BaseLogger):
+        super().__init__(cfg, logger)
 
-    def init_param(self):
+    def setup_model(self):
         # hyper-param
-        self.lambda_ = self.algo_config["lambda_"]
+        self.lambda_ = self.algo_cfg["lambda_"]
 
-        # conjugate gradient
-        self.residual_tol = self.algo_config["residual_tol"]
-        self.cg_steps = self.algo_config["cg_steps"]
-        self.damping = self.algo_config["damping"]
+        ## conjugate gradient
+        self.residual_tol = self.algo_cfg["residual_tol"]
+        self.cg_steps = self.algo_cfg["cg_steps"]
+        self.damping = self.algo_cfg["damping"]
 
-        # line search
-        self.beta = self.algo_config["beta"]
-        self.max_backtrack = self.algo_config["max_backtrack"]
-        self.accept_ratio = self.algo_config["accept_ratio"]
-        self.delta = self.algo_config["delta"]
+        ## line search
+        self.beta = self.algo_cfg["beta"]
+        self.max_backtrack = self.algo_cfg["max_backtrack"]
+        self.accept_ratio = self.algo_cfg["accept_ratio"]
+        self.delta = self.algo_cfg["delta"]
 
-    def init_component(self):
         # GAE
         self.gae = GAE(
             self.gamma,
             self.lambda_,
-            self.algo_config["norm_adv"],
-            self.algo_config["use_td_lambda"],
+            self.algo_cfg["norm_adv"],
+            self.algo_cfg["use_td_lambda"],
         )
 
         # actor
         actor_kwarg = {
             "state_shape": self.state_shape,
-            "net_arch": self.algo_config["actor"]["net_arch"],
+            "net_arch": self.algo_cfg["actor"]["net_arch"],
             "action_shape": self.action_shape,
-            "activation_fn": getattr(nn, self.algo_config["actor"]["activation_fn"]),
+            "activation_fn": getattr(nn, self.algo_cfg["actor"]["activation_fn"]),
         }
         self.actor = MLPGaussianActor(**actor_kwarg)
 
@@ -63,12 +62,12 @@ class TRPO(OnlineRLPolicy):
         value_net_kwarg = {
             "input_shape": self.state_shape,
             "output_shape": (1,),
-            "net_arch": self.algo_config["value_net"]["net_arch"],
-            "activation_fn": getattr(nn, self.algo_config["value_net"]["activation_fn"]),
+            "net_arch": self.algo_cfg["value_net"]["net_arch"],
+            "activation_fn": getattr(nn, self.algo_cfg["value_net"]["activation_fn"]),
         }
         self.value_net = MLPCritic(**value_net_kwarg)
-        self.value_net_optim = getattr(optim, self.algo_config["value_net"]["optimizer"])(
-            self.value_net.parameters(), self.algo_config["value_net"]["lr"]
+        self.value_net_optim = getattr(optim, self.algo_cfg["value_net"]["optimizer"])(
+            self.value_net.parameters(), self.algo_cfg["value_net"]["lr"]
         )
 
         move_device((self.actor, self.value_net), self.device)
@@ -81,14 +80,14 @@ class TRPO(OnlineRLPolicy):
             }
         )
 
-    def get_action(
+    def select_action(
         self,
         state: np.ndarray,
         deterministic: bool,
         keep_dtype_tensor: bool,
         return_log_prob: bool,
         **kwarg
-    ) -> Union[th.Tensor, np.ndarray]:
+    ) -> Union[Tuple[th.Tensor, th.Tensor], th.Tensor, np.ndarray]:
 
         return self.actor.sample(
             state, deterministic, keep_dtype_tensor, return_log_prob, self.device
@@ -96,7 +95,7 @@ class TRPO(OnlineRLPolicy):
 
     def update(self) -> Dict:
         self.log_info = dict()
-        if self.trans_buffer.size >= self.algo_config["rollout_steps"]:
+        if self.trans_buffer.size >= self.algo_cfg["rollout_steps"]:
             states, actions, next_states, rewards, dones = self.trans_buffer.buffers
 
             # get advantage
@@ -113,7 +112,7 @@ class TRPO(OnlineRLPolicy):
 
     def _update_value_net(self, states: th.Tensor, Rs: th.Tensor) -> float:
         idx = list(range(self.trans_buffer.size))
-        for _ in range(self.algo_config["value_net"]["n_update"]):
+        for _ in range(self.algo_cfg["value_net"]["n_update"]):
             random.shuffle(idx)
             batches = list(
                 BatchSampler(idx, batch_size=self.batch_size, drop_last=False)
@@ -132,7 +131,7 @@ class TRPO(OnlineRLPolicy):
         )
 
         ## pg
-        action_dist, log_probs = self._get_action_dist(states, actions)
+        action_dist, log_probs = self._select_action_dist(states, actions)
         old_action_dist = Normal(
             action_dist.loc.data.clone(), action_dist.scale.data.clone()
         )
@@ -163,7 +162,7 @@ class TRPO(OnlineRLPolicy):
                     original_actor_param + step, self.actor.parameters()
                 )
                 try:
-                    new_action_dist, new_log_probs = self._get_action_dist(
+                    new_action_dist, new_log_probs = self._select_action_dist(
                         states, actions
                     )
                 except:
@@ -187,7 +186,7 @@ class TRPO(OnlineRLPolicy):
             self.actor.parameters(),
         )
 
-    def _get_action_dist(
+    def _select_action_dist(
         self, states: th.Tensor, actions: th.Tensor
     ) -> Tuple[Normal, th.Tensor]:
         action_mean, action_std = self.actor(states)

@@ -1,6 +1,8 @@
 # ilkit
 Imitation Learning (IL) and Deep Reinforcement Learning (RL) with PyTorch.
 
+**Status**: Under development, and there may be some bugs. Welcome to issues, bug reports and PRs!
+
 ## Installation
 
 ```bash
@@ -9,7 +11,9 @@ cd ilkit
 pip install -e .
 ```
 
-### D4RL (optional)
+### Optional
+
+#### D4RL
 
 We support to load offline (expert) data from the [D4RL](https://github.com/Farama-Foundation/D4RL) benchmark.
 ```bash
@@ -18,7 +22,20 @@ cd d4rl
 pip install -e .
 ```
 
-### RLAssistant
+#### nni
+We support to use [nni](https://github.com/microsoft/nni) to auto-tune hyperparameters.
+
+```bash
+pip install nni
+```
+
+#### wandb
+
+```
+pip install wandb
+```
+
+#### RLAssistant
 
 We use [RLAssistant](https://github.com/polixir/RLAssistant) to manage experiments.
 
@@ -28,7 +45,7 @@ cd RLAssistant
 python install -e .
 ```
 
-## SmartLogger (optional)
+#### SmartLogger
 
 We support to view the experiment result in front page via [SmartLogger](https://github.com/FanmingL/SmartLogger)
 
@@ -36,13 +53,6 @@ We support to view the experiment result in front page via [SmartLogger](https:/
 git clone https://github.com/FanmingL/SmartLogger.git
 cd SmartLogger
 pip install -e .
-```
-
-### nni (optional)
-We (optionally) use [nni](https://github.com/microsoft/nni) to auto-tune hyperparameters.
-
-```bash
-pip install nni
 ```
 
 ## Implemented Algorithms
@@ -66,10 +76,10 @@ Welcome to make PRs on new algorithm implementations :) .
 - [x] A Reduction of Imitation Learning and Structured Prediction to No-Regret Online Learning (DAgger, for both continuous and discrete action space) [[paper](https://www.ri.cmu.edu/pub_files/2011/4/Ross-AISTATS11-NoRegret.pdf)] 
 - [x] Generative Adversarial Imitation Learning (GAIL) [[paper](https://arxiv.org/pdf/1606.03476.pdf)] [[official code](https://github.com/openai/imitation)]
 - [x] Learning Robust Rewards with Adversarial Inverse Reinforcement Learning (AIRL) [[paper](https://arxiv.org/pdf/1710.11248.pdf)]
-- [ ] Discriminator-Actor-Critic: Addressing Sample Inefficiency and Reward Bias in Adversarial Imitation Learning (DAC) [[paper](https://arxiv.org/pdf/1809.02925.pdf)] [[official code](https://github.com/google-research/google-research/tree/master/dac)]
-- [ ] Imitation Learning via Off-Policy Distribution Matching (ValueDICE) [[paper](https://arxiv.org/pdf/1912.05032.pdf)] [[official code](https://github.com/google-research/google-research/tree/master/value_dice)]
-- [ ] InfoGAIL: Interpretable Imitation Learning from Visual Demonstrations (InfoGAIL) [[paper](https://arxiv.org/pdf/1703.08840.pdf)] [[official code](https://github.com/YunzhuLi/InfoGAIL)]
 - [ ] IQ-Learn: Inverse soft-Q Learning for Imitation (IQ-Learn, for both continuous and discrete action space) [[paper](https://arxiv.org/pdf/2106.12142.pdf)] [[official code](https://github.com/Div99/IQ-Learn)]
+- [ ] InfoGAIL: Interpretable Imitation Learning from Visual Demonstrations (InfoGAIL) [[paper](https://arxiv.org/pdf/1703.08840.pdf)] [[official code](https://github.com/YunzhuLi/InfoGAIL)]
+- [ ] Imitation Learning via Off-Policy Distribution Matching (ValueDICE) [[paper](https://arxiv.org/pdf/1912.05032.pdf)] [[official code](https://github.com/google-research/google-research/tree/master/value_dice)]
+- [ ] Discriminator-Actor-Critic: Addressing Sample Inefficiency and Reward Bias in Adversarial Imitation Learning (DAC) [[paper](https://arxiv.org/pdf/1809.02925.pdf)] [[official code](https://github.com/google-research/google-research/tree/master/dac)]
 
 ## Run Experiments
 
@@ -77,26 +87,28 @@ Welcome to make PRs on new algorithm implementations :) .
 
 ```bash
 # RL
-python example/train_agent.py agent=rl/ppo env.id=Hopper-v4 agent.gamma=0.99
+python example/train_agent.py agent=rl/ppo env.id=Hopper-v4
 
 # IL
-python example/train_agent.py agent=il/gail env.id=Hopper-v4
+python example/train_agent.py agent=il/gail env.id=Hopper-v4 expert_dataset.d4rl_env_id=hopper-expert-v2
 ```
+
+By default, the results are stored at the `logs` dir.
 
 ### Collect demonstrations
 
 ```bash
-python example/collect_demo.py agent=rl/sac env.id=Hopper-v4 model_path=ckpt/sac_hopper.pt
+python example/collect_demo.py agent=rl/sac env.id=Hopper-v4 model_path=data/sac_hopper.pt
 ```
 
-## Hyper-parameter Fine-Tuning
+### Hyper-parameter Fine-Tuning
 
-Remember to specify your `nni_optim_fn` function.
+Remember to specify your `nni_optim_fn` function in `example/hyper_param_tuning.py`.
 
 ```bash
 pip install nni
 # start to fine tune hyper parameters
-nnictl create -c config/_hyper_param_tuning.yaml -p 8080
+nnictl create -c conf/_hyper_param_tuning.yaml -p 8080
 
 # stop to fine tune hyper parameters
 nnictl stop --all
@@ -109,48 +121,12 @@ nnictl view [--port PORT] [--experiment_dir EXPERIMENT_DIR] id
 
 Then, watch the results at `http://localhost:8080`; if you want to stop the experiment, please use command `nnictl stop [Experiment ID]`. For more commands, please see [the official documentation](https://nni.readthedocs.io/en/stable/reference/nnictl.html).
 
-## Process the Experimental Results
+## TODO
 
-Basically, we could use `tensorboard` to view the experiment logs.
-
-```
-tensorboard --logdir ./logs/log
-
-# or, log multiple dirs,
-# NOT recommended, because there may be some bugs associated with TF
-tensorboard --logdir_spec run:./logs/log,arc:./benchmark/log
-```
-
-[RLAssistant](https://github.com/xionghuichen/RLAssistant) also support multiple ways to process the experimental results.
-
-1. Delete unwanted results
-
-```bash
-python -m rla.delete_expt --data_root logs --task_table_name ilkit_example --reg '2022/10*'
-```
-
-2. Archive experiments
-
-```bash
-python -m rla.archive_expt --data_root logs --task_table_name ilkit_example --reg '2022/10*'
-```
-
-3. View experiment config
-
-```bash
-python -m rla.view_expt --data_root logs --task_table_name ilkit_example --reg '2022/10*'
-```
-
-4. View the experimental results in front page
-
-```bash
-python -m rla_scripts.start_pretty_plotter --data_root logs --task_table_name ilkit_example --regex "2022/11*"
-
-# check the port occupancy
-lsof -i:7005
-```
-
-Your could also use `rla_scripts/plot.ipynb` to plot the results.
+- [x] Support nni
+- [ ] Support the `__target__` usage of Hydra
+- [ ] Support parallel sampling
+- [ ] Support Ray for distributional traning
 
 ## Acknowledgement
 During implementing the IL and RL algorithms, a lot of classic open-source materials on the Internet served as good references. And I highly appreciate their author's effort. Below is a detailed list. By the way, thanks to my friends from [LAMDA-RL](https://github.com/LAMDA-RL) for their helpful discussions.
@@ -178,6 +154,7 @@ During implementing the IL and RL algorithms, a lot of classic open-source mater
 + [TD3](https://github.com/sfujim/TD3)
 + [pytorch-trpo](https://github.com/ikostrikov/pytorch-trpo)
 + [Code-for-Error-Bounds-of-Imitating-Policies-and-Environments](https://github.com/tianxusky/Code-for-Error-Bounds-of-Imitating-Policies-and-Environments)
++ [IQ-Learn](https://github.com/Div99/IQ-Learn)
 
 **Blog**
 

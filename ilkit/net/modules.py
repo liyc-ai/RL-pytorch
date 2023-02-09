@@ -8,6 +8,7 @@ from torch import nn
 def variable(shape: Tuple[int, ...]):
     return nn.Parameter(th.zeros(shape), requires_grad=True)
 
+
 def mlp(
     input_shape: Tuple[int,],
     output_shape: Tuple[int,],
@@ -21,14 +22,16 @@ def mlp(
     # output feature dimension
     if output_shape[0] == -1:
         if len(net_arch) > 0:
-            feature_shape = (net_arch[-1],0)
+            feature_shape = (net_arch[-1], 0)
         else:
             raise ValueError("Empty MLP!")
     else:
         feature_shape = output_shape
     # networks
     net = nn.Sequential(
-        *create_mlp(input_shape[0], output_shape[0], net_arch, activation_fn, squash_output)
+        *create_mlp(
+            input_shape[0], output_shape[0], net_arch, activation_fn, squash_output
+        )
     )
     return net, feature_shape
 
@@ -49,7 +52,7 @@ def cnn(
         module = [nn.Conv2d(input_channel, *net_arch[0]), activation_fn()]
     else:
         raise ValueError("Empty CNN!")
-    
+
     # parse modules
     for i in range(1, len(net_arch)):
         module.append(nn.Conv2d(net_arch[i - 1][0], *net_arch[i]))

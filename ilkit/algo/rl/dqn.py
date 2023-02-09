@@ -6,8 +6,9 @@ import torch as th
 import torch.nn.functional as F
 from torch import nn, optim
 
-from ilkit.algo.rl import OnlineRLPolicy
+from ilkit.algo.base import OnlineRLPolicy
 from ilkit.net.critic import MLPCritic
+from ilkit.util.logger import BaseLogger
 from ilkit.util.ptu import freeze_net, gradient_descent, move_device
 
 
@@ -15,26 +16,26 @@ class DQN(OnlineRLPolicy):
     """Deep Q Networks (DQN)
     """
 
-    def __init__(self, cfg: Dict):
-        super().__init__(cfg)
+    def __init__(self, cfg: Dict, logger: BaseLogger):
+        super().__init__(cfg, logger)
 
-    def init_param(self):
+    def setup_model(self):
         # hyper-param
-        self.target_update_freq = self.algo_config["target_update_freq"]
-        self.epsilon = self.algo_config["epsilon"]
+        self.target_update_freq = self.algo_cfg["target_update_freq"]
+        self.epsilon = self.algo_cfg["epsilon"]
+        self.global_t = 0
 
-    def init_component(self):
         # Q network
         q_net_kwarg = {
             "input_shape": self.state_shape,
             "output_shape": self.action_shape,
-            "net_arch": self.algo_config["QNet"]["net_arch"],
-            "activation_fn": getattr(nn, self.algo_config["QNet"]["activation_fn"]),
+            "net_arch": self.algo_cfg["QNet"]["net_arch"],
+            "activation_fn": getattr(nn, self.algo_cfg["QNet"]["activation_fn"]),
         }
         self.q_net = MLPCritic(**q_net_kwarg)
         self.q_net_target = deepcopy(self.q_net)
-        self.q_net_optim = getattr(optim, self.algo_config["QNet"]["optimizer"])(
-            self.q_net.parameters(), self.algo_config["QNet"]["lr"]
+        self.q_net_optim = getattr(optim, self.algo_cfg["QNet"]["optimizer"])(
+            self.q_net.parameters(), self.algo_cfg["QNet"]["lr"]
         )
 
         freeze_net((self.q_net_target,))
@@ -48,15 +49,15 @@ class DQN(OnlineRLPolicy):
             }
         )
 
-    def get_action(
+    def select_action(
         self,
         state: Union[np.ndarray, th.Tensor],
         deterministic: bool,
         keep_dtype_tensor: bool,
         **kwarg
-    ) -> Union[Tuple[th.Tensor, th.Tensor], th.Tensor]:
+    ) -> Union[th.Tensor, np.ndarray]:
         if not deterministic and np.random.random() < self.epsilon:
-            return self.train_env.action_space.sample()
+            return kwarg["action_space"].sample()
         with th.no_grad():
             state = (
                 th.Tensor(state).to(self.device) if type(state) is np.ndarray else state
@@ -80,6 +81,7 @@ class DQN(OnlineRLPolicy):
     def update(self) -> Dict:
         self.log_info = dict()
         if self.trans_buffer.size >= self.batch_size:
+            self.global_t += 1
             states, actions, next_states, rewards, dones = self.trans_buffer.sample(
                 self.batch_size, shuffle=True
             )

@@ -6,7 +6,6 @@ import torch as th
 
 # from GPUtil import showUtilization as gpu_usage
 from numba import cuda
-from stable_baselines3.common.torch_layers import create_mlp
 from torch import nn
 from torch.optim import Optimizer
 
@@ -44,17 +43,26 @@ def tensor2ndarray(tensors: Tuple[th.Tensor]):
 # ------------------- Manipulate NN Module ----------------------
 
 
-def move_device(nets: List[th.nn.Module], device: Union[str, th.device]):
+def move_device(modules: List[th.nn.Module], device: Union[str, th.device]):
     """Move net to specified device
     """
-    for net in nets:
-        net.to(device)
+    for module in modules:
+        module.to(device)
 
 
 def freeze_net(nets: List[nn.Module]):
     for net in nets:
         for p in net.parameters():
             p.requires_grad = False
+
+
+# ------------------ Initialization ----------------------------
+def orthogonal_init_(m):
+    """Custom weight init for Conv2D and Linear layers."""
+    if isinstance(m, nn.Linear) or isinstance(m, nn.Conv2d):
+        nn.init.orthogonal_(m.weight.data)
+        if hasattr(m.bias, "data"):
+            m.bias.data.fill_(0.0)
 
 
 # ------------------ Regularization -----------------------------
@@ -89,11 +97,12 @@ def gradient_descent(
     loss: th.Tensor,
     parameters: Union[th.Tensor, Iterable[th.Tensor]] = None,
     max_grad_norm: float = None,
+    retain_graph: bool = False,
 ):
     """Update network parameters with gradient descent.
     """
     net_optim.zero_grad()
-    loss.backward()
+    loss.backward(retain_graph=retain_graph)
 
     # gradient clip
     if all([parameters, max_grad_norm]):

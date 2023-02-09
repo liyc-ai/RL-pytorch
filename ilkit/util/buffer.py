@@ -15,8 +15,8 @@ class TransitionBuffer:
 
     def __init__(
         self,
-        state_shape: Tuple[int,...],
-        action_shape: Tuple[int,...],
+        state_shape: Tuple[int, ...],
+        action_shape: Tuple[int, ...],
         action_dtype: Union[np.int64, np.float32],
         device: Union[str, th.device],
         buffer_size: int = -1,
@@ -25,8 +25,14 @@ class TransitionBuffer:
         """
         self.state_shape = state_shape
         self.action_shape = action_shape
-        assert action_dtype in [np.int64, np.float32], "Unsupported action dtype!"
-        self.action_dtype = action_dtype  # np.int64 or np.float32
+
+        if action_dtype == "int":
+            self.action_dtype = np.int64
+        elif action_dtype == "float":
+            self.action_dtype = np.float32
+        else:
+            raise ValueError("Unsupported action dtype!")
+
         self.device = device
         self.buffer_size = buffer_size if buffer_size != -1 else sys.maxsize
         self.clear()
@@ -42,11 +48,12 @@ class TransitionBuffer:
         # state
         state, next_state = (np.array(_, dtype=np.float32) for _ in [state, next_state])
         # action
-        if self.action_dtype == np.int64:action = [action]
+        if self.action_dtype == np.int64:
+            action = [action]
         action = np.array(action, dtype=self.action_dtype)
         # reward and done
         reward, done = (np.array([_], dtype=np.float32) for _ in [reward, done])
-            
+
         new_transition = [state, action, next_state, reward, done]
         new_transition = [th.tensor(item).to(self.device) for item in new_transition]
 
@@ -106,14 +113,14 @@ class TransitionBuffer:
 
     def clear(self):
         # unlike some popular implementations, we start with an empty buffer located in self.device (may be gpu)
-        
+
         state_shape = (0,) + self.state_shape
-        
+
         if self.action_dtype == np.int64:
             action_shape = (0, 1)
         else:
             action_shape = (0,) + self.action_shape
-        
+
         self.buffers = [
             th.zeros(state_shape),  # state_buffer
             th.tensor(np.zeros(action_shape, dtype=self.action_dtype)),  # action_buffer
@@ -134,8 +141,8 @@ class DAggerBuffer:
 
     def __init__(
         self,
-        state_shape: Tuple[int,...],
-        action_shape: Tuple[int,...],
+        state_shape: Tuple[int, ...],
+        action_shape: Tuple[int, ...],
         action_dtype: Union[np.int64, np.float32],
         device: Union[str, th.device],
         buffer_size: int = -1,
@@ -144,8 +151,14 @@ class DAggerBuffer:
         """
         self.state_shape = state_shape
         self.action_shape = action_shape
-        assert action_dtype in [np.int64, np.float32], "Unsupported action dtype!"
-        self.action_dtype = action_dtype
+
+        if action_dtype == "int":
+            self.action_dtype = np.int64
+        elif action_dtype == "float":
+            self.action_dtype = np.float32
+        else:
+            raise ValueError("Unsupported action dtype!")
+
         self.device = device
         self.buffer_size = buffer_size if buffer_size != -1 else sys.maxsize
         self.clear()
@@ -154,7 +167,8 @@ class DAggerBuffer:
 
         state = np.array(state, dtype=np.float32)
 
-        if self.action_dtype == np.int64: action = [action]
+        if self.action_dtype == np.int64:
+            action = [action]
         action = np.array(action, dtype=self.action_dtype)
 
         new_transition = [state, action]
@@ -200,13 +214,13 @@ class DAggerBuffer:
             action_shape = (0, 1)
         else:
             action_shape = (0,) + self.action_shape
-        
+
         self.buffers = [
             th.zeros(state_shape),  # state_buffer
             th.tensor(np.zeros(action_shape, dtype=self.action_dtype)),  # action_buffer
         ]
         self.buffers = [item.to(self.device) for item in self.buffers]
-        
+
         self.ptr = 0
         self.size = 0
         self.total_size = 0  # Number of all the pushed items

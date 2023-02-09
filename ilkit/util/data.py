@@ -1,14 +1,15 @@
 import random
 from os.path import join
-from typing import Dict
+from typing import Callable, Dict
 
 import gym
 import h5py
 import numpy as np
 import torch as th
+from RLA import logger
 from tqdm import tqdm
 
-from ilkit.algo import BasePolicy
+from ilkit.algo.base import BasePolicy
 from ilkit.util.buffer import TransitionBuffer
 
 
@@ -23,6 +24,8 @@ class DataHandler:
     def collect_demo(
         self,
         expert: BasePolicy,
+        env: gym.Env,
+        reset_env: Callable,
         n_traj: int = 0,
         n_step: int = 0,
         save_dir: str = None,
@@ -37,26 +40,26 @@ class DataHandler:
         collected_steps, collected_n_traj = 0, 0
         expert_data = self._get_dataset_holder(save_log_prob)
 
-        next_obs, _ = expert.eval_env.reset(seed=self.seed)
+        next_obs, _ = reset_env(env, self.seed)
         while collected_n_traj < n_traj or collected_steps < n_step:
             collected_steps += 1
 
             obs = next_obs
             if save_log_prob:
-                action, log_prob = expert.get_action(
+                action, log_prob = expert.select_action(
                     obs,
                     keep_dtype_tensor=False,
                     deterministic=True,
                     return_log_prob=True,
                 )
             else:
-                action = expert.get_action(
+                action = expert.select_action(
                     obs,
                     keep_dtype_tensor=False,
                     deterministic=True,
                     return_log_prob=False,
                 )
-            next_obs, reward, terminated, truncated, _ = expert.eval_env.step(action)
+            next_obs, reward, terminated, truncated, _ = env.step(action)
 
             # insert
             expert_data["observations"].append(obs)
@@ -70,7 +73,7 @@ class DataHandler:
                 expert_data["infos/action_log_probs"].append(log_prob)
 
             if terminated or truncated:
-                next_obs, _ = expert.eval_env.reset(seed=self.seed)
+                next_obs, _ = reset_env(env, self.seed)
                 collected_n_traj += 1
 
         dataset = {}
@@ -101,9 +104,9 @@ class DataHandler:
     def parse_dataset(
         self, dataset_file_path: str = None, d4rl_env_id: str = None
     ) -> Dict:
-        if d4rl_env_id != "":
+        if d4rl_env_id is not None:
             return self.load_d4rl_dataset(d4rl_env_id)
-        elif dataset_file_path != "":
+        elif dataset_file_path is not None:
             return self.load_own_dataset(dataset_file_path)
         else:
             raise ValueError("You must specify the expert dataset!")
@@ -207,3 +210,28 @@ class DataHandler:
 
         h5file.visititems(visitor)
         return keys
+
+
+def load_expert_dataset(
+    seed: int,
+    expert_buffer_param: Dict,
+    n_expert_traj: int,
+    dataset_file_path: str = None,
+    d4rl_env_id: str = None,
+) -> TransitionBuffer:
+    """Load expert dataset into TransitionBuffer
+    """
+    # instantiate data handler
+    expert_data_handler = DataHandler(seed)
+
+    # get expert dataset
+    if d4rl_env_id is not None and dataset_file_path is not None:
+        logger.warn(
+            "User's own dataset and D4RL dataset are both specified, but we will ignore user's dataset"
+        )
+    expert_dataset = expert_data_handler.parse_dataset(dataset_file_path, d4rl_env_id)
+    expert_buffer = TransitionBuffer(**expert_buffer_param)
+    expert_data_handler.load_dataset_to_buffer(
+        expert_dataset, expert_buffer, n_expert_traj
+    )
+    return expert_buffer

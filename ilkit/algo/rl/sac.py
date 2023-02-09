@@ -8,61 +8,60 @@ import torch.nn.functional as F
 from stable_baselines3.common.utils import polyak_update
 from torch import nn, optim
 
-from ilkit.algo.rl import OnlineRLPolicy
+from ilkit.algo.base import OnlineRLPolicy
 from ilkit.net.actor import MLPGaussianActor
 from ilkit.net.critic import MLPTwinCritic
-from ilkit.util.ptu import (freeze_net, gradient_descent, move_device,
-                            tensor2ndarray)
+from ilkit.util.logger import BaseLogger
+from ilkit.util.ptu import freeze_net, gradient_descent, move_device, tensor2ndarray
 
 
 class SAC(OnlineRLPolicy):
     """Soft Actor Critic (SAC)
     """
 
-    def __init__(self, cfg: Dict):
-        super().__init__(cfg)
+    def __init__(self, cfg: Dict, logger: BaseLogger):
+        super().__init__(cfg, logger)
 
-    def init_param(self):
+    def setup_model(self):
         # hyper-param
         self.entropy_target = -self.action_shape[0]
-        self.warmup_steps = self.algo_config["warmup_steps"]
-        self.env_steps = self.algo_config["env_steps"]
+        self.warmup_steps = self.algo_cfg["warmup_steps"]
+        self.env_steps = self.algo_cfg["env_steps"]
 
-    def init_component(self):
         # actor
         actor_kwarg = {
             "state_shape": self.state_shape,
-            "net_arch": self.algo_config["actor"]["net_arch"],
+            "net_arch": self.algo_cfg["actor"]["net_arch"],
             "action_shape": self.action_shape,
-            "state_std_independent": self.algo_config["actor"]["state_std_independent"],
-            "activation_fn": getattr(nn, self.algo_config["actor"]["activation_fn"]),
+            "state_std_independent": self.algo_cfg["actor"]["state_std_independent"],
+            "activation_fn": getattr(nn, self.algo_cfg["actor"]["activation_fn"]),
         }
         self.actor = MLPGaussianActor(**actor_kwarg)
-        self.actor_optim = getattr(optim, self.algo_config["actor"]["optimizer"])(
-            self.actor.parameters(), self.algo_config["actor"]["lr"]
+        self.actor_optim = getattr(optim, self.algo_cfg["actor"]["optimizer"])(
+            self.actor.parameters(), self.algo_cfg["actor"]["lr"]
         )
 
         # critic
         critic_kwarg = {
-            "input_shape": (self.state_shape[0]+self.action_shape[0],),
-            "net_arch": self.algo_config["critic"]["net_arch"],
+            "input_shape": (self.state_shape[0] + self.action_shape[0],),
+            "net_arch": self.algo_cfg["critic"]["net_arch"],
             "output_shape": (1,),
-            "activation_fn": getattr(nn, self.algo_config["critic"]["activation_fn"]),
+            "activation_fn": getattr(nn, self.algo_cfg["critic"]["activation_fn"]),
         }
         self.critic = MLPTwinCritic(**critic_kwarg)
         self.critic_target = deepcopy(self.critic)
-        self.critic_optim = getattr(optim, self.algo_config["critic"]["optimizer"])(
-            self.critic.parameters(), self.algo_config["critic"]["lr"]
+        self.critic_optim = getattr(optim, self.algo_cfg["critic"]["optimizer"])(
+            self.critic.parameters(), self.algo_cfg["critic"]["lr"]
         )
 
         # alpha, we optimize log(alpha) because alpha should always be bigger than 0.
         self.log_alpha = th.zeros(1, device=self.device, requires_grad=True)
-        self.log_alpha_optim = getattr(optim, self.algo_config["alpha"]["optimizer"])(
-            [self.log_alpha], self.algo_config["alpha"]["lr"]
+        self.log_alpha_optim = getattr(optim, self.algo_cfg["alpha"]["optimizer"])(
+            [self.log_alpha], self.algo_cfg["alpha"]["lr"]
         )
         self.alpha = (
-            np.exp(self.log_alpha.item())
-            if self.algo_config["alpha"]["auto_tune"]
+            math.exp(self.log_alpha.item())
+            if self.algo_cfg["alpha"]["auto_tune"]
             else self.alpha["fixed_value"]
         )
 
@@ -81,14 +80,14 @@ class SAC(OnlineRLPolicy):
             }
         )
 
-    def get_action(
+    def select_action(
         self,
         state: Union[np.ndarray, th.Tensor],
         deterministic: bool,
         keep_dtype_tensor: bool,
         return_log_prob: bool,
         **kwarg
-    ) -> Union[Tuple[th.Tensor, th.Tensor], th.Tensor]:
+    ) -> Union[Tuple[th.Tensor, th.Tensor], th.Tensor, np.ndarray]:
         """
         :param deterministic: whether sample from the action distribution or just the action mean.
         :param return_dtype_tensor: whether the returned data's dtype keeps to be torch.Tensor or numpy.ndarray
@@ -145,17 +144,17 @@ class SAC(OnlineRLPolicy):
                 polyak_update(
                     self.critic.parameters(),
                     self.critic_target.parameters(),
-                    self.algo_config["critic"]["tau"],
+                    self.algo_cfg["critic"]["tau"],
                 )
 
         return self.log_info
 
-    def load_model(self, model_path: str):
+    def load_model(self, model_path: str = None):
         super().load_model(model_path)
 
         # We must explicitly reset log_alpha and alpha
         self.log_alpha.data = self.models["log_alpha"].data
-        self.alpha = np.exp(self.log_alpha.item())
+        self.alpha = math.exp(self.log_alpha.item())
 
     def _update_critic(
         self,
@@ -166,7 +165,7 @@ class SAC(OnlineRLPolicy):
         dones: th.Tensor,
     ):
         with th.no_grad():
-            pred_next_actions, pred_next_log_pis = self.get_action(
+            pred_next_actions, pred_next_log_pis = self.select_action(
                 next_states,
                 deterministic=False,
                 keep_dtype_tensor=True,
@@ -186,7 +185,7 @@ class SAC(OnlineRLPolicy):
         )
 
     def _update_actor(self, states: th.Tensor):
-        pred_actions, pred_log_pis = self.get_action(
+        pred_actions, pred_log_pis = self.select_action(
             states, deterministic=False, keep_dtype_tensor=True, return_log_prob=True
         )
         Q1, Q2 = self.critic(True, states, pred_actions)
@@ -202,7 +201,7 @@ class SAC(OnlineRLPolicy):
         
         Note: pred_log_pis are detached from the computation graph
         """
-        if self.algo_config["alpha"]["auto_tune"]:
+        if self.algo_cfg["alpha"]["auto_tune"]:
             alpha_loss = th.mean(self.log_alpha * (-pred_log_pis - self.entropy_target))
             self.log_info.update(
                 {"loss/alpha": gradient_descent(self.log_alpha_optim, alpha_loss)}
