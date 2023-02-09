@@ -45,10 +45,10 @@ def test_make_agent():
 
     with initialize(version_base="1.3.1", config_path="../conf"):
         for key in RL_AGENTS:
-            cfg = compose(config_name="_run_exp", overrides=[f"agent=rl/{key}"])
+            cfg = compose(config_name="run_exp", overrides=[f"agent=rl/{key}"])
             _helper(key, cfg)
         for key in IL_AGENTS:
-            cfg = compose(config_name="_run_exp", overrides=[f"agent=il/{key}"])
+            cfg = compose(config_name="run_exp", overrides=[f"agent=il/{key}"])
             _helper(key, cfg)
 
     if exists(logs_dir):

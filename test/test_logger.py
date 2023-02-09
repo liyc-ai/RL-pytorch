@@ -12,7 +12,7 @@ LOGS = "logs_test"
 
 def test_logger() -> None:
     with initialize(version_base="1.3.1", config_path="../conf"):
-        cfg = compose(config_name="_run_exp")
+        cfg = compose(config_name="run_exp")
         cfg = OmegaConf.to_object(cfg)
         work_dir = back_path(__file__, 2)
         cfg["work_dir"] = work_dir

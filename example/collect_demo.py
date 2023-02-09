@@ -17,7 +17,7 @@ WORK_DIR = os.getcwd()
 
 @hydra.main(
     config_path=join(WORK_DIR, "conf"),
-    config_name="_collect_demo",
+    config_name="collect_demo",
     version_base="1.3.1",
 )
 def collect_demo(cfg: DictConfig):

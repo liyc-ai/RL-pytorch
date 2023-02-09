@@ -108,7 +108,7 @@ Remember to specify your `nni_optim_fn` function in `example/hyper_param_tuning.
 ```bash
 pip install nni
 # start to fine tune hyper parameters
-nnictl create -c conf/_hyper_param_tuning.yaml -p 8080
+nnictl create -c conf/hyper_param_tuning.yaml -p 8080
 
 # stop to fine tune hyper parameters
 nnictl stop --all

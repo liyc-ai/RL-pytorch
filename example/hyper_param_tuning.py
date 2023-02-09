@@ -26,7 +26,7 @@ def nni_optim_fn(cfg: Dict):
 
 
 @hydra.main(
-    config_path=join(WORK_DIR, "conf"), config_name="_run_exp", version_base="1.3.1"
+    config_path=join(WORK_DIR, "conf"), config_name="run_exp", version_base="1.3.1"
 )
 def main(cfg: DictConfig):
     # prepare experiment

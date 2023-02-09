@@ -1,7 +1,7 @@
 .ref/
 logs*
 ckpt/
-conf/_wandb_info.yaml
+conf/wandb_info.yaml
 
 
 # Byte-compiled / optimized / DLL files

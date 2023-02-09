@@ -10,9 +10,6 @@ env:
   action_shape:
   action_dtype:
 
-# hyper-parameter fine-tuning
-hpf: false
-
 # Note: All paths below are absolute paths or relative paths to project dir
 model_path: ""
 
@@ -31,17 +28,11 @@ log:
   # below is sepcific to TBLogger
   backup_code_dir:
   # below is specific to RLALogger
-  rla_config: conf/_rla_config.yaml
+  rla_config: conf/rla_config.yaml
   # below is specific to wandb
   up2cloud: false
-  api_key_file: conf/_wandb_info.yaml  #! remember to create this
+  api_key_file: conf/wandb_info.yaml  #! remember to create this
   entity:  # group name
-
-# train
-train:
-  learn: true
-  max_steps: 1000_000
-  eval_interval: 5_000
 
 # collect demonstration
 collect:
@@ -52,13 +43,13 @@ collect:
 
 # imitation learning
 expert_dataset:
-  dataset_file_path: # data/cartpole-v1_expert.hdf5
+  dataset_file_path: # data/cartpole_expert-v1.hdf5
   d4rl_env_id: # hopper-expert-v2
   n_expert_traj: 10
 
 # algo
 defaults:
-  - agent: rl/ddpg
+  - agent: rl/sac
   - override hydra/hydra_logging: disabled  
   - override hydra/job_logging: disabled
   - _self_
