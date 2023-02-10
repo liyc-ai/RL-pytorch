@@ -6,7 +6,7 @@ from omegaconf import DictConfig, OmegaConf
 from stable_baselines3.common.utils import set_random_seed
 
 import ilkit
-from ilkit.util.env import get_env_info, make_env, reset_env
+from ilkit.util.env import get_env_info, make_env, reset_env_fn
 from ilkit.util.logger import setup_logger
 from ilkit.util.ptu import clean_cuda, set_torch
 
@@ -37,7 +37,7 @@ def main(cfg: DictConfig):
     agent.load_model()
 
     # train agent
-    agent.learn(train_env, eval_env, reset_env)
+    agent.learn(train_env, eval_env, reset_env_fn)
 
     # save model
     agent.save_model(join(getattr(logger, "checkpoint_dir"), "final_model.pt"))

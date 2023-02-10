@@ -14,6 +14,7 @@ from ilkit.algo.base import ILPolicy
 from ilkit.net.actor import MLPDeterministicActor, MLPGaussianActor
 from ilkit.util.logger import BaseLogger
 from ilkit.util.ptu import gradient_descent, tensor2ndarray
+from tqdm import trange
 
 
 class BCContinuous(ILPolicy):
@@ -57,7 +58,7 @@ class BCContinuous(ILPolicy):
             state, deterministic, keep_dtype_tensor, return_log_prob, self.device
         )
 
-    def nni_learn(self, train_env: gym.Env, eval_env: gym.Env, reset_env: Callable):
+    def _nni_learn(self, train_env: gym.Env, eval_env: gym.Env, reset_env_fn: Callable):
         import nni
 
         from ilkit.util.eval import eval_policy
@@ -66,36 +67,22 @@ class BCContinuous(ILPolicy):
         train_steps = self.cfg["train"]["max_steps"]
         eval_interval = self.cfg["train"]["eval_interval"]
 
-        for t in range(train_steps):
+        for t in trange(train_steps):
 
             # update actor
             self.update()
 
             # evaluate
             if (t + 1) % eval_interval == 0:
-                eval_return = eval_policy(eval_env, reset_env, self, self.seed)
+                eval_return = eval_policy(eval_env, reset_env_fn, self, self.seed)
                 nni.report_intermediate_result(eval_return)
 
                 if eval_return > best_return:
                     best_return = eval_return
 
         nni.report_final_result(best_return)
-
-    def update(self):
-        log_info = dict()
-        states, actions = self.expert_buffer.sample(self.batch_size)[:2]
-        log_info.update(
-            {
-                "loss": gradient_descent(
-                    self.actor_optim,
-                    self.get_loss(states, actions),
-                    self.actor.parameters(),
-                )
-            }
-        )
-        return log_info
-
-    def no_nni_learn(self, train_env: gym.Env, eval_env: gym.Env, reset_env: Callable):
+        
+    def _no_nni_learn(self, train_env: gym.Env, eval_env: gym.Env, reset_env_fn: Callable):
         from ilkit.util.eval import eval_policy
 
         if not self.cfg["train"]["learn"]:
@@ -108,7 +95,7 @@ class BCContinuous(ILPolicy):
         train_steps = self.cfg["train"]["max_steps"]
         eval_interval = self.cfg["train"]["eval_interval"]
 
-        for t in range(train_steps):
+        for t in trange(train_steps):
             last_time = now_time
             self.logger.set_global_t(t)
 
@@ -118,7 +105,7 @@ class BCContinuous(ILPolicy):
 
             # evaluate
             if (t + 1) % eval_interval == 0:
-                eval_return = eval_policy(eval_env, reset_env, self, self.seed)
+                eval_return = eval_policy(eval_env, reset_env_fn, self, self.seed)
                 self.logger.logkv("eval/return", eval_return)
 
                 if eval_return > best_return:
@@ -136,6 +123,16 @@ class BCContinuous(ILPolicy):
                 )
 
             self.logger.dumpkvs()
+
+    def update(self):
+        states, actions = self.expert_buffer.sample(self.batch_size)[:2]
+        return {
+            "loss": gradient_descent(
+                self.actor_optim,
+                self.get_loss(states, actions),
+                self.actor.parameters(),
+            )
+        }
 
     def get_loss(self, expert_states: th.Tensor, expert_actions: th.Tensor):
         action_mean, action_std = self.actor(expert_states)

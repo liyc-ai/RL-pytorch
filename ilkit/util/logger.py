@@ -8,8 +8,8 @@ from os.path import join
 from typing import Any, Dict
 
 from omegaconf import OmegaConf
-
-from ilkit.util.helper import copy_file_dir
+import shutil
+from os.path import join, isfile
 
 try:
     import RLA
@@ -20,7 +20,7 @@ except:
 
 
 class BaseLogger(ABC):
-    def __init__(self, cfg: Dict[str, Any], log_root: str):
+    def __init__(self, cfg: Dict[str, Any]):
         """
         : param root: Path of all logs
         : param record_params: Used to name current results
@@ -30,7 +30,6 @@ class BaseLogger(ABC):
         self.log_cfg = self.cfg["log"]
         self.work_dir = cfg["work_dir"]
         self.checkpoint_dir = None  #! Must be specified later
-        self.log_root = log_root
         self.create_logger()
 
     @abstractmethod
@@ -65,8 +64,8 @@ class BaseLogger(ABC):
 
 
 class TBLogger(BaseLogger):
-    def __init__(self, cfg: Dict[str, Any], log_root: str):
-        super().__init__(cfg, log_root)
+    def __init__(self, cfg: Dict[str, Any]):
+        super().__init__(cfg)
         self.global_t = 0
         self.kvs = dict()
 
@@ -77,7 +76,7 @@ class TBLogger(BaseLogger):
         self._create_tb_logger()
 
         # file logger
-        self._create_root_logger()
+        self._create_file_logger()
 
         # checkpoint dir
         self._create_ckpt()
@@ -107,7 +106,7 @@ class TBLogger(BaseLogger):
         self.kvs = dict()
 
     def dump2log(self, info: str):
-        getattr(self.root_logger, "info")(info)
+        getattr(self.file_logger, "info")(info)
 
     def _parse_record_param(self):
         self._record_param: Dict[str, Any] = dict()
@@ -128,23 +127,23 @@ class TBLogger(BaseLogger):
                 self.run_name + "&" + key + "=" + str(self._record_param[key])
             )
         self.log_dir = join(
-            self.work_dir, self.log_root, self.log_cfg["project"], self.run_name
+            self.work_dir, self.log_cfg["root"], self.log_cfg["project"], self.run_name
         )
         os.makedirs(self.log_dir, exist_ok=True)
 
     def _create_tb_logger(self):
         self.tb_logger = SummaryWriter(self.log_dir)
 
-    def _create_root_logger(self):
+    def _create_file_logger(self):
         logging.basicConfig(
             level=logging.INFO,
             format="%(asctime)s [%(levelname)s] %(message)s",
             handlers=[
                 logging.FileHandler(join(self.log_dir, "log_file.log")),
-                logging.StreamHandler(),
+                # logging.StreamHandler(),
             ],
         )
-        self.root_logger = logging.getLogger(__name__)
+        self.file_logger = logging.getLogger(__name__)
 
     def _create_ckpt(self):
         self.checkpoint_dir = join(self.log_dir, "checkpoint")  # for model
@@ -159,22 +158,30 @@ class TBLogger(BaseLogger):
             print(jd, file=f)
 
         # code
+        
+        def _copy_file_dir(src_dir: str, dst_dir: str, file: str):
+            src_file_path = join(src_dir, *file.split("/"))
+            if isfile(src_file_path):
+                shutil.copy(src_file_path, dst_dir)
+            else:
+                shutil.copytree(src_file_path, dst_dir)
+        
         dst_code_dir = join(self.log_dir, "code")
         os.makedirs(dst_code_dir, exist_ok=True)
         if self.log_cfg["backup_code_dir"] is not None:  # code dir
             for code_dir in self.log_cfg["backup_code_dir"]:
-                copy_file_dir(self.work_dir, dst_code_dir, code_dir)
+                _copy_file_dir(self.work_dir, dst_code_dir, code_dir)
         if self.log_cfg["run_file"] is not None:  # code file
             if type(self.log_cfg["run_file"]) is list:
                 for file in self.log_cfg["run_file"]:
-                    copy_file_dir(self.work_dir, dst_code_dir, file)
+                    _copy_file_dir(self.work_dir, dst_code_dir, file)
             else:
-                copy_file_dir(self.work_dir, dst_code_dir, self.log_cfg["run_file"])
+                _copy_file_dir(self.work_dir, dst_code_dir, self.log_cfg["run_file"])
 
 
 class RLALogger(BaseLogger):
-    def __init__(self, cfg: Dict[str, Any], log_root: str):
-        super().__init__(cfg, log_root)
+    def __init__(self, cfg: Dict[str, Any]):
+        super().__init__(cfg)
 
     def create_logger(self):
         self.logger = RLA.logger
@@ -187,7 +194,7 @@ class RLALogger(BaseLogger):
         self.exp_manager.configure(
             task_table_name=self.log_cfg["project"],
             private_config_path=rla_config_path,
-            data_root=join(self.work_dir, self.log_root),
+            data_root=join(self.work_dir, self.log_cfg["root"]),
             run_file=self.log_cfg["run_file"],
             code_root=self.work_dir,
         )
@@ -224,8 +231,8 @@ class RLALogger(BaseLogger):
 
 
 class WBLogger(TBLogger):
-    def __init__(self, cfg: Dict[str, Any], log_root: str):
-        super().__init__(cfg, log_root)
+    def __init__(self, cfg: Dict[str, Any]):
+        super().__init__(cfg)
 
     def create_logger(self):
         # login with api keys
@@ -247,7 +254,7 @@ class WBLogger(TBLogger):
         self._create_log_dir()
 
         # file logger
-        self._create_root_logger()
+        self._create_file_logger()
 
         # checkpoint dir
         self._create_ckpt()
@@ -282,7 +289,7 @@ class WBLogger(TBLogger):
         wandb.log({"timestep": self.global_t}, commit=True)
 
 
-def setup_logger(cfg: Dict, log_root: str = "logs") -> BaseLogger:
+def setup_logger(cfg: Dict) -> BaseLogger:
     if not cfg["log"]["setup_logger"]:
         return None
     # sanity check
@@ -291,4 +298,4 @@ def setup_logger(cfg: Dict, log_root: str = "logs") -> BaseLogger:
     assert logger_type in supported_logger, f"Unsupported logger type {logger_type}"
 
     # instantiate the specified logger
-    return supported_logger[logger_type](cfg, log_root)
+    return supported_logger[logger_type](cfg)

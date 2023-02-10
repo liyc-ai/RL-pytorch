@@ -42,7 +42,7 @@ def make_env(env_id: str) -> gym.Env:
     return env
 
 
-def reset_env(env: gym.Env, seed: int) -> Dict:
+def reset_env_fn(env: gym.Env, seed: int) -> Dict:
     next_state, info = env.reset(seed=seed)
     env.action_space.seed(seed)
     env.observation_space.seed(seed)

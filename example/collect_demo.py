@@ -7,7 +7,7 @@ from stable_baselines3.common.utils import set_random_seed
 
 import ilkit
 from ilkit.util.data import DataHandler
-from ilkit.util.env import get_env_info, make_env, reset_env
+from ilkit.util.env import get_env_info, make_env, reset_env_fn
 from ilkit.util.logger import setup_logger
 from ilkit.util.ptu import clean_cuda, set_torch
 
@@ -64,7 +64,7 @@ def collect_demo(cfg: DictConfig):
             "n_traj and n_step are both specified, but we will ignore n_step"
         )
     data_handler.collect_demo(
-        agent, env, reset_env, n_traj, n_step, save_dir, save_name
+        agent, env, reset_env_fn, n_traj, n_step, save_dir, save_name
     )
     logger.dump2log(f"Succeed to save demonstrations at {join(save_dir, save_name)}!")
 

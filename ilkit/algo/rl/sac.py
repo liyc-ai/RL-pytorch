@@ -55,15 +55,17 @@ class SAC(OnlineRLPolicy):
         )
 
         # alpha, we optimize log(alpha) because alpha should always be bigger than 0.
-        self.log_alpha = th.zeros(1, device=self.device, requires_grad=True)
-        self.log_alpha_optim = getattr(optim, self.algo_cfg["alpha"]["optimizer"])(
-            [self.log_alpha], self.algo_cfg["alpha"]["lr"]
-        )
-        self.alpha = (
-            math.exp(self.log_alpha.item())
-            if self.algo_cfg["alpha"]["auto_tune"]
-            else self.alpha["fixed_value"]
-        )
+        if self.algo_cfg["log_alpha"]["auto_tune"]:
+            self.log_alpha = th.tensor([self.algo_cfg["log_alpha"]["init_value"]], device=self.device, requires_grad=True)
+            self.log_alpha_optim = getattr(optim, self.algo_cfg["log_alpha"]["optimizer"])(
+                [self.log_alpha], self.algo_cfg["log_alpha"]["lr"]
+            )
+            self.models.update({
+                "log_alpha": self.log_alpha,
+                "log_alpha_optim": self.log_alpha_optim,
+            })
+        else:
+            self.log_alpha = th.tensor([self.algo_cfg["log_alpha"]["init_value"]], device=self.device)
 
         freeze_net((self.critic_target,))
         move_device((self.actor, self.critic, self.critic_target), self.device)
@@ -75,10 +77,12 @@ class SAC(OnlineRLPolicy):
                 "critic": self.critic,
                 "critic_target": self.critic_target,
                 "critic_optim": self.critic_optim,
-                "log_alpha": self.log_alpha,
-                "log_alpha_optim": self.log_alpha_optim,
             }
         )
+        
+    @property
+    def alpha(self):
+        return math.exp(self.log_alpha.item())
 
     def select_action(
         self,
@@ -140,7 +144,10 @@ class SAC(OnlineRLPolicy):
             # update params
             for _ in range(self.env_steps):
                 self._update_critic(states, actions, next_states, rewards, dones)
-                self._update_alpha(self._update_actor(states))
+                if self.algo_cfg["log_alpha"]["auto_tune"]:
+                    self._update_alpha(self._update_actor(states))
+                else:
+                    self._update_actor(states)
                 polyak_update(
                     self.critic.parameters(),
                     self.critic_target.parameters(),
@@ -148,13 +155,7 @@ class SAC(OnlineRLPolicy):
                 )
 
         return self.log_info
-
-    def load_model(self, model_path: str = None):
-        super().load_model(model_path)
-
-        # We must explicitly reset log_alpha and alpha
-        self.log_alpha.data = self.models["log_alpha"].data
-        self.alpha = math.exp(self.log_alpha.item())
+    
 
     def _update_critic(
         self,
@@ -201,15 +202,11 @@ class SAC(OnlineRLPolicy):
         
         Note: pred_log_pis are detached from the computation graph
         """
-        if self.algo_cfg["alpha"]["auto_tune"]:
-            alpha_loss = th.mean(self.log_alpha * (-pred_log_pis - self.entropy_target))
-            self.log_info.update(
-                {"loss/alpha": gradient_descent(self.log_alpha_optim, alpha_loss)}
-            )
+        alpha_loss = th.mean(self.log_alpha * (-pred_log_pis - self.entropy_target))
+        self.log_info.update(
+            {"loss/alpha": gradient_descent(self.log_alpha_optim, alpha_loss)}
+        )
 
-            # update alpha
-            self.models["log_alpha"].data = self.log_alpha.data
-            self.alpha = math.exp(self.log_alpha.item())
-            return alpha_loss.item()
-        else:
-            self.log_info.update({"loss/alpha": 0.0})
+        # update alpha
+        self.models["log_alpha"].data = self.log_alpha.data
+        

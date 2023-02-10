@@ -19,8 +19,8 @@ critic:
   lr: !!float 3e-4
   tau: 0.05
 
-alpha:
+log_alpha:
   auto_tune: True
-  fixed_value: 1.0
+  init_value: 0.0
   optimizer: Adam
   lr: !!float 3e-4

@@ -7,14 +7,14 @@ from ilkit.algo.base import BasePolicy
 
 
 def eval_policy(
-    eval_env: gym.Env, reset_env: Callable, policy: BasePolicy, seed: int, episodes=10
+    eval_env: gym.Env, reset_env_fn: Callable, policy: BasePolicy, seed: int, episodes=10
 ):
     """Evaluate Policy
     """
     policy.eval()
     avg_rewards = []
     for _ in range(episodes):
-        (state, _), terminated, truncated = reset_env(eval_env, seed), False, False
+        (state, _), terminated, truncated = reset_env_fn(eval_env, seed), False, False
         avg_reward = 0.0
         while not (terminated or truncated):
             action = policy.select_action(

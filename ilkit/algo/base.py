@@ -1,3 +1,4 @@
+from re import A
 import time
 from abc import ABC, abstractmethod
 from os.path import exists, isabs, join
@@ -10,6 +11,7 @@ from torch import nn, optim
 
 from ilkit.util.buffer import TransitionBuffer
 from ilkit.util.logger import BaseLogger
+from tqdm import trange
 
 
 class BasePolicy(ABC):
@@ -59,16 +61,18 @@ class BasePolicy(ABC):
         """
         raise NotImplementedError
 
-    def learn(self, train_env: gym.Env, eval_env: gym.Env, reset_env: Callable):
+    def learn(self, train_env: gym.Env, eval_env: gym.Env, reset_env_fn_fn: Callable):
         if self.cfg["hpf"]:
-            self.nni_learn(train_env, eval_env, reset_env)
+            self._nni_learn(train_env, eval_env, reset_env_fn_fn)
         else:
-            self.no_nni_learn(train_env, eval_env, reset_env)
-
-    def nni_learn(self, train_env: gym.Env, eval_env: gym.Env, reset_env: Callable):
+            self._no_nni_learn(train_env, eval_env, reset_env_fn_fn)
+    
+    @abstractmethod        
+    def _nni_learn(self, train_env: gym.Env, eval_env: gym.Env, reset_env_fn_fn: Callable):
         raise NotImplementedError
-
-    def no_nni_learn(self, train_env: gym.Env, eval_env: gym.Env, reset_env: Callable):
+    
+    @abstractmethod
+    def _no_nni_learn(self, train_env: gym.Env, eval_env: gym.Env, reset_env_fn_fn: Callable):
         raise NotImplementedError
 
     # ----------- Model ------------
@@ -94,7 +98,7 @@ class BasePolicy(ABC):
             model_path = self.cfg["model_path"]
 
         state_dicts = {}
-        model_path = self.parse_path(model_path)
+        model_path = self.abs_path(model_path)
         for model_name in self.models:
             if isinstance(self.models[model_name], th.Tensor):
                 state_dicts[model_name] = {model_name: self.models[model_name]}
@@ -111,7 +115,7 @@ class BasePolicy(ABC):
         if model_path is None:
             model_path = self.cfg["model_path"]
 
-        model_path = self.parse_path(model_path)
+        model_path = self.abs_path(model_path)
         if not exists(model_path):
             self.logger.dump2log(
                 "No model to load, the model parameters are randomly initialized."
@@ -121,12 +125,13 @@ class BasePolicy(ABC):
         for model_name in self.models:
             if isinstance(self.models[model_name], th.Tensor):
                 self.models[model_name] = state_dicts[model_name][model_name]
+                self.__dict__[model_name].data = self.models[model_name].data
             else:
                 self.models[model_name].load_state_dict(state_dicts[model_name])
         self.logger.dump2log(f"Successfully load model from {model_path}!")
 
     # ------------ Utilities ---------------
-    def parse_path(self, path: str):
+    def abs_path(self, path: str):
         """Convert relative path to absolute path
         """
         if path is not None and path != "":
@@ -147,7 +152,7 @@ class ILPolicy(BasePolicy):
 
         # get expert dataset
         expert_info = self.cfg["expert_dataset"]
-        dataset_file_path = self.parse_path(expert_info["dataset_file_path"])
+        dataset_file_path = self.abs_path(expert_info["dataset_file_path"])
         if expert_info["d4rl_env_id"] is not None and dataset_file_path is not None:
             self.logger.dump2log(
                 "User's own dataset and D4RL dataset are both specified, but we will ignore user's dataset"
@@ -189,9 +194,8 @@ class OnlineRLPolicy(BasePolicy):
 
         self.trans_buffer = TransitionBuffer(**buffer_kwarg)
 
-    def nni_learn(self, train_env: gym.Env, eval_env: gym.Env, reset_env: Callable):
+    def _nni_learn(self, train_env: gym.Env, eval_env: gym.Env, reset_env_fn: Callable):
         import nni
-
         from ilkit.util.eval import eval_policy
 
         train_return = 0
@@ -200,8 +204,8 @@ class OnlineRLPolicy(BasePolicy):
         eval_interval = self.cfg["train"]["eval_interval"]
 
         # start training
-        next_state, _ = reset_env(train_env, self.seed)
-        for t in range(train_steps):
+        next_state, _ = reset_env_fn(train_env, self.seed)
+        for t in trange(train_steps):
 
             state = next_state
             if "warmup_steps" in self.algo_cfg and t < self.algo_cfg["warmup_steps"]:
@@ -227,12 +231,12 @@ class OnlineRLPolicy(BasePolicy):
 
             # whether this episode ends
             if terminated or truncated:
-                next_state, _ = reset_env(train_env, self.seed)
+                next_state, _ = reset_env_fn(train_env, self.seed)
                 train_return = 0
 
             # evaluate
             if (t + 1) % eval_interval == 0:
-                eval_return = eval_policy(eval_env, reset_env, self, self.seed)
+                eval_return = eval_policy(eval_env, reset_env_fn, self, self.seed)
                 nni.report_intermediate_result(eval_return)
 
                 if eval_return > best_return:
@@ -240,7 +244,7 @@ class OnlineRLPolicy(BasePolicy):
 
         nni.report_final_result(best_return)
 
-    def no_nni_learn(self, train_env: gym.Env, eval_env: gym.Env, reset_env: Callable):
+    def _no_nni_learn(self, train_env: gym.Env, eval_env: gym.Env, reset_env_fn: Callable):
         from ilkit.util.eval import eval_policy
 
         if not self.cfg["train"]["learn"]:
@@ -255,8 +259,8 @@ class OnlineRLPolicy(BasePolicy):
         eval_interval = self.cfg["train"]["eval_interval"]
 
         # start training
-        next_state, info = reset_env(train_env, self.seed)
-        for t in range(train_steps):
+        next_state, info = reset_env_fn(train_env, self.seed)
+        for t in trange(train_steps):
             last_time = now_time
             self.logger.set_global_t(t)
 
@@ -286,12 +290,12 @@ class OnlineRLPolicy(BasePolicy):
             # whether this episode ends
             if terminated or truncated:
                 self.logger.logkv("return/train", train_return)
-                next_state, info = reset_env(train_env, self.seed)
+                next_state, info = reset_env_fn(train_env, self.seed)
                 train_return = 0
 
             # evaluate
             if (t + 1) % eval_interval == 0:
-                eval_return = eval_policy(eval_env, reset_env, self, self.seed)
+                eval_return = eval_policy(eval_env, reset_env_fn, self, self.seed)
                 self.logger.logkv("return/eval", eval_return)
 
                 if eval_return > best_return:

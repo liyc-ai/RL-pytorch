@@ -17,6 +17,7 @@ from ilkit.util.buffer import DAggerBuffer
 from ilkit.util.eval import eval_policy
 from ilkit.util.logger import BaseLogger
 from ilkit.util.ptu import gradient_descent, tensor2ndarray
+from tqdm import trange
 
 
 class DAggerContinuous(BCContinuous):
@@ -62,12 +63,12 @@ class DAggerContinuous(BCContinuous):
 
         expert_config = deepcopy(self.cfg)
         expert_config["agent"] = OmegaConf.to_object(
-            OmegaConf.load(self.parse_path(self.algo_cfg["expert"]["config"]))
+            OmegaConf.load(self.abs_path(self.algo_cfg["expert"]["config"]))
         )
         self.expert = make(expert_config, self.logger)
         self.expert.load_model(self.algo_cfg["expert"]["model_path"])
 
-    def nni_learn(self, train_env: gym.Env, eval_env: gym.Env, reset_env: Callable):
+    def _nni_learn(self, train_env: gym.Env, eval_env: gym.Env, reset_env_fn: Callable):
         import nni
 
         train_return = 0
@@ -76,8 +77,8 @@ class DAggerContinuous(BCContinuous):
         eval_interval = self.cfg["train"]["eval_interval"]
 
         # start training
-        next_state, _ = reset_env(train_env, self.seed)
-        for t in range(train_steps):
+        next_state, _ = reset_env_fn(train_env, self.seed)
+        for t in trange(train_steps):
             state = next_state
             action = self.select_action(
                 state,
@@ -101,12 +102,12 @@ class DAggerContinuous(BCContinuous):
 
             # whether this episode ends
             if terminated or truncated:
-                next_state, _ = reset_env(train_env, self.seed)
+                next_state, _ = reset_env_fn(train_env, self.seed)
                 train_return = 0
 
             # evaluate
             if (t + 1) % eval_interval == 0:
-                eval_return = eval_policy(eval_env, reset_env, self, self.seed)
+                eval_return = eval_policy(eval_env, reset_env_fn, self, self.seed)
 
                 nni.report_intermediate_result(eval_return)
 
@@ -115,7 +116,7 @@ class DAggerContinuous(BCContinuous):
 
         nni.report_final_result(best_return)
 
-    def no_nni_learn(self, train_env: gym.Env, eval_env: gym.Env, reset_env: Callable):
+    def _no_nni_learn(self, train_env: gym.Env, eval_env: gym.Env, reset_env_fn: Callable):
         if not self.cfg["train"]["learn"]:
             self.logger.dump2log("We did not learn anything!")
             return
@@ -128,8 +129,8 @@ class DAggerContinuous(BCContinuous):
         eval_interval = self.cfg["train"]["eval_interval"]
 
         # start training
-        next_state, _ = reset_env(train_env, self.seed)
-        for t in range(train_steps):
+        next_state, _ = reset_env_fn(train_env, self.seed)
+        for t in trange(train_steps):
             last_time = now_time
             self.logger.set_global_t(t)
 
@@ -158,12 +159,12 @@ class DAggerContinuous(BCContinuous):
             # whether this episode ends
             if terminated or truncated:
                 self.logger.logkv("return", train_return, "train")
-                next_state, _ = reset_env(train_env, self.seed)
+                next_state, _ = reset_env_fn(train_env, self.seed)
                 train_return = 0
 
             # evaluate
             if (t + 1) % eval_interval == 0:
-                eval_return = eval_policy(eval_env, reset_env, self, self.seed)
+                eval_return = eval_policy(eval_env, reset_env_fn, self, self.seed)
                 self.logger.logkv("return/eval", eval_return)
 
                 if eval_return > best_return:

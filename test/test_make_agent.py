@@ -6,14 +6,14 @@ from omegaconf import DictConfig, OmegaConf
 
 from ilkit import IL_AGENTS, RL_AGENTS, make
 from ilkit.util.env import get_env_info, make_env
-from ilkit.util.helper import back_path
 from ilkit.util.logger import setup_logger
+import os
 
 LOGS = "logs_test"
 
 
 def test_make_agent():
-    work_dir = back_path(__file__, 2)
+    work_dir = os.getcwd()
     logs_dir = join(work_dir, LOGS)
 
     # setup environment
@@ -26,6 +26,7 @@ def test_make_agent():
         try:
             cfg = OmegaConf.to_object(cfg)
             cfg["work_dir"] = work_dir
+            cfg["log"]["root"] = LOGS
 
             if agent in discrete_agents:
                 cfg["env"].update(get_env_info(discrete_env))
@@ -36,7 +37,7 @@ def test_make_agent():
                 cfg["env"].update(get_env_info(continuous_env))
                 cfg["expert_dataset"]["d4rl_env_id"] = "hopper-expert-v2"
 
-            logger = setup_logger(cfg, LOGS)
+            logger = setup_logger(cfg)
             make(cfg, logger)
         except Exception as exc:
             if exists(logs_dir):

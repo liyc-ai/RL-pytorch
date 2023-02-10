@@ -15,6 +15,7 @@ model_path: ""
 
 # log
 log:
+  root: logs
   logger_type: tensorboard
   setup_logger: true
   print_time_interval: 10_000
@@ -31,7 +32,7 @@ log:
   rla_config: conf/rla_config.yaml
   # below is specific to wandb
   up2cloud: false
-  api_key_file: conf/wandb_info.yaml  #! remember to create this
+  api_key_file: conf/_wandb_info.yaml  #! remember to create this
   entity:  # group name
 
 # collect demonstration

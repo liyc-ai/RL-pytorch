@@ -25,7 +25,7 @@ class DataHandler:
         self,
         expert: BasePolicy,
         env: gym.Env,
-        reset_env: Callable,
+        reset_env_fn: Callable,
         n_traj: int = 0,
         n_step: int = 0,
         save_dir: str = None,
@@ -40,7 +40,7 @@ class DataHandler:
         collected_steps, collected_n_traj = 0, 0
         expert_data = self._get_dataset_holder(save_log_prob)
 
-        next_obs, _ = reset_env(env, self.seed)
+        next_obs, _ = reset_env_fn(env, self.seed)
         while collected_n_traj < n_traj or collected_steps < n_step:
             collected_steps += 1
 
@@ -73,7 +73,7 @@ class DataHandler:
                 expert_data["infos/action_log_probs"].append(log_prob)
 
             if terminated or truncated:
-                next_obs, _ = reset_env(env, self.seed)
+                next_obs, _ = reset_env_fn(env, self.seed)
                 collected_n_traj += 1
 
         dataset = {}

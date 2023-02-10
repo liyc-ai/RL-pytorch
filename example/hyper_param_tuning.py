@@ -7,7 +7,7 @@ from omegaconf import DictConfig, OmegaConf
 from stable_baselines3.common.utils import set_random_seed
 
 import ilkit
-from ilkit.util.env import get_env_info, make_env, reset_env
+from ilkit.util.env import get_env_info, make_env, reset_env_fn
 from ilkit.util.ptu import clean_cuda, set_torch
 
 # get global working dir
@@ -47,7 +47,7 @@ def main(cfg: DictConfig):
     agent = ilkit.make(cfg)
 
     # train agent
-    agent.learn(train_env, eval_env, reset_env)
+    agent.learn(train_env, eval_env, reset_env_fn)
 
 
 if __name__ == "__main__":

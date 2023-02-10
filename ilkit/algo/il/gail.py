@@ -17,6 +17,7 @@ from ilkit.net.critic import MLPCritic
 from ilkit.util.eval import eval_policy
 from ilkit.util.logger import BaseLogger
 from ilkit.util.ptu import gradient_descent
+from tqdm import trange
 
 
 class GAIL(ILPolicy):
@@ -60,7 +61,7 @@ class GAIL(ILPolicy):
 
         generator_cfg = deepcopy(self.cfg)
         generator_cfg["agent"] = OmegaConf.to_object(
-            OmegaConf.load(self.parse_path(self.algo_cfg["generator"]))
+            OmegaConf.load(self.abs_path(self.algo_cfg["generator"]))
         )
         self.generator = make(generator_cfg)
 
@@ -79,7 +80,7 @@ class GAIL(ILPolicy):
             state, deterministic, keep_dtype_tensor, return_log_prob, **kwarg
         )
 
-    def nni_learn(self, train_env: gym.Env, eval_env: gym.Env, reset_env: Callable):
+    def _nni_learn(self, train_env: gym.Env, eval_env: gym.Env, reset_env_fn: Callable):
         import nni
 
         train_return = 0
@@ -88,8 +89,8 @@ class GAIL(ILPolicy):
         eval_interval = self.cfg["train"]["eval_interval"]
 
         # start training
-        next_state, _ = reset_env(train_env, self.seed)
-        for t in range(train_steps):
+        next_state, _ = reset_env_fn(train_env, self.seed)
+        for t in trange(train_steps):
 
             state = next_state
             action = self.select_action(
@@ -111,12 +112,12 @@ class GAIL(ILPolicy):
 
             # whether this episode ends
             if terminated or truncated:
-                next_state, _ = reset_env(train_env, self.seed)
+                next_state, _ = reset_env_fn(train_env, self.seed)
                 train_return = 0
 
             # evaluate
             if (t + 1) % eval_interval == 0:
-                eval_return = eval_policy(eval_env, reset_env, self, self.seed)
+                eval_return = eval_policy(eval_env, reset_env_fn, self, self.seed)
 
                 nni.report_intermediate_result(eval_return)
 
@@ -125,7 +126,7 @@ class GAIL(ILPolicy):
 
         nni.report_final_result(best_return)
 
-    def no_nni_learn(self, train_env: gym.Env, eval_env: gym.Env, reset_env: Callable):
+    def _no_nni_learn(self, train_env: gym.Env, eval_env: gym.Env, reset_env_fn: Callable):
         if not self.cfg["train"]["learn"]:
             self.logger.dump2log("We did not learn anything!")
             return
@@ -138,8 +139,8 @@ class GAIL(ILPolicy):
         eval_interval = self.cfg["train"]["eval_interval"]
 
         # start training
-        next_state, _ = reset_env(train_env, self.seed)
-        for t in range(train_steps):
+        next_state, _ = reset_env_fn(train_env, self.seed)
+        for t in trange(train_steps):
             last_time = now_time
             self.logger.set_global_t(t)
 
@@ -165,12 +166,12 @@ class GAIL(ILPolicy):
             # whether this episode ends
             if terminated or truncated:
                 self.logger.logkv("return/train", train_return)
-                next_state, info = reset_env(train_env, self.seed)
+                next_state, info = reset_env_fn(train_env, self.seed)
                 train_return = 0
 
             # evaluate
             if (t + 1) % eval_interval == 0:
-                eval_return = eval_policy(eval_env, reset_env, self, self.seed)
+                eval_return = eval_policy(eval_env, reset_env_fn, self, self.seed)
                 self.logger.logkv("return/eval", eval_return)
 
                 if eval_return > best_return:
@@ -244,7 +245,7 @@ class GAIL(ILPolicy):
             self.generator.trans_buffer.buffers[3] = rewards
 
     def load_model(self, model_path: str):
-        model_path = self.parse_path(model_path)
+        model_path = self.abs_path(model_path)
         if not exists(model_path):
             self.logger.warn(
                 "No model to load, the model parameters are randomly initialized."
