@@ -10,6 +10,7 @@ import torch.nn.functional as F
 from omegaconf import OmegaConf
 from torch import nn, optim
 from torch.distributions.categorical import Categorical
+from tqdm import trange
 
 from ilkit.algo.il.bc import BCContinuous
 from ilkit.net.actor import MLPDeterministicActor, MLPGaussianActor
@@ -17,7 +18,6 @@ from ilkit.util.buffer import DAggerBuffer
 from ilkit.util.eval import eval_policy
 from ilkit.util.logger import BaseLogger
 from ilkit.util.ptu import gradient_descent, tensor2ndarray
-from tqdm import trange
 
 
 class DAggerContinuous(BCContinuous):
@@ -63,7 +63,7 @@ class DAggerContinuous(BCContinuous):
 
         expert_config = deepcopy(self.cfg)
         expert_config["agent"] = OmegaConf.to_object(
-            OmegaConf.load(self.abs_path(self.algo_cfg["expert"]["config"]))
+            OmegaConf.load(self.algo_cfg["expert"]["config"])
         )
         self.expert = make(expert_config, self.logger)
         self.expert.load_model(self.algo_cfg["expert"]["model_path"])

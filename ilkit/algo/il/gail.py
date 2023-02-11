@@ -11,13 +11,13 @@ import torch.nn.functional as F
 from omegaconf import OmegaConf
 from torch import nn, optim
 from torch.utils.data import BatchSampler
+from tqdm import trange
 
-from ilkit.algo.base import ILPolicy
+from ilkit.algo.base import ILPolicy, OnlineRLPolicy
 from ilkit.net.critic import MLPCritic
 from ilkit.util.eval import eval_policy
 from ilkit.util.logger import BaseLogger
 from ilkit.util.ptu import gradient_descent
-from tqdm import trange
 
 
 class GAIL(ILPolicy):
@@ -61,9 +61,9 @@ class GAIL(ILPolicy):
 
         generator_cfg = deepcopy(self.cfg)
         generator_cfg["agent"] = OmegaConf.to_object(
-            OmegaConf.load(self.abs_path(self.algo_cfg["generator"]))
+            OmegaConf.load(self.algo_cfg["generator"])
         )
-        self.generator = make(generator_cfg)
+        self.generator: OnlineRLPolicy  = make(generator_cfg)
 
         for key, value in self.generator.models.items():
             self.models.update({"generator_" + key: value})
@@ -245,27 +245,24 @@ class GAIL(ILPolicy):
             self.generator.trans_buffer.buffers[3] = rewards
 
     def load_model(self, model_path: str):
-        model_path = self.abs_path(model_path)
         if not exists(model_path):
-            self.logger.warn(
+            self.logger.dump2log(
                 "No model to load, the model parameters are randomly initialized."
             )
             return
         state_dicts = th.load(model_path)
-        for model_name in self.models.keys():
-            if model_name.startswith("generator_"):
-                imitator_model_name = model_name[len("generator_") :]
-                if isinstance(self.models[model_name], th.Tensor):
-                    self.generator.models[imitator_model_name] = state_dicts[
-                        model_name
-                    ][model_name]
+        for name, model in self.models.keys():
+            if name.startswith("generator_"):
+                _name = name[len("generator_") :]
+                if isinstance(model, th.Tensor):
+                    self.generator.models[_name] = state_dicts[name][name]
+                    self.generator.__dict__[_name].data = self.generator.models[_name].data
                 else:
-                    self.generator.models[imitator_model_name].load_state_dict(
-                        state_dicts[model_name]
-                    )
+                    self.generator.models[_name].load_state_dict(model)
             else:
-                if isinstance(self.models[model_name], th.Tensor):
-                    self.models[model_name] = state_dicts[model_name][model_name]
+                if isinstance(model, th.Tensor):
+                    self.models[name] = state_dicts[name][name]
+                    self.__dict__[name].data = self.models[name].data
                 else:
-                    self.models[model_name].load_state_dict(state_dicts[model_name])
-        self.logger.info(f"Successfully load model from {model_path}!")
+                    self.models[name].load_state_dict(model)
+        self.logger.dump2log(f"Successfully load model from {model_path}!")

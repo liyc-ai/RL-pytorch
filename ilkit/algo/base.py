@@ -1,17 +1,17 @@
-from re import A
 import time
 from abc import ABC, abstractmethod
 from os.path import exists, isabs, join
+from re import A
 from typing import Callable, Dict, Union
 
 import gym
 import numpy as np
 import torch as th
 from torch import nn, optim
+from tqdm import trange
 
 from ilkit.util.buffer import TransitionBuffer
 from ilkit.util.logger import BaseLogger
-from tqdm import trange
 
 
 class BasePolicy(ABC):
@@ -98,12 +98,11 @@ class BasePolicy(ABC):
             model_path = self.cfg["model_path"]
 
         state_dicts = {}
-        model_path = self.abs_path(model_path)
-        for model_name in self.models:
-            if isinstance(self.models[model_name], th.Tensor):
-                state_dicts[model_name] = {model_name: self.models[model_name]}
+        for name, model in self.models.items():
+            if isinstance(model, th.Tensor):
+                state_dicts[name] = {name: model}
             else:
-                state_dicts[model_name] = self.models[model_name].state_dict()
+                state_dicts[name] = model.state_dict()
         th.save(state_dicts, model_path)
 
         self.logger.dump2log(f"Successfully save model to {model_path}!")
@@ -115,29 +114,19 @@ class BasePolicy(ABC):
         if model_path is None:
             model_path = self.cfg["model_path"]
 
-        model_path = self.abs_path(model_path)
         if not exists(model_path):
             self.logger.dump2log(
                 "No model to load, the model parameters are randomly initialized."
             )
             return
         state_dicts = th.load(model_path)
-        for model_name in self.models:
-            if isinstance(self.models[model_name], th.Tensor):
-                self.models[model_name] = state_dicts[model_name][model_name]
-                self.__dict__[model_name].data = self.models[model_name].data
+        for name, model in self.models.items():
+            if isinstance(model, th.Tensor):
+                self.models[name] = state_dicts[name][name]
+                self.__dict__[name].data = self.models[name].data
             else:
-                self.models[model_name].load_state_dict(state_dicts[model_name])
+                model.load_state_dict(state_dicts[name])
         self.logger.dump2log(f"Successfully load model from {model_path}!")
-
-    # ------------ Utilities ---------------
-    def abs_path(self, path: str):
-        """Convert relative path to absolute path
-        """
-        if path is not None and path != "":
-            if not isabs(path):
-                path = join(self.work_dir, path)
-        return path
 
 
 class ILPolicy(BasePolicy):
@@ -152,7 +141,7 @@ class ILPolicy(BasePolicy):
 
         # get expert dataset
         expert_info = self.cfg["expert_dataset"]
-        dataset_file_path = self.abs_path(expert_info["dataset_file_path"])
+        dataset_file_path = expert_info["dataset_file_path"]
         if expert_info["d4rl_env_id"] is not None and dataset_file_path is not None:
             self.logger.dump2log(
                 "User's own dataset and D4RL dataset are both specified, but we will ignore user's dataset"
@@ -196,6 +185,7 @@ class OnlineRLPolicy(BasePolicy):
 
     def _nni_learn(self, train_env: gym.Env, eval_env: gym.Env, reset_env_fn: Callable):
         import nni
+
         from ilkit.util.eval import eval_policy
 
         train_return = 0

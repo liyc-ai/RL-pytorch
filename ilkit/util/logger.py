@@ -1,15 +1,13 @@
 import json
 import logging
 import os
-import sys
+import shutil
 from abc import ABC, abstractmethod
 from datetime import datetime
-from os.path import join
+from os.path import isfile, join
 from typing import Any, Dict
 
 from omegaconf import OmegaConf
-import shutil
-from os.path import join, isfile
 
 try:
     import RLA
