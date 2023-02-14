@@ -14,7 +14,7 @@ env:
 hpf: false
 
 # Note: All paths below are absolute paths or relative paths to project dir
-model_path: ""
+model_path: data/hopper-v4_sac.pt
 
 # log
 log:

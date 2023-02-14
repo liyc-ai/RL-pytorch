@@ -98,7 +98,7 @@ By default, the results are stored at the `logs` dir.
 ### Collect demonstrations
 
 ```bash
-python example/collect_demo.py agent=rl/sac env.id=Hopper-v4 model_path=data/sac_hopper.pt
+python example/collect_demo.py agent=rl/sac env.id=Hopper-v4 model_path=data/hopper-v4_sac.pt
 ```
 
 ### Hyper-parameter Fine-Tuning
