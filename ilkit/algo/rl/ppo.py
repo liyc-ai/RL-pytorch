@@ -2,6 +2,7 @@ import random
 from typing import Dict
 
 import torch as th
+from mlg import IntegratedLogger
 from torch import nn, optim
 from torch.utils.data import BatchSampler
 
@@ -9,7 +10,6 @@ from ilkit.algo.rl.trpo import TRPO
 from ilkit.net.actor import MLPGaussianActor
 from ilkit.net.critic import MLPCritic
 from ilkit.util.drls import GAE
-from ilkit.util.logger import BaseLogger
 from ilkit.util.ptu import gradient_descent, move_device
 
 
@@ -17,7 +17,7 @@ class PPO(TRPO):
     """Proximal Policy Optimization (PPO)
     """
 
-    def __init__(self, cfg: Dict, logger: BaseLogger):
+    def __init__(self, cfg: Dict, logger: IntegratedLogger):
         super().__init__(cfg, logger)
 
     def setup_model(self):

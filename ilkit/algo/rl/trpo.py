@@ -4,18 +4,19 @@ from typing import Callable, Dict, Tuple, Union
 import numpy as np
 import torch as th
 import torch.nn.functional as F
+from mlg import IntegratedLogger
 from torch import nn, optim
 from torch.autograd import grad
 from torch.distributions.kl import kl_divergence
 from torch.distributions.normal import Normal
-from torch.nn.utils.convert_parameters import parameters_to_vector, vector_to_parameters
+from torch.nn.utils.convert_parameters import (parameters_to_vector,
+                                               vector_to_parameters)
 from torch.utils.data import BatchSampler
 
 from ilkit.algo.base import OnlineRLPolicy
 from ilkit.net.actor import MLPGaussianActor
 from ilkit.net.critic import MLPCritic
 from ilkit.util.drls import GAE
-from ilkit.util.logger import BaseLogger
 from ilkit.util.ptu import gradient_descent, move_device
 
 
@@ -23,7 +24,7 @@ class TRPO(OnlineRLPolicy):
     """Trust Region Policy Optimization (TRPO)
     """
 
-    def __init__(self, cfg: Dict, logger: BaseLogger):
+    def __init__(self, cfg: Dict, logger: IntegratedLogger):
         super().__init__(cfg, logger)
 
     def setup_model(self):

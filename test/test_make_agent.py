@@ -1,13 +1,13 @@
+import os
 import shutil
 from os.path import exists, join
 
 from hydra import compose, initialize
+from mlg import IntegratedLogger
 from omegaconf import DictConfig, OmegaConf
 
 from ilkit import IL_AGENTS, RL_AGENTS, make
 from ilkit.util.env import get_env_info, make_env
-from ilkit.util.logger import setup_logger
-import os
 
 LOGS = "logs_test"
 
@@ -37,7 +37,11 @@ def test_make_agent():
                 cfg["env"].update(get_env_info(continuous_env))
                 cfg["expert_dataset"]["d4rl_env_id"] = "hopper-expert-v2"
 
-            logger = setup_logger(cfg)
+            logger = IntegratedLogger(
+                record_param=cfg["log"]["record_param"],
+                log_root=cfg["log"]["root"],
+                args=cfg
+            )
             make(cfg, logger)
         except Exception as exc:
             if exists(logs_dir):

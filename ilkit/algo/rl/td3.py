@@ -4,21 +4,22 @@ from typing import Dict, Union
 import numpy as np
 import torch as th
 import torch.nn.functional as F
+from mlg import IntegratedLogger
 from stable_baselines3.common.utils import polyak_update
 from torch import nn, optim
 
 from ilkit.algo.base import OnlineRLPolicy
 from ilkit.net.actor import MLPDeterministicActor
 from ilkit.net.critic import MLPTwinCritic
-from ilkit.util.logger import BaseLogger
-from ilkit.util.ptu import freeze_net, gradient_descent, move_device, tensor2ndarray
+from ilkit.util.ptu import (freeze_net, gradient_descent, move_device,
+                            tensor2ndarray)
 
 
 class TD3(OnlineRLPolicy):
     """Twin Delayed Deep Deterministic Policy Gradient (TD3)
     """
 
-    def __init__(self, cfg: Dict, logger: BaseLogger):
+    def __init__(self, cfg: Dict, logger: IntegratedLogger):
         super().__init__(cfg, logger)
 
     def setup_model(self):

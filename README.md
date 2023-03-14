@@ -11,9 +11,17 @@ cd ilkit
 pip install -e .
 ```
 
-### Optional
+### mllogger
 
-#### D4RL
+We use [mllogger](https://github.com/BepfCp/mllogger.git) to manage the experimental results.
+
+```bash
+git clone https://github.com/BepfCp/mllogger.git
+cd mllogger
+pip install -e .
+```
+
+#### D4RL (Optional)
 
 We support to load offline (expert) data from the [D4RL](https://github.com/Farama-Foundation/D4RL) benchmark.
 ```bash
@@ -22,42 +30,7 @@ cd d4rl
 pip install -e .
 ```
 
-#### nni
-We support to use [nni](https://github.com/microsoft/nni) to auto-tune hyperparameters.
-
-```bash
-pip install nni
-```
-
-#### wandb
-
-```
-pip install wandb
-```
-
-#### RLAssistant
-
-We use [RLAssistant](https://github.com/polixir/RLAssistant) to manage experiments.
-
-```bash
-git clone https://github.com/polixir/RLAssistant.git
-cd RLAssistant
-python install -e .
-```
-
-#### SmartLogger
-
-We support to view the experiment result in front page via [SmartLogger](https://github.com/FanmingL/SmartLogger)
-
-```bash
-git clone https://github.com/FanmingL/SmartLogger.git
-cd SmartLogger
-pip install -e .
-```
-
 ## Implemented Algorithms
-
-Welcome to make PRs on new algorithm implementations :) .
 
 ### RL
 
@@ -103,7 +76,13 @@ python example/collect_demo.py agent=rl/sac env.id=Hopper-v4 model_path=data/hop
 
 ### Hyper-parameter Fine-Tuning
 
-Remember to specify your `nni_optim_fn` function in `example/hyper_param_tuning.py`.
+We support to use [nni](https://github.com/microsoft/nni) to auto-tune hyperparameters.
+
+```bash
+pip install nni
+```
+
+Then specify your `nni_optim_fn` function in `example/hyper_param_tuning.py`.
 
 ```bash
 pip install nni

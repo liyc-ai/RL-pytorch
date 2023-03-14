@@ -2,10 +2,11 @@ __version__ = "0.0.1"
 
 from typing import Any, Dict
 
+from mlg import IntegratedLogger
+
 from ilkit.algo.base import BasePolicy
 from ilkit.algo.il import *
 from ilkit.algo.rl import *
-from ilkit.util.logger import BaseLogger
 
 # Reinforcement Learning
 RL_AGENTS: Dict[str, BasePolicy] = {
@@ -37,11 +38,11 @@ IL_AGENTS: Dict[str, BasePolicy] = {
 AGENTS: Dict[str, BasePolicy] = dict(RL_AGENTS, **IL_AGENTS)  # Merge two dicts
 
 
-def _get_agent(cfg: Dict, logger: BaseLogger) -> BasePolicy:
+def _get_agent(cfg: Dict, logger: IntegratedLogger) -> BasePolicy:
     return AGENTS[cfg["agent"]["algo"]](cfg, logger)
 
 
-def make(cfg: Dict[str, Any], logger: BaseLogger = None) -> BasePolicy:
+def make(cfg: Dict[str, Any], logger: IntegratedLogger) -> BasePolicy:
     agent = _get_agent(cfg, logger)
     agent.setup_model()
     return agent

@@ -4,12 +4,12 @@ from typing import Dict
 
 import torch as th
 import torch.nn.functional as F
+from mlg import IntegratedLogger
 from torch import nn, optim
 from torch.utils.data import BatchSampler
 
 from ilkit.algo.il.gail import GAIL
 from ilkit.net.critic import MLPCritic
-from ilkit.util.logger import BaseLogger
 from ilkit.util.ptu import gradient_descent, move_device
 
 
@@ -17,7 +17,7 @@ class AIRL(GAIL):
     """Learning Robust Rewards with Adversarial Inverse Reinforcement Learning (AIRL)
     """
 
-    def __init__(self, cfg: Dict, logger: BaseLogger):
+    def __init__(self, cfg: Dict, logger: IntegratedLogger):
         super().__init__(cfg, logger)
 
     def setup_model(self):

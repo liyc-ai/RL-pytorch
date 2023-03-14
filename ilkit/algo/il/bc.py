@@ -1,4 +1,3 @@
-import time
 from os.path import join
 from typing import Callable, Dict, Tuple, Union
 
@@ -6,22 +5,22 @@ import gym
 import numpy as np
 import torch as th
 import torch.nn.functional as F
+from mlg import IntegratedLogger
 from torch import nn, optim
 from torch.distributions.categorical import Categorical
 from torch.distributions.normal import Normal
+from tqdm import trange
 
 from ilkit.algo.base import ILPolicy
 from ilkit.net.actor import MLPDeterministicActor, MLPGaussianActor
-from ilkit.util.logger import BaseLogger
 from ilkit.util.ptu import gradient_descent, tensor2ndarray
-from tqdm import trange
 
 
 class BCContinuous(ILPolicy):
     """Behavioral Cloning (BC) for Continuous Control
     """
 
-    def __init__(self, cfg: Dict, logger: BaseLogger):
+    def __init__(self, cfg: Dict, logger: IntegratedLogger):
         super().__init__(cfg, logger)
 
     def setup_model(self):
@@ -86,43 +85,24 @@ class BCContinuous(ILPolicy):
         from ilkit.util.eval import eval_policy
 
         if not self.cfg["train"]["learn"]:
-            self.logger.dump2log("We did not learn anything!")
+            self.logger.warning("We did not learn anything!")
             return
 
         best_return = -float("inf")
-        past_time = 0
-        now_time = time.time()
         train_steps = self.cfg["train"]["max_steps"]
         eval_interval = self.cfg["train"]["eval_interval"]
 
         for t in trange(train_steps):
-            last_time = now_time
-            self.logger.set_global_t(t)
-
             # update actor
-            info = self.update()
-            self.logger.logkvs(info)
-
+            self.logger.add_dict(self.update(), t)
             # evaluate
             if (t + 1) % eval_interval == 0:
                 eval_return = eval_policy(eval_env, reset_env_fn, self, self.seed)
-                self.logger.logkv("eval/return", eval_return)
+                self.logger.add_scalar("eval/return", eval_return, t)
 
                 if eval_return > best_return:
-                    self.save_model(join(self.logger.checkpoint_dir, "best_model.pt"))
+                    self.save_model(join(self.logger.ckpt_dir, "best_model.pt"))
                     best_return = eval_return
-
-            # update time
-            now_time = time.time()
-            one_step_time = now_time - last_time
-            past_time += one_step_time
-            if (t + 1) % self.cfg["log"]["print_time_interval"] == 0:
-                remain_time = one_step_time * (train_steps - t - 1)
-                self.logger.dump2log(
-                    f"Run: {past_time/60} min, Remain: {remain_time/60} min"
-                )
-
-            self.logger.dumpkvs()
 
     def update(self):
         states, actions = self.expert_buffer.sample(self.batch_size)[:2]
@@ -154,7 +134,7 @@ class BCDiscrete(BCContinuous):
     """Behavioral Cloning (BC) for Discrete Control
     """
 
-    def __init__(self, cfg: Dict, logger: BaseLogger):
+    def __init__(self, cfg: Dict, logger: IntegratedLogger):
         super().__init__(cfg, logger)
 
     def setup_model(self):

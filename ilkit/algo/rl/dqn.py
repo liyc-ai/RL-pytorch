@@ -4,11 +4,11 @@ from typing import Dict, Tuple, Union
 import numpy as np
 import torch as th
 import torch.nn.functional as F
+from mlg import IntegratedLogger
 from torch import nn, optim
 
 from ilkit.algo.base import OnlineRLPolicy
 from ilkit.net.critic import MLPCritic
-from ilkit.util.logger import BaseLogger
 from ilkit.util.ptu import freeze_net, gradient_descent, move_device
 
 
@@ -16,7 +16,7 @@ class DQN(OnlineRLPolicy):
     """Deep Q Networks (DQN)
     """
 
-    def __init__(self, cfg: Dict, logger: BaseLogger):
+    def __init__(self, cfg: Dict, logger: IntegratedLogger):
         super().__init__(cfg, logger)
 
     def setup_model(self):

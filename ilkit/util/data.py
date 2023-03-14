@@ -6,7 +6,6 @@ import gym
 import h5py
 import numpy as np
 import torch as th
-from RLA import logger
 from tqdm import tqdm
 
 from ilkit.algo.base import BasePolicy
@@ -226,6 +225,7 @@ def load_expert_dataset(
 
     # get expert dataset
     if d4rl_env_id is not None and dataset_file_path is not None:
+        from RLA import logger
         logger.warn(
             "User's own dataset and D4RL dataset are both specified, but we will ignore user's dataset"
         )

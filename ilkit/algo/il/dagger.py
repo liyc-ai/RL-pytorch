@@ -1,4 +1,3 @@
-import time
 from copy import deepcopy
 from os.path import join
 from typing import Callable, Dict, Tuple, Union
@@ -7,6 +6,7 @@ import gym
 import numpy as np
 import torch as th
 import torch.nn.functional as F
+from mlg import IntegratedLogger
 from omegaconf import OmegaConf
 from torch import nn, optim
 from torch.distributions.categorical import Categorical
@@ -16,7 +16,6 @@ from ilkit.algo.il.bc import BCContinuous
 from ilkit.net.actor import MLPDeterministicActor, MLPGaussianActor
 from ilkit.util.buffer import DAggerBuffer
 from ilkit.util.eval import eval_policy
-from ilkit.util.logger import BaseLogger
 from ilkit.util.ptu import gradient_descent, tensor2ndarray
 
 
@@ -24,7 +23,7 @@ class DAggerContinuous(BCContinuous):
     """Dataset Aggregation (DAgger) for Continuous Control
     """
 
-    def __init__(self, cfg: Dict, logger: BaseLogger):
+    def __init__(self, cfg: Dict, logger: IntegratedLogger):
         super().__init__(cfg, logger)
 
     def setup_model(self):
@@ -118,22 +117,17 @@ class DAggerContinuous(BCContinuous):
 
     def _no_nni_learn(self, train_env: gym.Env, eval_env: gym.Env, reset_env_fn: Callable):
         if not self.cfg["train"]["learn"]:
-            self.logger.dump2log("We did not learn anything!")
+            self.logger.warning("We did not learn anything!")
             return
 
         train_return = 0
         best_return = -float("inf")
-        past_time = 0
-        now_time = time.time()
         train_steps = self.cfg["train"]["max_steps"]
         eval_interval = self.cfg["train"]["eval_interval"]
 
         # start training
         next_state, _ = reset_env_fn(train_env, self.seed)
         for t in trange(train_steps):
-            last_time = now_time
-            self.logger.set_global_t(t)
-
             state = next_state
             action = self.select_action(
                 state,
@@ -153,35 +147,22 @@ class DAggerContinuous(BCContinuous):
             self.trans_buffer.insert_transition(state, expert_action)
 
             # update policy
-            info = self.update()
-            self.logger.logkvs(info)
+            self.logger.add_dict(self.update(), t)
 
             # whether this episode ends
             if terminated or truncated:
-                self.logger.logkv("return", train_return, "train")
+                self.logger.add_scalar("return/train", train_return, t)
                 next_state, _ = reset_env_fn(train_env, self.seed)
                 train_return = 0
 
             # evaluate
             if (t + 1) % eval_interval == 0:
                 eval_return = eval_policy(eval_env, reset_env_fn, self, self.seed)
-                self.logger.logkv("return/eval", eval_return)
+                self.logger.add_scalar("return/eval", eval_return, t)
 
                 if eval_return > best_return:
-                    self.save_model(join(self.logger.checkpoint_dir, "best_model.pt"))
+                    self.save_model(join(self.logger.ckpt_dir, "best_model.pt"))
                     best_return = eval_return
-
-            # update time
-            now_time = time.time()
-            one_step_time = now_time - last_time
-            past_time += one_step_time
-            if (t + 1) % self.cfg["log"]["print_time_interval"] == 0:
-                remain_time = one_step_time * (train_steps - t - 1)
-                self.logger.dump2log(
-                    f"Run: {past_time/60} min, Remain: {remain_time/60} min"
-                )
-
-            self.logger.dumpkvs()
 
     def update(self):
         log_info = dict()
@@ -203,7 +184,7 @@ class DAggerDiscrete(DAggerContinuous):
     """Dataset Aggregation (DAgger) for Discrete Control
     """
 
-    def __init__(self, cfg: Dict, logger: BaseLogger):
+    def __init__(self, cfg: Dict, logger: IntegratedLogger):
         super().__init__(cfg, logger)
 
     def setup_model(self):

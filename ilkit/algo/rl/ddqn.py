@@ -1,16 +1,16 @@
 from typing import Dict
 
 import torch as th
+from mlg import IntegratedLogger
 
 from ilkit.algo.rl.dqn import DQN
-from ilkit.util.logger import BaseLogger
 
 
 class DDQN(DQN):
     """Deep Double Q Networks (DDQN)
     """
 
-    def __init__(self, cfg: Dict, logger: BaseLogger):
+    def __init__(self, cfg: Dict, logger: IntegratedLogger):
         super().__init__(cfg, logger)
 
     def _get_q_target(self, next_states: th.Tensor):

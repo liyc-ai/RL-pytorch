@@ -19,24 +19,10 @@ model_path: data/hopper-v4_sac.pt
 # log
 log:
   root: logs
-  logger_type: tensorboard
-  setup_logger: true
-  print_time_interval: 10_000
   record_param:
     - seed
     - agent.algo
     - env.id
-  run_file:
-    - example/train_agent.py
-  project: ilkit_example
-  # below is sepcific to TBLogger
-  backup_code_dir:
-  # below is specific to RLALogger
-  rla_config: conf/rla_config.yaml
-  # below is specific to wandb
-  up2cloud: false
-  api_key_file: conf/_wandb_info.yaml  #! remember to create this
-  entity:  # group name
 
 # train
 train:

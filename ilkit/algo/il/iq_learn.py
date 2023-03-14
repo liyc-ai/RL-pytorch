@@ -3,11 +3,11 @@ from typing import Dict, Tuple, Union
 import numpy as np
 import torch as th
 import torch.nn.functional as F
+from mlg import IntegratedLogger
 from torch.distributions import Categorical
 
 from ilkit.algo.rl.dqn import DQN
 from ilkit.algo.rl.sac import SAC
-from ilkit.util.logger import BaseLogger
 from ilkit.util.ptu import tensor2ndarray
 
 
@@ -52,7 +52,7 @@ class IQLearnDiscrete(DQN):
     """Inverse soft-Q Learning for Imitation (IQ-Learn), discrete action space
     """
 
-    def __init__(self, cfg: Dict, logger: BaseLogger):
+    def __init__(self, cfg: Dict, logger: IntegratedLogger):
         super().__init__(cfg, logger)
 
     def setup_model(self):
@@ -113,7 +113,7 @@ class IQLearnContinuous(SAC):
     """Inverse soft-Q Learning for Imitation (IQ-Learn), continuous action space
     """
 
-    def __init__(self, cfg: Dict, logger: BaseLogger):
+    def __init__(self, cfg: Dict, logger: IntegratedLogger):
         super().__init__(cfg, logger)
 
     def setup_model(self):

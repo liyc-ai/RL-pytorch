@@ -1,4 +1,3 @@
-import time
 from abc import ABC, abstractmethod
 from os.path import exists, join
 from typing import Callable, Dict, Union
@@ -6,18 +5,18 @@ from typing import Callable, Dict, Union
 import gym
 import numpy as np
 import torch as th
+from mlg import IntegratedLogger
 from torch import nn, optim
 from tqdm import trange
 
 from ilkit.util.buffer import TransitionBuffer
-from ilkit.util.logger import BaseLogger
 
 
 class BasePolicy(ABC):
     """Base for RL and IL
     """
 
-    def __init__(self, cfg: Dict, logger: BaseLogger):
+    def __init__(self, cfg: Dict, logger: IntegratedLogger):
         self.cfg = cfg
         self.algo_cfg = cfg["agent"]  # configs of algorithms
 
@@ -104,7 +103,7 @@ class BasePolicy(ABC):
                 state_dicts[name] = model.state_dict()
         th.save(state_dicts, model_path)
 
-        self.logger.dump2log(f"Successfully save model to {model_path}!")
+        self.logger.info(f"Successfully save model to {model_path}!")
 
     def load_model(self, model_path: str = None):
         """Load model from pre-specified path
@@ -114,7 +113,7 @@ class BasePolicy(ABC):
             model_path = self.cfg["model_path"]
 
         if not exists(model_path):
-            self.logger.dump2log(
+            self.logger.warning(
                 "No model to load, the model parameters are randomly initialized."
             )
             return
@@ -125,11 +124,11 @@ class BasePolicy(ABC):
                 self.__dict__[name].data = self.models[name].data
             else:
                 model.load_state_dict(state_dicts[name])
-        self.logger.dump2log(f"Successfully load model from {model_path}!")
+        self.logger.info(f"Successfully load model from {model_path}!")
 
 
 class ILPolicy(BasePolicy):
-    def __init__(self, cfg: Dict, logger: BaseLogger):
+    def __init__(self, cfg: Dict, logger: IntegratedLogger):
         super().__init__(cfg, logger)
 
     def load_expert(self):
@@ -142,7 +141,7 @@ class ILPolicy(BasePolicy):
         expert_info = self.cfg["expert_dataset"]
         dataset_file_path = expert_info["dataset_file_path"]
         if expert_info["d4rl_env_id"] is not None and dataset_file_path is not None:
-            self.logger.dump2log(
+            self.logger.warning(
                 "User's own dataset and D4RL dataset are both specified, but we will ignore user's dataset"
             )
         expert_dataset = self.data_handler.parse_dataset(
@@ -164,7 +163,7 @@ class ILPolicy(BasePolicy):
 
 
 class OnlineRLPolicy(BasePolicy):
-    def __init__(self, cfg: Dict, logger: BaseLogger):
+    def __init__(self, cfg: Dict, logger: IntegratedLogger):
         super().__init__(cfg, logger)
 
         # hyper-param
@@ -237,22 +236,17 @@ class OnlineRLPolicy(BasePolicy):
         from ilkit.util.eval import eval_policy
 
         if not self.cfg["train"]["learn"]:
-            self.logger.dump2log("We did not learn anything!")
+            self.logger.warning("We did not learn anything!")
             return
 
         train_return = 0
         best_return = -float("inf")
-        past_time = 0
-        now_time = time.time()
         train_steps = self.cfg["train"]["max_steps"]
         eval_interval = self.cfg["train"]["eval_interval"]
 
         # start training
         next_state, info = reset_env_fn(train_env, self.seed)
         for t in trange(train_steps):
-            last_time = now_time
-            self.logger.set_global_t(t)
-
             state = next_state
             if "warmup_steps" in self.algo_cfg and t < self.algo_cfg["warmup_steps"]:
                 action = train_env.action_space.sample()
@@ -273,32 +267,19 @@ class OnlineRLPolicy(BasePolicy):
             )
 
             # update policy
-            info = self.update()
-            self.logger.logkvs(info)
+            self.logger.add_dict(self.update(), t)
 
             # whether this episode ends
             if terminated or truncated:
-                self.logger.logkv("return/train", train_return)
-                next_state, info = reset_env_fn(train_env, self.seed)
+                self.logger.add_scalar("return/train", train_return, t)
+                next_state, _ = reset_env_fn(train_env, self.seed)
                 train_return = 0
 
             # evaluate
             if (t + 1) % eval_interval == 0:
                 eval_return = eval_policy(eval_env, reset_env_fn, self, self.seed)
-                self.logger.logkv("return/eval", eval_return)
+                self.logger.add_scalar("return/eval", eval_return, t)
 
                 if eval_return > best_return:
-                    self.save_model(join(self.logger.checkpoint_dir, "best_model.pt"))
+                    self.save_model(join(self.logger.ckpt_dir, "best_model.pt"))
                     best_return = eval_return
-
-            # update time
-            now_time = time.time()
-            one_step_time = now_time - last_time
-            past_time += one_step_time
-            if (t + 1) % self.cfg["log"]["print_time_interval"] == 0:
-                remain_time = one_step_time * (train_steps - t - 1)
-                self.logger.dump2log(
-                    f"Run: {past_time/60} min, Remain: {remain_time/60} min"
-                )
-
-            self.logger.dumpkvs()
