@@ -105,7 +105,7 @@ Then, watch the results at `http://localhost:8080`; if you want to stop the expe
 - [x] Support nni
 - [ ] Support the `__target__` usage of Hydra
 - [ ] Support parallel sampling
-- [ ] Support Ray for distributional traning
+- [ ] Support Ray for distributional training
 
 ## Acknowledgement
 During implementing the IL and RL algorithms, a lot of classic open-source materials on the Internet served as good references. And I highly appreciate their author's effort. Below is a detailed list. By the way, thanks to my friends from [LAMDA-RL](https://github.com/LAMDA-RL) for their helpful discussions.
