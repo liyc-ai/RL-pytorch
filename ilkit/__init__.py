@@ -34,7 +34,7 @@ IL_AGENTS: Dict[str, BasePolicy] = {
     # "value_dice": ValueDICE,
 }
 
-AGENTS: Dict[str, BasePolicy] = RL_AGENTS | IL_AGENTS
+AGENTS: Dict[str, BasePolicy] = dict(RL_AGENTS, **IL_AGENTS)  # Merge two dicts
 
 
 def _get_agent(cfg: Dict, logger: BaseLogger) -> BasePolicy:

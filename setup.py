@@ -39,6 +39,7 @@ setup(
     author_email="ychenli.X@gmail.com",
     url="https://github.com/BepfCp/ilkit",
     packages=find_packages(include=["ilkit.*"]),
+    python_requires=">=3.7",
     install_requires=requires,
     extras_require=extras,  # pip install -e ".[all]"
 )

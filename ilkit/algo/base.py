@@ -1,7 +1,6 @@
 import time
 from abc import ABC, abstractmethod
-from os.path import exists, isabs, join
-from re import A
+from os.path import exists, join
 from typing import Callable, Dict, Union
 
 import gym
