@@ -108,7 +108,7 @@ Then, watch the results at `http://localhost:8080`; if you want to stop the expe
 - [ ] Support Ray for distributional training
 
 ## Acknowledgement
-During implementing the IL and RL algorithms, a lot of classic open-source materials on the Internet served as good references. And I highly appreciate their author's effort. Below is a detailed list. By the way, thanks to my friends from [LAMDA-RL](https://github.com/LAMDA-RL) for their helpful discussions.
+During the implementation of the IL and RL algorithms, I found many classic open-source materials on the Internet to be excellent references. I am deeply grateful for the efforts of their authors. Below is a detailed list. Additionally, I would like to extend my thanks to my friends from [LAMDA-RL](https://github.com/LAMDA-RL) for our helpful discussions.
 
 **RL Library**
 
