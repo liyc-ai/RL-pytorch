@@ -31,9 +31,7 @@ def main(cfg: DictConfig):
 
     # setup logger
     logger = IntegratedLogger(
-        record_param=cfg["log"]["record_param"],
-        log_root=cfg["log"]["root"],
-        args=cfg
+        record_param=cfg["log"]["record_param"], log_root=cfg["log"]["root"], args=cfg
     )
 
     # create agent

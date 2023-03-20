@@ -7,7 +7,11 @@ from ilkit.algo.base import BasePolicy
 
 
 def eval_policy(
-    eval_env: gym.Env, reset_env_fn: Callable, policy: BasePolicy, seed: int, episodes=10
+    eval_env: gym.Env,
+    reset_env_fn: Callable,
+    policy: BasePolicy,
+    seed: int,
+    episodes=10,
 ):
     """Evaluate Policy
     """

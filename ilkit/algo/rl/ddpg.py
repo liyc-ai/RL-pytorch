@@ -11,8 +11,7 @@ from torch import nn, optim
 from ilkit.algo.base import OnlineRLPolicy
 from ilkit.net.actor import MLPDeterministicActor
 from ilkit.net.critic import MLPCritic
-from ilkit.util.ptu import (freeze_net, gradient_descent, move_device,
-                            tensor2ndarray)
+from ilkit.util.ptu import freeze_net, gradient_descent, move_device, tensor2ndarray
 
 
 class DDPG(OnlineRLPolicy):

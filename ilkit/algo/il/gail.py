@@ -62,7 +62,7 @@ class GAIL(ILPolicy):
         generator_cfg["agent"] = OmegaConf.to_object(
             OmegaConf.load(self.algo_cfg["generator"])
         )
-        self.generator: OnlineRLPolicy  = make(generator_cfg, self.logger)
+        self.generator: OnlineRLPolicy = make(generator_cfg, self.logger)
 
         for key, value in self.generator.models.items():
             self.models.update({"generator_" + key: value})
@@ -125,7 +125,9 @@ class GAIL(ILPolicy):
 
         nni.report_final_result(best_return)
 
-    def _no_nni_learn(self, train_env: gym.Env, eval_env: gym.Env, reset_env_fn: Callable):
+    def _no_nni_learn(
+        self, train_env: gym.Env, eval_env: gym.Env, reset_env_fn: Callable
+    ):
         if not self.cfg["train"]["learn"]:
             self.logger.warning("We did not learn anything!")
             return
@@ -237,7 +239,9 @@ class GAIL(ILPolicy):
                 _name = name[len("generator_") :]
                 if isinstance(model, th.Tensor):
                     self.generator.models[_name] = state_dicts[name][name]
-                    self.generator.__dict__[_name].data = self.generator.models[_name].data
+                    self.generator.__dict__[_name].data = self.generator.models[
+                        _name
+                    ].data
                 else:
                     self.generator.models[_name].load_state_dict(model)
             else:

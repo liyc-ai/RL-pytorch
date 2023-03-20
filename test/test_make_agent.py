@@ -30,17 +30,22 @@ def test_make_agent():
 
             if agent in discrete_agents:
                 cfg["env"].update(get_env_info(discrete_env))
-                cfg["expert_dataset"][
-                    "dataset_file_path"
-                ] = "data/cartpole-v1_expert.hdf5"
+                cfg["expert_dataset"].update(
+                    {
+                        "use_own_dataset": True,
+                        "own_dataset_path": "data/cartpole-v1_expert.hdf5",
+                    }
+                )
             else:
                 cfg["env"].update(get_env_info(continuous_env))
-                cfg["expert_dataset"]["d4rl_env_id"] = "hopper-expert-v2"
+                cfg["expert_dataset"].update(
+                    {"use_own_dataset": False, "d4rl_env_id": "hopper-expert-v2"}
+                )
 
             logger = IntegratedLogger(
                 record_param=cfg["log"]["record_param"],
                 log_root=cfg["log"]["root"],
-                args=cfg
+                args=cfg,
             )
             make(cfg, logger)
         except Exception as exc:

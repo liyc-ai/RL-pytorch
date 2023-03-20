@@ -12,8 +12,7 @@ from torch import nn, optim
 from ilkit.algo.base import OnlineRLPolicy
 from ilkit.net.actor import MLPGaussianActor
 from ilkit.net.critic import MLPTwinCritic
-from ilkit.util.ptu import (freeze_net, gradient_descent, move_device,
-                            tensor2ndarray)
+from ilkit.util.ptu import freeze_net, gradient_descent, move_device, tensor2ndarray
 
 
 class SAC(OnlineRLPolicy):
@@ -57,16 +56,21 @@ class SAC(OnlineRLPolicy):
 
         # alpha, we optimize log(alpha) because alpha should always be bigger than 0.
         if self.algo_cfg["log_alpha"]["auto_tune"]:
-            self.log_alpha = th.tensor([self.algo_cfg["log_alpha"]["init_value"]], device=self.device, requires_grad=True)
-            self.log_alpha_optim = getattr(optim, self.algo_cfg["log_alpha"]["optimizer"])(
-                [self.log_alpha], self.algo_cfg["log_alpha"]["lr"]
+            self.log_alpha = th.tensor(
+                [self.algo_cfg["log_alpha"]["init_value"]],
+                device=self.device,
+                requires_grad=True,
             )
-            self.models.update({
-                "log_alpha": self.log_alpha,
-                "log_alpha_optim": self.log_alpha_optim,
-            })
+            self.log_alpha_optim = getattr(
+                optim, self.algo_cfg["log_alpha"]["optimizer"]
+            )([self.log_alpha], self.algo_cfg["log_alpha"]["lr"])
+            self.models.update(
+                {"log_alpha": self.log_alpha, "log_alpha_optim": self.log_alpha_optim}
+            )
         else:
-            self.log_alpha = th.tensor([self.algo_cfg["log_alpha"]["init_value"]], device=self.device)
+            self.log_alpha = th.tensor(
+                [self.algo_cfg["log_alpha"]["init_value"]], device=self.device
+            )
 
         freeze_net((self.critic_target,))
         move_device((self.actor, self.critic, self.critic_target), self.device)
@@ -80,7 +84,7 @@ class SAC(OnlineRLPolicy):
                 "critic_optim": self.critic_optim,
             }
         )
-        
+
     @property
     def alpha(self):
         return math.exp(self.log_alpha.item())
@@ -156,7 +160,6 @@ class SAC(OnlineRLPolicy):
                 )
 
         return self.log_info
-    
 
     def _update_critic(
         self,
@@ -210,4 +213,3 @@ class SAC(OnlineRLPolicy):
 
         # update alpha
         self.models["log_alpha"].data = self.log_alpha.data
-        

@@ -80,8 +80,10 @@ class BCContinuous(ILPolicy):
                     best_return = eval_return
 
         nni.report_final_result(best_return)
-        
-    def _no_nni_learn(self, train_env: gym.Env, eval_env: gym.Env, reset_env_fn: Callable):
+
+    def _no_nni_learn(
+        self, train_env: gym.Env, eval_env: gym.Env, reset_env_fn: Callable
+    ):
         from ilkit.util.eval import eval_policy
 
         if not self.cfg["train"]["learn"]:

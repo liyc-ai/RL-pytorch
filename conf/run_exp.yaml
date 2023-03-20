@@ -39,9 +39,11 @@ collect:
 
 # imitation learning
 expert_dataset:
-  dataset_file_path: # data/cartpole-v1_expert.hdf5
-  d4rl_env_id: # hopper-expert-v2
   n_expert_traj: 10
+  # whether to use your own dataset, if not, we will consider d4rl dataset
+  use_own_dataset: false
+  own_dataset_path: data/cartpole-v1_expert.hdf5
+  d4rl_env_id: hopper-expert-v2
 
 # algo
 defaults:

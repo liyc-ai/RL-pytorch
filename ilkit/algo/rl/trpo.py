@@ -9,8 +9,7 @@ from torch import nn, optim
 from torch.autograd import grad
 from torch.distributions.kl import kl_divergence
 from torch.distributions.normal import Normal
-from torch.nn.utils.convert_parameters import (parameters_to_vector,
-                                               vector_to_parameters)
+from torch.nn.utils.convert_parameters import parameters_to_vector, vector_to_parameters
 from torch.utils.data import BatchSampler
 
 from ilkit.algo.base import OnlineRLPolicy

@@ -64,13 +64,17 @@ class BasePolicy(ABC):
             self._nni_learn(train_env, eval_env, reset_env_fn_fn)
         else:
             self._no_nni_learn(train_env, eval_env, reset_env_fn_fn)
-    
-    @abstractmethod        
-    def _nni_learn(self, train_env: gym.Env, eval_env: gym.Env, reset_env_fn_fn: Callable):
-        raise NotImplementedError
-    
+
     @abstractmethod
-    def _no_nni_learn(self, train_env: gym.Env, eval_env: gym.Env, reset_env_fn_fn: Callable):
+    def _nni_learn(
+        self, train_env: gym.Env, eval_env: gym.Env, reset_env_fn_fn: Callable
+    ):
+        raise NotImplementedError
+
+    @abstractmethod
+    def _no_nni_learn(
+        self, train_env: gym.Env, eval_env: gym.Env, reset_env_fn_fn: Callable
+    ):
         raise NotImplementedError
 
     # ----------- Model ------------
@@ -88,7 +92,7 @@ class BasePolicy(ABC):
             if isinstance(model, nn.Module):
                 self.models[model].train()
 
-    def save_model(self, model_path: str):
+    def save_model(self, model_path: str = None):
         """Save model to pre-specified path
         Note: Currently, only th.Tensor and th.nn.Module are supported.
         """
@@ -132,21 +136,11 @@ class ILPolicy(BasePolicy):
         super().__init__(cfg, logger)
 
     def load_expert(self):
-        from ilkit.util.data import DataHandler
-
-        # instantiate data handler
-        self.data_handler = DataHandler(self.seed)
+        from ilkit.util.data import get_expert_dataset
 
         # get expert dataset
         expert_info = self.cfg["expert_dataset"]
-        dataset_file_path = expert_info["dataset_file_path"]
-        if expert_info["d4rl_env_id"] is not None and dataset_file_path is not None:
-            self.logger.warning(
-                "User's own dataset and D4RL dataset are both specified, but we will ignore user's dataset"
-            )
-        expert_dataset = self.data_handler.parse_dataset(
-            dataset_file_path, expert_info["d4rl_env_id"]
-        )
+        expert_dataset = get_expert_dataset(**expert_info)
 
         # load expert dataset into buffer
         expert_buffer_kwarg = {
@@ -157,9 +151,7 @@ class ILPolicy(BasePolicy):
             "buffer_size": -1,
         }
         self.expert_buffer = TransitionBuffer(**expert_buffer_kwarg)
-        self.data_handler.load_dataset_to_buffer(
-            expert_dataset, self.expert_buffer, expert_info["n_expert_traj"]
-        )
+        self.expert_buffer.load_dataset(expert_dataset, expert_info["n_expert_traj"])
 
 
 class OnlineRLPolicy(BasePolicy):
@@ -232,7 +224,9 @@ class OnlineRLPolicy(BasePolicy):
 
         nni.report_final_result(best_return)
 
-    def _no_nni_learn(self, train_env: gym.Env, eval_env: gym.Env, reset_env_fn: Callable):
+    def _no_nni_learn(
+        self, train_env: gym.Env, eval_env: gym.Env, reset_env_fn: Callable
+    ):
         from ilkit.util.eval import eval_policy
 
         if not self.cfg["train"]["learn"]:
