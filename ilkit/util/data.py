@@ -71,8 +71,9 @@ def split_dataset_into_trajs(
             while i < max_steps:
                 start_idx = i
                 traj_len = 1
-                while (traj_len <= max_steps) and (i < max_steps):
+                while (traj_len <= max_episode_steps) and (i < max_steps):
                     i += 1
+                    traj_len += 1
                     if dataset["terminals"][i - 1]:
                         break
                 traj_pairs.append([start_idx, i])
