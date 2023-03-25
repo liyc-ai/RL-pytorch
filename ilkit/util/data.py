@@ -2,7 +2,7 @@ import os
 from os.path import join
 from typing import Callable, Dict, List
 
-import gym
+import gymnasium as gym
 import h5py
 import numpy as np
 import torch as th
@@ -221,11 +221,10 @@ def get_expert_dataset(
                 dataset[k] = dataset_file[k][:]
         return dataset
     else:
-        try:
-            import d4rl
-        except:
-            raise Exception(
-                "Please correctly install D4RL from https://github.com/Farama-Foundation/D4RL"
-            )
+        import d4rl
+        # d4rl is not compatible with gymnasium but only gym
+        import gym
         env = gym.make(d4rl_env_id)
+        import gymnasium as gym
+        
         return env.get_dataset()

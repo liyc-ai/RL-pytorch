@@ -8,25 +8,9 @@ Imitation Learning (IL) and Deep Reinforcement Learning (RL) with PyTorch.
 ```bash
 git clone https://github.com/BepfCp/ilkit
 cd ilkit
-pip install -e .
-```
-
-### mllogger
-
-We use [mllogger](https://github.com/BepfCp/mllogger.git) to manage the experimental results.
-
-```bash
-git clone https://github.com/BepfCp/mllogger.git
-cd mllogger
-pip install -e .
-```
-
-#### D4RL (Optional)
-
-We support to load offline (expert) data from the [D4RL](https://github.com/Farama-Foundation/D4RL) benchmark.
-```bash
-git clone https://github.com/rail-berkeley/d4rl.git
-cd d4rl
+# install with D4RL
+pip install -e ".[d4rl]"
+# or install without D4RL
 pip install -e .
 ```
 
@@ -76,13 +60,7 @@ python example/collect_demo.py agent=rl/sac env.id=Hopper-v4 model_path=data/hop
 
 ### Hyper-parameter Fine-Tuning
 
-We support to use [nni](https://github.com/microsoft/nni) to auto-tune hyperparameters.
-
-```bash
-pip install nni
-```
-
-Then specify your `nni_optim_fn` function in `example/hyper_param_tuning.py`.
+We support to use [nni](https://github.com/microsoft/nni) to auto-tune hyperparameters. To do so, please specify your `nni_optim_fn` function in `example/hyper_param_tuning.py`.
 
 ```bash
 pip install nni

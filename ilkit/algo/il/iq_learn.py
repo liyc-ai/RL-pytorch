@@ -3,7 +3,7 @@ from typing import Dict, Tuple, Union
 import numpy as np
 import torch as th
 import torch.nn.functional as F
-from mlg import IntegratedLogger
+from mllogger import IntegratedLogger
 from torch.distributions import Categorical
 
 from ilkit.algo.rl.dqn import DQN

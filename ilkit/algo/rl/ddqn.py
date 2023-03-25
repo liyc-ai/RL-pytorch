@@ -1,7 +1,7 @@
 from typing import Dict
 
 import torch as th
-from mlg import IntegratedLogger
+from mllogger import IntegratedLogger
 
 from ilkit.algo.rl.dqn import DQN
 

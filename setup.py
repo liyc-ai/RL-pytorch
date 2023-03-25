@@ -23,7 +23,9 @@ def read_requirements():
     return install_requires
 
 
-extras = {"nni": ["nni"]}
+extras = {
+    "d4rl": ["d4rl @ git+https://github.com/Farama-Foundation/D4RL@master#egg=D4RL"],
+}
 
 extras["all"] = list(
     set(itertools.chain.from_iterable(map(lambda group: extras[group], extras.keys())))
@@ -38,8 +40,22 @@ setup(
     author="Yi-Chen Li",
     author_email="ychenli.X@gmail.com",
     url="https://github.com/BepfCp/ilkit",
-    packages=find_packages(include=["ilkit.*"]),
+    packages=find_packages(include=["ilkit*"]),
     python_requires=">=3.7",
-    install_requires=requires,
-    extras_require=extras,  # pip install -e ".[all]"
+    install_requires=[
+        "gym==0.21.0",
+        "gymnasium==0.27.1",
+        "h5py",
+        "hydra-core==1.3.2",
+        "nni",
+        "numba",
+        "numpy==1.23.5",
+        "omegaconf==2.3.0",
+        "setuptools==65.5.1",
+        "stable_baselines3==1.7.0",
+        "torch",
+        "tqdm",
+        "mllogger @ git+https://github.com/BepfCp/mllogger@main#egg=mllogger"
+    ],
+    extras_require=extras,  # pip install -e ".[d4rl]"
 )

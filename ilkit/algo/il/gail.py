@@ -3,11 +3,11 @@ from copy import deepcopy
 from os.path import exists, join
 from typing import Callable, Dict, Tuple, Union
 
-import gym
+import gymnasium as gym
 import numpy as np
 import torch as th
 import torch.nn.functional as F
-from mlg import IntegratedLogger
+from mllogger import IntegratedLogger
 from omegaconf import OmegaConf
 from torch import nn, optim
 from torch.utils.data import BatchSampler

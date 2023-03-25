@@ -2,7 +2,7 @@ from typing import Dict, Union
 
 import numpy as np
 import torch as th
-from mlg import IntegratedLogger
+from mllogger import IntegratedLogger
 
 from ilkit.algo.base import ILPolicy
 

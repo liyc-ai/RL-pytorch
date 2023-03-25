@@ -2,7 +2,7 @@ import os
 from os.path import join
 
 import hydra
-from mlg import IntegratedLogger
+from mllogger import IntegratedLogger
 from omegaconf import DictConfig, OmegaConf
 from stable_baselines3.common.utils import set_random_seed
 

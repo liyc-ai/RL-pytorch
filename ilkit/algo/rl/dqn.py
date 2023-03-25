@@ -4,7 +4,7 @@ from typing import Dict, Tuple, Union
 import numpy as np
 import torch as th
 import torch.nn.functional as F
-from mlg import IntegratedLogger
+from mllogger import IntegratedLogger
 from torch import nn, optim
 
 from ilkit.algo.base import OnlineRLPolicy

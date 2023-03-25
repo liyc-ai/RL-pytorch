@@ -2,7 +2,7 @@ import random
 from typing import Dict
 
 import torch as th
-from mlg import IntegratedLogger
+from mllogger import IntegratedLogger
 from torch import nn, optim
 from torch.utils.data import BatchSampler
 

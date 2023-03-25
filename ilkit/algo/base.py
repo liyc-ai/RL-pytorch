@@ -2,10 +2,10 @@ from abc import ABC, abstractmethod
 from os.path import exists, join
 from typing import Callable, Dict, Union
 
-import gym
+import gymnasium as gym
 import numpy as np
 import torch as th
-from mlg import IntegratedLogger
+from mllogger import IntegratedLogger
 from torch import nn, optim
 from tqdm import trange
 

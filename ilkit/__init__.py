@@ -2,7 +2,7 @@ __version__ = "0.0.1"
 
 from typing import Any, Dict
 
-from mlg import IntegratedLogger
+from mllogger import IntegratedLogger
 
 from ilkit.algo.base import BasePolicy
 from ilkit.algo.il import *

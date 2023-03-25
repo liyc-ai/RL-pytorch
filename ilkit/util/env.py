@@ -1,7 +1,7 @@
 from typing import Dict
 
-import gym
-from gym.spaces import Box, Discrete
+import gymnasium as gym
+from gymnasium.spaces import Box, Discrete
 
 
 def _get_space_info(obj: gym.Space):
@@ -9,7 +9,7 @@ def _get_space_info(obj: gym.Space):
         shape = obj.shape
         type_ = "float"
     elif isinstance(obj, Discrete):
-        shape = (obj.n,)
+        shape = (obj.n.item(),)
         type_ = "int"
     else:
         raise TypeError("Currently only Box and Discrete are supported!")

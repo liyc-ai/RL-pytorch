@@ -1,5 +1,0 @@
-gym==0.26.2
-numpy
-stable_baselines3
-numba
-hydra-core==1.3.1

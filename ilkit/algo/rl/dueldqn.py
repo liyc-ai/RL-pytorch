@@ -1,7 +1,7 @@
 from copy import deepcopy
 from typing import Dict
 
-from mlg import IntegratedLogger
+from mllogger import IntegratedLogger
 from torch import nn, optim
 
 from ilkit.algo.rl.ddqn import DDQN
