@@ -141,7 +141,7 @@ class DDPG(OnlineRLPolicy):
         with th.no_grad():
             pred_next_actions = self.select_action(
                 next_states,
-                deterministic=True,
+                deterministic=False,
                 keep_dtype_tensor=True,
                 actor=self.actor_target,
             )
