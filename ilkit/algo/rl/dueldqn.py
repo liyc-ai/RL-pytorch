@@ -1,7 +1,7 @@
 from copy import deepcopy
 from typing import Dict
 
-from mllogger import IntegratedLogger
+from mllogger import TBLogger
 from torch import nn, optim
 
 from ilkit.algo.rl.ddqn import DDQN
@@ -13,7 +13,7 @@ class DuelDQN(DDQN):
     """Dueling Deep Q Networks (DuelDQN)
     """
 
-    def __init__(self, cfg: Dict, logger: IntegratedLogger):
+    def __init__(self, cfg: Dict, logger: TBLogger):
         super().__init__(cfg, logger)
 
     def setup_model(self):

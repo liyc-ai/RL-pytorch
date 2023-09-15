@@ -5,7 +5,7 @@ import gymnasium as gym
 import numpy as np
 import torch as th
 import torch.nn.functional as F
-from mllogger import IntegratedLogger
+from mllogger import TBLogger
 from torch import nn, optim
 from torch.distributions.categorical import Categorical
 from torch.distributions.normal import Normal
@@ -20,7 +20,7 @@ class BCContinuous(ILPolicy):
     """Behavioral Cloning (BC) for Continuous Control
     """
 
-    def __init__(self, cfg: Dict, logger: IntegratedLogger):
+    def __init__(self, cfg: Dict, logger: TBLogger):
         super().__init__(cfg, logger)
 
     def setup_model(self):
@@ -87,7 +87,7 @@ class BCContinuous(ILPolicy):
         from ilkit.util.eval import eval_policy
 
         if not self.cfg["train"]["learn"]:
-            self.logger.warning("We did not learn anything!")
+            self.logger.tb.warning("We did not learn anything!")
             return
 
         best_return = -float("inf")
@@ -100,7 +100,7 @@ class BCContinuous(ILPolicy):
             # evaluate
             if (t + 1) % eval_interval == 0:
                 eval_return = eval_policy(eval_env, reset_env_fn, self, self.seed)
-                self.logger.add_scalar("eval/return", eval_return, t)
+                self.logger.tb.add_scalar("eval/return", eval_return, t)
 
                 if eval_return > best_return:
                     self.save_model(join(self.logger.ckpt_dir, "best_model.pt"))
@@ -136,7 +136,7 @@ class BCDiscrete(BCContinuous):
     """Behavioral Cloning (BC) for Discrete Control
     """
 
-    def __init__(self, cfg: Dict, logger: IntegratedLogger):
+    def __init__(self, cfg: Dict, logger: TBLogger):
         super().__init__(cfg, logger)
 
     def setup_model(self):

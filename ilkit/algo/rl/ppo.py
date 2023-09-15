@@ -2,7 +2,7 @@ import random
 from typing import Dict
 
 import torch as th
-from mllogger import IntegratedLogger
+from mllogger import TBLogger
 from torch import nn, optim
 from torch.utils.data import BatchSampler
 
@@ -17,7 +17,7 @@ class PPO(TRPO):
     """Proximal Policy Optimization (PPO)
     """
 
-    def __init__(self, cfg: Dict, logger: IntegratedLogger):
+    def __init__(self, cfg: Dict, logger: TBLogger):
         super().__init__(cfg, logger)
 
     def setup_model(self):

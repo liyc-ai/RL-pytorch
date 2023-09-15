@@ -15,7 +15,6 @@ model_path: "data/hopper-v4_sac.pt"
 
 # log
 log:
-  root: logs
   record_param:
     - seed
     - agent.algo

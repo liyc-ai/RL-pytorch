@@ -3,7 +3,7 @@ import shutil
 from os.path import exists, join
 
 from hydra import compose, initialize
-from mllogger import IntegratedLogger
+from mllogger import TBLogger
 from omegaconf import DictConfig, OmegaConf
 
 from ilkit import IL_AGENTS, RL_AGENTS, make

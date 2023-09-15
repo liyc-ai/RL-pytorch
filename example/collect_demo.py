@@ -2,7 +2,7 @@ import os
 from os.path import join
 
 import hydra
-from mllogger import IntegratedLogger
+from mllogger import TBLogger
 from omegaconf import DictConfig, OmegaConf
 from stable_baselines3.common.utils import set_random_seed
 
@@ -31,8 +31,8 @@ def main(cfg: DictConfig):
     cfg["env"].update(get_env_info(env))
 
     # setup logger
-    logger = IntegratedLogger(
-        record_param=cfg["log"]["record_param"], log_root=cfg["log"]["root"], args=cfg
+    logger = TBLogger(
+        args=cfg, record_param=cfg["log"]["record_param"]
     )
 
     # create agent
@@ -52,16 +52,16 @@ def main(cfg: DictConfig):
 
     # collect demonstration
     ## Note: If n_traj and n_step are both specified, we will just consider the n_traj
-    logger.info("Start to collect demonstrations...")
+    logger.console.info("Start to collect demonstrations...")
     n_traj = collect_info["n_traj"]
     n_step = collect_info["n_step"]
     if n_traj > 0 and n_step > 0:
         n_step = 0
-        logger.warning(
+        logger.console.warning(
             "n_traj and n_step are both specified, but we will ignore n_step"
         )
     collect_demo(agent, env, reset_env_fn, n_traj, n_step, save_dir, save_name)
-    logger.info(f"Succeed to save demonstrations at {join(save_dir, save_name)}!")
+    logger.console.info(f"Succeed to save demonstrations at {join(save_dir, save_name)}!")
 
 
 if __name__ == "__main__":

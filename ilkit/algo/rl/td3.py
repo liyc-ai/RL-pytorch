@@ -4,7 +4,7 @@ from typing import Dict, Union
 import numpy as np
 import torch as th
 import torch.nn.functional as F
-from mllogger import IntegratedLogger
+from mllogger import TBLogger
 from stable_baselines3.common.utils import polyak_update
 from torch import nn, optim
 
@@ -19,7 +19,7 @@ class TD3(OnlineRLPolicy):
     """Twin Delayed Deep Deterministic Policy Gradient (TD3)
     """
 
-    def __init__(self, cfg: Dict, logger: IntegratedLogger):
+    def __init__(self, cfg: Dict, logger: TBLogger):
         super().__init__(cfg, logger)
 
     def setup_model(self):

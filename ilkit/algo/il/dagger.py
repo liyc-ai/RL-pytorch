@@ -6,7 +6,7 @@ import gymnasium as gym
 import numpy as np
 import torch as th
 import torch.nn.functional as F
-from mllogger import IntegratedLogger
+from mllogger import TBLogger
 from omegaconf import OmegaConf
 from torch import nn, optim
 from torch.distributions.categorical import Categorical
@@ -23,7 +23,7 @@ class DAggerContinuous(BCContinuous):
     """Dataset Aggregation (DAgger) for Continuous Control
     """
 
-    def __init__(self, cfg: Dict, logger: IntegratedLogger):
+    def __init__(self, cfg: Dict, logger: TBLogger):
         super().__init__(cfg, logger)
 
     def setup_model(self):
@@ -119,7 +119,7 @@ class DAggerContinuous(BCContinuous):
         self, train_env: gym.Env, eval_env: gym.Env, reset_env_fn: Callable
     ):
         if not self.cfg["train"]["learn"]:
-            self.logger.warning("We did not learn anything!")
+            self.logger.console.warning("We did not learn anything!")
             return
 
         train_return = 0
@@ -153,14 +153,14 @@ class DAggerContinuous(BCContinuous):
 
             # whether this episode ends
             if terminated or truncated:
-                self.logger.add_scalar("return/train", train_return, t)
+                self.logger.tb.add_scalar("return/train", train_return, t)
                 next_state, _ = reset_env_fn(train_env, self.seed)
                 train_return = 0
 
             # evaluate
             if (t + 1) % eval_interval == 0:
                 eval_return = eval_policy(eval_env, reset_env_fn, self, self.seed)
-                self.logger.add_scalar("return/eval", eval_return, t)
+                self.logger.tb.add_scalar("return/eval", eval_return, t)
 
                 if eval_return > best_return:
                     self.save_model(join(self.logger.ckpt_dir, "best_model.pt"))
@@ -186,7 +186,7 @@ class DAggerDiscrete(DAggerContinuous):
     """Dataset Aggregation (DAgger) for Discrete Control
     """
 
-    def __init__(self, cfg: Dict, logger: IntegratedLogger):
+    def __init__(self, cfg: Dict, logger: TBLogger):
         super().__init__(cfg, logger)
 
     def setup_model(self):

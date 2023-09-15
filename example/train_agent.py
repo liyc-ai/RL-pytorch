@@ -2,7 +2,7 @@ import os
 from os.path import join
 
 import hydra
-from mllogger import IntegratedLogger
+from mllogger import TBLogger
 from omegaconf import DictConfig, OmegaConf
 from stable_baselines3.common.utils import set_random_seed
 
@@ -30,8 +30,8 @@ def main(cfg: DictConfig):
     cfg["env"].update(get_env_info(eval_env))
 
     # setup logger
-    logger = IntegratedLogger(
-        record_param=cfg["log"]["record_param"], log_root=cfg["log"]["root"], args=cfg
+    logger = TBLogger(
+        args=cfg, record_param=cfg["log"]["record_param"]
     )
 
     # create agent

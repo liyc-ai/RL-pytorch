@@ -7,7 +7,7 @@ import gymnasium as gym
 import numpy as np
 import torch as th
 import torch.nn.functional as F
-from mllogger import IntegratedLogger
+from mllogger import TBLogger
 from omegaconf import OmegaConf
 from torch import nn, optim
 from torch.utils.data import BatchSampler
@@ -23,7 +23,7 @@ class GAIL(ILPolicy):
     """Generative Adversarial Imitation Learning (GAIL)
     """
 
-    def __init__(self, cfg: Dict, logger: IntegratedLogger):
+    def __init__(self, cfg: Dict, logger: TBLogger):
         super().__init__(cfg, logger)
 
     def setup_model(self):
@@ -129,7 +129,7 @@ class GAIL(ILPolicy):
         self, train_env: gym.Env, eval_env: gym.Env, reset_env_fn: Callable
     ):
         if not self.cfg["train"]["learn"]:
-            self.logger.warning("We did not learn anything!")
+            self.logger.console.warning("We did not learn anything!")
             return
 
         train_return = 0
@@ -160,14 +160,14 @@ class GAIL(ILPolicy):
 
             # whether this episode ends
             if terminated or truncated:
-                self.logger.add_scalar("return/train", train_return, t)
+                self.logger.tb.add_scalar("return/train", train_return, t)
                 next_state, _ = reset_env_fn(train_env, self.seed)
                 train_return = 0
 
             # evaluate
             if (t + 1) % eval_interval == 0:
                 eval_return = eval_policy(eval_env, reset_env_fn, self, self.seed)
-                self.logger.add_scalar("return/eval", eval_return, t)
+                self.logger.tb.add_scalar("return/eval", eval_return, t)
 
                 if eval_return > best_return:
                     self.save_model(join(self.logger.ckpt_dir, "best_model.pt"))
@@ -229,7 +229,7 @@ class GAIL(ILPolicy):
 
     def load_model(self, model_path: str):
         if not exists(model_path):
-            self.logger.warning(
+            self.logger.console.warning(
                 "No model to load, the model parameters are randomly initialized."
             )
             return
@@ -250,4 +250,4 @@ class GAIL(ILPolicy):
                     self.__dict__[name].data = self.models[name].data
                 else:
                     self.models[name].load_state_dict(model)
-        self.logger.info(f"Successfully load model from {model_path}!")
+        self.logger.console.info(f"Successfully load model from {model_path}!")

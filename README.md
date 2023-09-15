@@ -8,9 +8,10 @@ Imitation Learning (IL) and Deep Reinforcement Learning (RL) with PyTorch.
 ```bash
 git clone https://github.com/BepfCp/ilkit
 cd ilkit
-# install with D4RL
-pip install -e ".[d4rl]"
-# or install without D4RL
+pip install -e .
+# install logger
+git clone https://github.com/BepfCp/mllogger.git
+cd mllogger
 pip install -e .
 ```
 

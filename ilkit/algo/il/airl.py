@@ -4,7 +4,7 @@ from typing import Dict
 
 import torch as th
 import torch.nn.functional as F
-from mllogger import IntegratedLogger
+from mllogger import TBLogger
 from torch import nn, optim
 from torch.utils.data import BatchSampler
 
@@ -17,7 +17,7 @@ class AIRL(GAIL):
     """Learning Robust Rewards with Adversarial Inverse Reinforcement Learning (AIRL)
     """
 
-    def __init__(self, cfg: Dict, logger: IntegratedLogger):
+    def __init__(self, cfg: Dict, logger: TBLogger):
         super().__init__(cfg, logger)
 
     def setup_model(self):

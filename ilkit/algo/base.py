@@ -5,18 +5,18 @@ from typing import Callable, Dict, Union
 import gymnasium as gym
 import numpy as np
 import torch as th
-from mllogger import IntegratedLogger
 from torch import nn, optim
 from tqdm import trange
 
 from ilkit.util.buffer import TransitionBuffer
+from mllogger import TBLogger
 
 
 class BasePolicy(ABC):
     """Base for RL and IL
     """
 
-    def __init__(self, cfg: Dict, logger: IntegratedLogger):
+    def __init__(self, cfg: Dict, logger: TBLogger):
         self.cfg = cfg
         self.algo_cfg = cfg["agent"]  # configs of algorithms
 
@@ -107,7 +107,7 @@ class BasePolicy(ABC):
                 state_dicts[name] = model.state_dict()
         th.save(state_dicts, model_path)
 
-        self.logger.info(f"Successfully save model to {model_path}!")
+        self.logger.console.info(f"Successfully save model to {model_path}!")
 
     def load_model(self, model_path: str = None):
         """Load model from pre-specified path
@@ -117,7 +117,7 @@ class BasePolicy(ABC):
             model_path = self.cfg["model_path"]
 
         if not exists(model_path):
-            self.logger.warning(
+            self.logger.console.warning(
                 "No model to load, the model parameters are randomly initialized."
             )
             return
@@ -128,11 +128,11 @@ class BasePolicy(ABC):
                 self.__dict__[name].data = self.models[name].data
             else:
                 model.load_state_dict(state_dicts[name])
-        self.logger.info(f"Successfully load model from {model_path}!")
+        self.logger.console.info(f"Successfully load model from {model_path}!")
 
 
 class ILPolicy(BasePolicy):
-    def __init__(self, cfg: Dict, logger: IntegratedLogger):
+    def __init__(self, cfg: Dict, logger: TBLogger):
         super().__init__(cfg, logger)
 
     def load_expert(self):
@@ -155,7 +155,7 @@ class ILPolicy(BasePolicy):
 
 
 class OnlineRLPolicy(BasePolicy):
-    def __init__(self, cfg: Dict, logger: IntegratedLogger):
+    def __init__(self, cfg: Dict, logger: TBLogger):
         super().__init__(cfg, logger)
 
         # hyper-param
@@ -230,7 +230,7 @@ class OnlineRLPolicy(BasePolicy):
         from ilkit.util.eval import eval_policy
 
         if not self.cfg["train"]["learn"]:
-            self.logger.warning("We did not learn anything!")
+            self.logger.console.warning("We did not learn anything!")
             return
 
         train_return = 0
@@ -265,14 +265,14 @@ class OnlineRLPolicy(BasePolicy):
 
             # whether this episode ends
             if terminated or truncated:
-                self.logger.add_scalar("return/train", train_return, t)
+                self.logger.tb.add_scalar("return/train", train_return, t)
                 next_state, _ = reset_env_fn(train_env, self.seed)
                 train_return = 0
 
             # evaluate
             if (t + 1) % eval_interval == 0:
                 eval_return = eval_policy(eval_env, reset_env_fn, self, self.seed)
-                self.logger.add_scalar("return/eval", eval_return, t)
+                self.logger.tb.add_scalar("return/eval", eval_return, t)
 
                 if eval_return > best_return:
                     self.save_model(join(self.logger.ckpt_dir, "best_model.pt"))
