@@ -7,7 +7,8 @@ Re-implementations of Deep Reinforcement Learning (DRL) algorithms, written in P
 git clone https://github.com/BepfCp/rlbase
 cd rlbase
 pip install -e .
-# install logger
+# logger
+cd ..
 git clone https://github.com/BepfCp/mllogger.git
 cd mllogger
 pip install -e .
