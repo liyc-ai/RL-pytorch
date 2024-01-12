@@ -1,5 +1,5 @@
 # rlbase
-Re-implementations of Deep Reinforcement Learning (DRL) algorithms with PyTorch.
+Re-implementations of Deep Reinforcement Learning (DRL) algorithms, written in PyTorch.
 
 ## Installation
 
