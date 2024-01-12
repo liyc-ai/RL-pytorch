@@ -10,9 +10,6 @@ env:
   action_shape:
   action_dtype:
 
-# hyper-parameter fine-tuning
-hpf: false
-
 # Note: All paths below are absolute paths or relative paths to project dir
 model_path: data/hopper-v4_sac.pt
 
@@ -29,24 +26,9 @@ train:
   max_steps: 1000_000
   eval_interval: 5_000
 
-# collect demonstration
-collect:
-  n_traj: 0
-  n_step: 1000_000
-  save_dir: data
-  save_name: ""
-
-# imitation learning
-expert_dataset:
-  n_expert_traj: 10
-  # whether to use your own dataset, if not, we will consider d4rl dataset
-  use_own_dataset: false
-  own_dataset_path: data/cartpole-v1_expert.hdf5
-  d4rl_env_id: hopper-expert-v2
-
 # algo
 defaults:
-  - agent: rl/ddpg
+  - agent: ddpg
   - override hydra/hydra_logging: disabled  
   - override hydra/job_logging: disabled
   - _self_
