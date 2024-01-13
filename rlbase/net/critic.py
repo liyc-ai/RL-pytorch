@@ -10,8 +10,12 @@ from rlbase.util.ptu import orthogonal_init_
 class MLPCritic(Module):
     def __init__(
         self,
-        input_shape: Tuple[int,],
-        output_shape: Tuple[int,],
+        input_shape: Tuple[
+            int,
+        ],
+        output_shape: Tuple[
+            int,
+        ],
         net_arch: List[int],
         activation_fn: Module = ReLU,
         **kwarg
@@ -33,8 +37,12 @@ class MLPCritic(Module):
 class MLPTwinCritic(Module):
     def __init__(
         self,
-        input_shape: Tuple[int,],
-        output_shape: Tuple[int,],
+        input_shape: Tuple[
+            int,
+        ],
+        output_shape: Tuple[
+            int,
+        ],
         net_arch: List[int],
         activation_fn: Module = ReLU,
         **kwarg
@@ -55,13 +63,16 @@ class MLPTwinCritic(Module):
 
 
 class MLPDuleQNet(Module):
-    """Dueling Q Network
-    """
+    """Dueling Q Network"""
 
     def __init__(
         self,
-        input_shape: Tuple[int,],
-        output_shape: Tuple[int,],
+        input_shape: Tuple[
+            int,
+        ],
+        output_shape: Tuple[
+            int,
+        ],
         net_arch: List[int],
         v_head: List[int],
         adv_head: List[int],

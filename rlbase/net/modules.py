@@ -10,8 +10,12 @@ def variable(shape: Tuple[int, ...]):
 
 
 def mlp(
-    input_shape: Tuple[int,],
-    output_shape: Tuple[int,],
+    input_shape: Tuple[
+        int,
+    ],
+    output_shape: Tuple[
+        int,
+    ],
     net_arch: List[int],
     activation_fn: nn.Module = nn.ReLU,
     squash_output: bool = False,
@@ -44,7 +48,7 @@ def cnn(
 ) -> Tuple[List[nn.Module], int]:
     """
     :param input_shape: (channel, ...)
-    :net_arch: list of conv2d, i.e., (output_channel, kernel_size, stride, padding) 
+    :net_arch: list of conv2d, i.e., (output_channel, kernel_size, stride, padding)
     """
     input_channel = input_shape[0]
 

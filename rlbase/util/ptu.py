@@ -29,8 +29,7 @@ def clean_cuda():
 
 
 def tensor2ndarray(tensors: Tuple[th.Tensor]):
-    """Convert torch.Tensor to numpy.ndarray
-    """
+    """Convert torch.Tensor to numpy.ndarray"""
     result = []
     for item in tensors:
         if th.is_tensor(item):
@@ -44,8 +43,7 @@ def tensor2ndarray(tensors: Tuple[th.Tensor]):
 
 
 def move_device(modules: List[th.nn.Module], device: Union[str, th.device]):
-    """Move net to specified device
-    """
+    """Move net to specified device"""
     for module in modules:
         module.to(device)
 
@@ -75,8 +73,7 @@ def gradient_descent(
     max_grad_norm: float = None,
     retain_graph: bool = False,
 ):
-    """Update network parameters with gradient descent.
-    """
+    """Update network parameters with gradient descent."""
     net_optim.zero_grad()
     loss.backward(retain_graph=retain_graph)
 

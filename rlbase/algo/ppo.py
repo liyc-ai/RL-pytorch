@@ -14,8 +14,7 @@ from rlbase.util.ptu import gradient_descent, move_device
 
 
 class PPO(TRPO):
-    """Proximal Policy Optimization (PPO)
-    """
+    """Proximal Policy Optimization (PPO)"""
 
     def __init__(self, cfg: Dict, logger: TBLogger):
         super().__init__(cfg, logger)

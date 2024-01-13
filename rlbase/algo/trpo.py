@@ -9,11 +9,10 @@ from torch import nn, optim
 from torch.autograd import grad
 from torch.distributions.kl import kl_divergence
 from torch.distributions.normal import Normal
-from torch.nn.utils.convert_parameters import (parameters_to_vector,
-                                               vector_to_parameters)
+from torch.nn.utils.convert_parameters import parameters_to_vector, vector_to_parameters
 from torch.utils.data import BatchSampler
 
-from rlbase.algo.base import OnlineRLPolicy
+from rlbase.algo import OnlineRLPolicy
 from rlbase.net.actor import MLPGaussianActor
 from rlbase.net.critic import MLPCritic
 from rlbase.util.drls import GAE
@@ -21,8 +20,7 @@ from rlbase.util.ptu import gradient_descent, move_device
 
 
 class TRPO(OnlineRLPolicy):
-    """Trust Region Policy Optimization (TRPO)
-    """
+    """Trust Region Policy Optimization (TRPO)"""
 
     def __init__(self, cfg: Dict, logger: TBLogger):
         super().__init__(cfg, logger)
@@ -210,9 +208,9 @@ class TRPO(OnlineRLPolicy):
 
     def _conjugate_gradient(self, kl_g: th.Tensor, pg: th.Tensor) -> th.Tensor:
         """To calculate s = H^{-1}g without solving inverse of H
-        
+
         Ref: https://en.wikipedia.org/wiki/Conjugate_gradient_method
-        
+
         Code modified from: https://github.com/ikostrikov/pytorch-trpo
         """
         x = th.zeros_like(pg)
@@ -233,8 +231,7 @@ class TRPO(OnlineRLPolicy):
         return x
 
     def _Fvp_func(self, kl_g: th.Tensor, p: th.Tensor) -> th.Tensor:
-        """Fisher vector product
-        """
+        """Fisher vector product"""
         gvp = th.dot(kl_g, p)
         Hvp = grad(gvp, self.actor.parameters(), retain_graph=True)
         Hvp = parameters_to_vector(Hvp).detach()

@@ -18,8 +18,7 @@ class BaseBuffer(ABC):
         device: Union[str, th.device],
         buffer_size: int = -1,
     ):
-        """If buffer size is not specified, it will continually add new items in without removal of old items.
-        """
+        """If buffer size is not specified, it will continually add new items in without removal of old items."""
         self.state_shape = state_shape
         self.action_shape = action_shape
 
@@ -52,8 +51,7 @@ class BaseBuffer(ABC):
         raise NotImplementedError
 
     def load_dataset(self, dataset: Dict[str, np.ndarray], n_traj: int = None):
-        """Load [n_traj] trajs into the buffer
-        """
+        """Load [n_traj] trajs into the buffer"""
         from rlbase.util.data import get_one_traj, split_dataset_into_trajs
 
         if n_traj is None:
@@ -67,7 +65,7 @@ class BaseBuffer(ABC):
 
     def sample(self, batch_size: int = None, shuffle: bool = True):
         """Randomly sample items from the buffer.
-        
+
         If batch_size is not provided, we will sample all the stored items.
         """
         idx = list(range(self.size))
@@ -162,16 +160,14 @@ class TransitionBuffer(BaseBuffer):
         rewards: float,
         dones: bool,
     ):
-        """Insert a batch of transitions
-        """
+        """Insert a batch of transitions"""
         for i in range(states.shape[0]):
             self.insert_transition(
                 states[i], actions[i], next_states[i], rewards[i], dones[i]
             )
 
     def insert_dataset(self, dataset: Dict):
-        """Insert dataset into the buffer
-        """
+        """Insert dataset into the buffer"""
         observations, actions, next_observations, rewards, terminals = (
             dataset["observations"],
             dataset["actions"],

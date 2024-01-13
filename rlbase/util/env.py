@@ -28,8 +28,7 @@ def get_env_info(env: gym.Env):
 
 
 def make_env(env_id: str) -> gym.Env:
-    """Currently we only support the below simple env style
-    """
+    """Currently we only support the below simple env style"""
     try:
         env = gym.make(env_id)
     except:

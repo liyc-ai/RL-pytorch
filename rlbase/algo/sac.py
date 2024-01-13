@@ -9,16 +9,14 @@ from mllogger import TBLogger
 from stable_baselines3.common.utils import polyak_update
 from torch import nn, optim
 
-from rlbase.algo.base import OnlineRLPolicy
+from rlbase.algo import OnlineRLPolicy
 from rlbase.net.actor import MLPGaussianActor
 from rlbase.net.critic import MLPTwinCritic
-from rlbase.util.ptu import (freeze_net, gradient_descent, move_device,
-                            tensor2ndarray)
+from rlbase.util.ptu import freeze_net, gradient_descent, move_device, tensor2ndarray
 
 
 class SAC(OnlineRLPolicy):
-    """Soft Actor Critic (SAC)
-    """
+    """Soft Actor Critic (SAC)"""
 
     def __init__(self, cfg: Dict, logger: TBLogger):
         super().__init__(cfg, logger)
@@ -204,7 +202,7 @@ class SAC(OnlineRLPolicy):
 
     def _update_alpha(self, pred_log_pis: th.Tensor):
         """Auto-tune alpha
-        
+
         Note: pred_log_pis are detached from the computation graph
         """
         alpha_loss = th.mean(self.log_alpha * (-pred_log_pis - self.entropy_target))

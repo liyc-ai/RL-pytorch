@@ -12,6 +12,7 @@ def get_version():
             return line.strip().split()[-1].strip().strip('"')
     raise RuntimeError("bad version data in __init__.py")
 
+
 setup(
     name="rlbase",
     version=get_version(),
@@ -31,6 +32,6 @@ setup(
         "setuptools==65.5.1",
         "stable_baselines3",
         "torch",
-        "tqdm"
-    ]
+        "tqdm",
+    ],
 )

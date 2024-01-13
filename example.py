@@ -30,9 +30,7 @@ def main(cfg: DictConfig):
     cfg["env"].update(get_env_info(eval_env))
 
     # setup logger
-    logger = TBLogger(
-        args=cfg, record_param=cfg["log"]["record_param"]
-    )
+    logger = TBLogger(args=cfg, record_param=cfg["log"]["record_param"])
 
     # create agent
     agent = rlbase.make(cfg, logger)
@@ -42,7 +40,7 @@ def main(cfg: DictConfig):
     agent.learn(train_env, eval_env, reset_env_fn)
 
     # save model
-    agent.save_model(join(getattr(logger, "checkpoint_dir"), "final_model.pt"))
+    logger.save_torch_model(agent.models, logger.ckpt_dir, "final_model.pt")
 
 
 if __name__ == "__main__":

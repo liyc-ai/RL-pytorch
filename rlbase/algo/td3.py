@@ -8,16 +8,14 @@ from mllogger import TBLogger
 from stable_baselines3.common.utils import polyak_update
 from torch import nn, optim
 
-from rlbase.algo.base import OnlineRLPolicy
+from rlbase.algo import OnlineRLPolicy
 from rlbase.net.actor import MLPDeterministicActor
 from rlbase.net.critic import MLPTwinCritic
-from rlbase.util.ptu import (freeze_net, gradient_descent, move_device,
-                            tensor2ndarray)
+from rlbase.util.ptu import freeze_net, gradient_descent, move_device, tensor2ndarray
 
 
 class TD3(OnlineRLPolicy):
-    """Twin Delayed Deep Deterministic Policy Gradient (TD3)
-    """
+    """Twin Delayed Deep Deterministic Policy Gradient (TD3)"""
 
     def __init__(self, cfg: Dict, logger: TBLogger):
         super().__init__(cfg, logger)
@@ -99,7 +97,7 @@ class TD3(OnlineRLPolicy):
             action = th.clamp(action + noise, -1.0, 1.0)
 
         if not keep_dtype_tensor:
-            action, = tensor2ndarray((action,))
+            (action,) = tensor2ndarray((action,))
 
         return action
 

@@ -8,9 +8,10 @@ import numpy as np
 import torch as th
 from tqdm import tqdm
 
-from rlbase.algo.base import BasePolicy
+from rlbase.algo import BasePolicy
 
 # ================ Helpers =======================
+
 
 def get_h5_keys(h5file: h5py.File) -> List[str]:
     keys = []
@@ -24,8 +25,7 @@ def get_h5_keys(h5file: h5py.File) -> List[str]:
 
 
 def get_dataset_holder(with_log_prob: bool):
-    """To determine the portions of demos
-    """
+    """To determine the portions of demos"""
     dataset = dict(
         observations=[],
         actions=[],
@@ -39,7 +39,8 @@ def get_dataset_holder(with_log_prob: bool):
     return dataset
 
 
-#=============================  Collect  ==============================
+# =============================  Collect  ==============================
+
 
 @th.no_grad()
 def collect_dataset(
@@ -52,9 +53,9 @@ def collect_dataset(
     save_name: str = None,
     save_log_prob: bool = False,
     seed: int = 0,
-)-> Dict[str, np.ndarray]:
+) -> Dict[str, np.ndarray]:
     """Collect dataset
-    
+
     :param n_traj: Collect [n_trajs] trajectories
     :param n_step: Collect [max_steps] transitions
     """
@@ -119,11 +120,12 @@ def collect_dataset(
 
 # ================ Utility functions ================
 
+
 def split_dataset_into_trajs(
     dataset: Dict[str, np.ndarray], max_episode_steps: int = None
 ):
     """Split the [D4RL] style dataset into trajectories
-    
+
     :return: the corresponding start index and end index (not included) of every trajectories
     """
     max_steps = dataset["observations"].shape[0]
@@ -158,11 +160,13 @@ def split_dataset_into_trajs(
                 traj_pairs.append([start_idx, i])
     return traj_pairs
 
-#=============================  Save  ==============================
+
+# =============================  Save  ==============================
+
 
 def save_dataset_to_h5(dataset: Dict[str, np.ndarray], save_dir: str, file_name: str):
     """To dump dataset into .hdf5 file
-    
+
     :param dataset: Dataset to be saved
     :param save_dir: To save the collected demos
     :param file_name: File name of the saved demos
@@ -174,7 +178,8 @@ def save_dataset_to_h5(dataset: Dict[str, np.ndarray], save_dir: str, file_name:
         hfile.create_dataset(key, data=value, compression="gzip")
 
 
-#=============================  Get  ==============================
+# =============================  Get  ==============================
+
 
 def get_one_traj(
     dataset: Dict[str, np.ndarray],
@@ -182,8 +187,7 @@ def get_one_traj(
     end_idx: int,
     with_log_prob: bool = False,
 ):
-    """Return a trajectory in dataset, from start_idx to end_idx (not included).
-    """
+    """Return a trajectory in dataset, from start_idx to end_idx (not included)."""
     one_traj = {
         "observations": dataset["observations"][start_idx:end_idx],
         "actions": dataset["actions"][start_idx:end_idx],
@@ -219,9 +223,11 @@ def get_dataset(
         return dataset
     else:
         import d4rl
+
         # d4rl is not compatible with gymnasium but only gym
         import gym
+
         env = gym.make(d4rl_env_id)
         import gymnasium as gym
-        
+
         return env.get_dataset()

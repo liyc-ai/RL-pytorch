@@ -86,8 +86,12 @@ class MLPGaussianActor(Module):
 class MLPDeterministicActor(Module):
     def __init__(
         self,
-        state_shape: Tuple[int,],
-        action_shape: Tuple[int,],
+        state_shape: Tuple[
+            int,
+        ],
+        action_shape: Tuple[
+            int,
+        ],
         net_arch: List[int],
         activation_fn: Module = ReLU,
         **kwarg

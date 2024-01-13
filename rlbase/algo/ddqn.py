@@ -7,8 +7,7 @@ from rlbase.algo.dqn import DQN
 
 
 class DDQN(DQN):
-    """Deep Double Q Networks (DDQN)
-    """
+    """Deep Double Q Networks (DDQN)"""
 
     def __init__(self, cfg: Dict, logger: TBLogger):
         super().__init__(cfg, logger)

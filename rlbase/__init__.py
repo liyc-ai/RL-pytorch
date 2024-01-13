@@ -2,9 +2,9 @@ __version__ = "1.0.0"
 
 from typing import Any, Dict
 
-from rlbase.algo.base import BasePolicy
-from rlbase.algo import *
 from mllogger import TBLogger
+
+from rlbase.algo import *
 
 # Reinforcement Learning
 AGENTS: Dict[str, BasePolicy] = {

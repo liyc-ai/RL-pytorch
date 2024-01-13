@@ -1,5 +1,5 @@
 from copy import deepcopy
-from typing import Dict, Tuple, Union
+from typing import Dict, Union
 
 import numpy as np
 import torch as th
@@ -7,14 +7,13 @@ import torch.nn.functional as F
 from mllogger import TBLogger
 from torch import nn, optim
 
-from rlbase.algo.base import OnlineRLPolicy
+from rlbase.algo import OnlineRLPolicy
 from rlbase.net.critic import MLPCritic
 from rlbase.util.ptu import freeze_net, gradient_descent, move_device
 
 
 class DQN(OnlineRLPolicy):
-    """Deep Q Networks (DQN)
-    """
+    """Deep Q Networks (DQN)"""
 
     def __init__(self, cfg: Dict, logger: TBLogger):
         super().__init__(cfg, logger)

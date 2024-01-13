@@ -3,7 +3,7 @@ from typing import Callable
 import gymnasium as gym
 import numpy as np
 
-from rlbase.algo.base import BasePolicy
+from rlbase.algo import BasePolicy
 
 
 def eval_policy(
@@ -13,8 +13,7 @@ def eval_policy(
     seed: int,
     episodes=10,
 ):
-    """Evaluate Policy
-    """
+    """Evaluate Policy"""
     policy.eval()
     avg_rewards = []
     for _ in range(episodes):

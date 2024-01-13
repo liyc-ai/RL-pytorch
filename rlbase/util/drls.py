@@ -3,7 +3,7 @@ import torch as th
 
 class GAE:
     """Estimate Advantage using GAE (https://arxiv.org/abs/1506.02438)
-    
+
     Ref:
     [1] https://nn.labml.ai/rl/ppo/gae.html
     [2] https://github.com/ikostrikov/pytorch-trpo

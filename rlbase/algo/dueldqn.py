@@ -10,8 +10,7 @@ from rlbase.util.ptu import freeze_net, move_device
 
 
 class DuelDQN(DDQN):
-    """Dueling Deep Q Networks (DuelDQN)
-    """
+    """Dueling Deep Q Networks (DuelDQN)"""
 
     def __init__(self, cfg: Dict, logger: TBLogger):
         super().__init__(cfg, logger)
