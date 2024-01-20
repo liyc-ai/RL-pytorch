@@ -3,6 +3,7 @@ from typing import Callable, Dict
 import gymnasium as gym
 from rlplugs.drls.buffer import TransitionBuffer
 from rlplugs.logger import LoggerType
+from rlplugs.net.ptu import save_torch_model
 from tqdm import trange
 
 from rlpyt import BaseRLAgent
@@ -75,7 +76,8 @@ class OnlineRLAgent(BaseRLAgent):
                 self.logger.tb.add_scalar("return/eval", eval_return, t)
 
                 if eval_return > best_return:
-                    self.logger.save_torch_model(
-                        self.models, self.logger.ckpt_dir, "best_model.pt"
+                    self.logger.console.info(
+                        f"Successfully save models into {save_torch_model(self.models, self.logger.ckpt_dir, 'best_model.pt')}"
                     )
+
                     best_return = eval_return

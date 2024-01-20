@@ -5,7 +5,7 @@ import hydra
 from omegaconf import DictConfig, OmegaConf
 from rlplugs.drls.env import get_env_info, make_env, reset_env_fn
 from rlplugs.logger import TBLogger
-from rlplugs.net.ptu import clean_cuda, set_torch
+from rlplugs.net.ptu import clean_cuda, save_torch_model, set_torch
 from stable_baselines3.common.utils import set_random_seed
 
 import rlpyt
@@ -40,7 +40,9 @@ def main(cfg: DictConfig):
     agent.learn(train_env, eval_env, reset_env_fn)
 
     # save model
-    logger.save_torch_model(agent.models, logger.ckpt_dir, "final_model.pt")
+    logger.console.info(
+        f"Successfully save models into {save_torch_model(agent.models, logger.ckpt_dir, 'final_model.pt')}"
+    )
 
 
 if __name__ == "__main__":
