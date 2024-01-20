@@ -1,12 +1,12 @@
 from typing import Callable, Dict
 
 import gymnasium as gym
+from rlplugs.drls.buffer import TransitionBuffer
 from rlplugs.logger import LoggerType
 from tqdm import trange
 
-from rlpyt.algo import BaseRLAgent
-from rlpyt.util.buffer import TransitionBuffer
-from rlpyt.util.eval import eval_policy
+from rlpyt import BaseRLAgent
+from rlpyt._helpers import eval_policy
 
 
 class OnlineRLAgent(BaseRLAgent):
@@ -29,7 +29,6 @@ class OnlineRLAgent(BaseRLAgent):
         self.trans_buffer = TransitionBuffer(**buffer_kwarg)
 
     def learn(self, train_env: gym.Env, eval_env: gym.Env, reset_env_fn: Callable):
-
         if not self.cfg["train"]["learn"]:
             self.logger.console.warning("We did not learn anything!")
             return

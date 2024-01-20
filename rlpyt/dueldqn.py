@@ -2,11 +2,11 @@ from copy import deepcopy
 from typing import Dict
 
 from rlplugs.logger import LoggerType
+from rlplugs.net.critic import MLPDuleQNet
+from rlplugs.net.ptu import freeze_net, move_device
 from torch import nn, optim
 
-from rlpyt.algo.ddqn import DDQN
-from rlpyt.net.critic import MLPDuleQNet
-from rlpyt.util.ptu import freeze_net, move_device
+from rlpyt.ddqn import DDQN
 
 
 class DuelDQN(DDQN):

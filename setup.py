@@ -20,7 +20,7 @@ setup(
     author="Yi-Chen Li",
     author_email="ychenli.X@gmail.com",
     url="https://github.com/BepfCp/rlbase",
-    packages=find_packages(include=["rlbase*"]),
+    packages=find_packages(include=["rlpyt*"]),
     python_requires="<3.11,>=3.7",
     install_requires=[
         "gymnasium[all]",
@@ -29,9 +29,10 @@ setup(
         "numba",
         "numpy==1.23.5",
         "omegaconf==2.3.0",
-        "setuptools==65.5.1",
+        "setuptools",
         "stable_baselines3",
         "torch",
         "tqdm",
+        "rlplugs @ git+https://github.com/BepfCp/rlplugs@main",
     ],
 )

@@ -6,13 +6,13 @@ import numpy as np
 import torch as th
 import torch.nn.functional as F
 from rlplugs.logger import LoggerType
+from rlplugs.net.actor import MLPGaussianActor
+from rlplugs.net.critic import MLPTwinCritic
+from rlplugs.net.ptu import freeze_net, gradient_descent, move_device, tensor2ndarray
 from stable_baselines3.common.utils import polyak_update
 from torch import nn, optim
 
-from rlpyt.algo import OnlineRLAgent
-from rlpyt.net.actor import MLPGaussianActor
-from rlpyt.net.critic import MLPTwinCritic
-from rlpyt.util.ptu import freeze_net, gradient_descent, move_device, tensor2ndarray
+from rlpyt import OnlineRLAgent
 
 
 class SAC(OnlineRLAgent):

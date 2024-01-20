@@ -5,17 +5,17 @@ import numpy as np
 import torch as th
 import torch.nn.functional as F
 from rlplugs.logger import LoggerType
+from rlplugs.net.actor import MLPDeterministicActor
+from rlplugs.net.critic import MLPCritic
+from rlplugs.net.ptu import freeze_net, gradient_descent, move_device, tensor2ndarray
 from stable_baselines3.common.utils import polyak_update
 from torch import nn, optim
 
-from rlpyt.algo import OnlineRLAgent
-from rlpyt.net.actor import MLPDeterministicActor
-from rlpyt.net.critic import MLPTwinCritic
-from rlpyt.util.ptu import freeze_net, gradient_descent, move_device, tensor2ndarray
+from rlpyt import OnlineRLAgent
 
 
-class TD3(OnlineRLAgent):
-    """Twin Delayed Deep Deterministic Policy Gradient (TD3)"""
+class DDPG(OnlineRLAgent):
+    """Deep Deterministic Policy Gradient (DDPG)"""
 
     def __init__(self, cfg: Dict, logger: LoggerType):
         super().__init__(cfg, logger)
@@ -25,7 +25,6 @@ class TD3(OnlineRLAgent):
         self.entropy_target = -self.action_shape[0]
         self.warmup_steps = self.algo_cfg["warmup_steps"]
         self.env_steps = self.algo_cfg["env_steps"]
-        self.total_train_it = 0
 
         # actor
         actor_kwarg = {
@@ -43,11 +42,11 @@ class TD3(OnlineRLAgent):
         # critic
         critic_kwarg = {
             "input_shape": (self.state_shape[0] + self.action_shape[0],),
-            "net_arch": self.algo_cfg["critic"]["net_arch"],
             "output_shape": (1,),
+            "net_arch": self.algo_cfg["critic"]["net_arch"],
             "activation_fn": getattr(nn, self.algo_cfg["critic"]["activation_fn"]),
         }
-        self.critic = MLPTwinCritic(**critic_kwarg)
+        self.critic = MLPCritic(**critic_kwarg)
         self.critic_target = deepcopy(self.critic)
         self.critic_optim = getattr(optim, self.algo_cfg["critic"]["optimizer"])(
             self.critic.parameters(), self.algo_cfg["critic"]["lr"]
@@ -89,11 +88,8 @@ class TD3(OnlineRLAgent):
 
         # add explore noise
         if not deterministic:
-            noise = th.clamp(
-                th.randn_like(action) * self.algo_cfg["sigma"],
-                -self.algo_cfg["c"],
-                self.algo_cfg["c"],
-            )
+            noise = th.randn_like(action) * (self.algo_cfg["expl_std"])
+            # by default, the action scale is [-1.,1.]
             action = th.clamp(action + noise, -1.0, 1.0)
 
         if not keep_dtype_tensor:
@@ -109,7 +105,6 @@ class TD3(OnlineRLAgent):
             or rest_steps < 0
             or rest_steps % self.env_steps != 0
         ):
-            self.total_train_it += 1
             states, actions, next_states, rewards, dones = self.trans_buffer.sample(
                 self.batch_size
             )
@@ -117,19 +112,18 @@ class TD3(OnlineRLAgent):
             # update params
             for _ in range(self.env_steps):
                 self._update_critic(states, actions, next_states, rewards, dones)
-                if self.total_train_it % self.algo_cfg["policy_freq"] == 0:
-                    self._update_actor(states)
+                self._update_actor(states)
 
-                    polyak_update(
-                        self.critic.parameters(),
-                        self.critic_target.parameters(),
-                        self.algo_cfg["critic"]["tau"],
-                    )
-                    polyak_update(
-                        self.actor.parameters(),
-                        self.actor_target.parameters(),
-                        self.algo_cfg["actor"]["tau"],
-                    )
+                polyak_update(
+                    self.critic.parameters(),
+                    self.critic_target.parameters(),
+                    self.algo_cfg["critic"]["tau"],
+                )
+                polyak_update(
+                    self.actor.parameters(),
+                    self.actor_target.parameters(),
+                    self.algo_cfg["actor"]["tau"],
+                )
 
         return self.log_info
 
@@ -148,12 +142,10 @@ class TD3(OnlineRLAgent):
                 keep_dtype_tensor=True,
                 actor=self.actor_target,
             )
-            target_Q1, target_Q2 = self.critic_target(
-                True, next_states, pred_next_actions
-            )
-            target_Q = rewards + self.gamma * (1 - dones) * th.min(target_Q1, target_Q2)
-        Q1, Q2 = self.critic(True, states, actions)
-        critic_loss = F.mse_loss(Q1, target_Q) + F.mse_loss(Q2, target_Q)
+            target_Q = self.critic_target(next_states, pred_next_actions)
+            target_Q = rewards + self.gamma * (1 - dones) * target_Q
+        Q = self.critic(states, actions)
+        critic_loss = F.mse_loss(Q, target_Q)
         self.log_info.update(
             {"loss/critic": gradient_descent(self.critic_optim, critic_loss)}
         )
@@ -162,7 +154,7 @@ class TD3(OnlineRLAgent):
         pred_actions = self.select_action(
             states, deterministic=True, keep_dtype_tensor=True
         )
-        Q = self.critic(False, states, pred_actions)
+        Q = self.critic(states, pred_actions)
         actor_loss = -th.mean(Q)
         self.log_info.update(
             {"loss/actor": gradient_descent(self.actor_optim, actor_loss)}

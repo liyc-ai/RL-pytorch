@@ -2,15 +2,15 @@ import random
 from typing import Dict
 
 import torch as th
+from rlplugs.drls.gae import GAE
 from rlplugs.logger import LoggerType
+from rlplugs.net.actor import MLPGaussianActor
+from rlplugs.net.critic import MLPCritic
+from rlplugs.net.ptu import gradient_descent, move_device
 from torch import nn, optim
 from torch.utils.data import BatchSampler
 
-from rlpyt.algo.trpo import TRPO
-from rlpyt.net.actor import MLPGaussianActor
-from rlpyt.net.critic import MLPCritic
-from rlpyt.util.drls import GAE
-from rlpyt.util.ptu import gradient_descent, move_device
+from rlpyt.trpo import TRPO
 
 
 class PPO(TRPO):

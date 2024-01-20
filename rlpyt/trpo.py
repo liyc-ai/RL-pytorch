@@ -4,7 +4,11 @@ from typing import Callable, Dict, Tuple, Union
 import numpy as np
 import torch as th
 import torch.nn.functional as F
+from rlplugs.drls.gae import GAE
 from rlplugs.logger import LoggerType
+from rlplugs.net.actor import MLPGaussianActor
+from rlplugs.net.critic import MLPCritic
+from rlplugs.net.ptu import gradient_descent, move_device
 from torch import nn, optim
 from torch.autograd import grad
 from torch.distributions.kl import kl_divergence
@@ -12,11 +16,7 @@ from torch.distributions.normal import Normal
 from torch.nn.utils.convert_parameters import parameters_to_vector, vector_to_parameters
 from torch.utils.data import BatchSampler
 
-from rlpyt.algo import OnlineRLAgent
-from rlpyt.net.actor import MLPGaussianActor
-from rlpyt.net.critic import MLPCritic
-from rlpyt.util.drls import GAE
-from rlpyt.util.ptu import gradient_descent, move_device
+from rlpyt import OnlineRLAgent
 
 
 class TRPO(OnlineRLAgent):
@@ -87,7 +87,6 @@ class TRPO(OnlineRLAgent):
         return_log_prob: bool,
         **kwarg
     ) -> Union[Tuple[th.Tensor, th.Tensor], th.Tensor, np.ndarray]:
-
         return self.actor.sample(
             state, deterministic, keep_dtype_tensor, return_log_prob, self.device
         )

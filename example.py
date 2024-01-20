@@ -2,13 +2,13 @@ import os
 from os.path import join
 
 import hydra
-from rlplugs.logger import TBLogger
 from omegaconf import DictConfig, OmegaConf
+from rlplugs.drls.env import get_env_info, make_env, reset_env_fn
+from rlplugs.logger import TBLogger
+from rlplugs.net.ptu import clean_cuda, set_torch
 from stable_baselines3.common.utils import set_random_seed
 
 import rlpyt
-from rlpyt.util.env import get_env_info, make_env, reset_env_fn
-from rlpyt.util.ptu import clean_cuda, set_torch
 
 # get global work dir
 WORK_DIR = os.getcwd()

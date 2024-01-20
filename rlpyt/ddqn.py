@@ -3,7 +3,7 @@ from typing import Dict
 import torch as th
 from rlplugs.logger import LoggerType
 
-from rlpyt.algo.dqn import DQN
+from rlpyt.dqn import DQN
 
 
 class DDQN(DQN):
