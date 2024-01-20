@@ -4,18 +4,18 @@ from typing import Dict, Union
 import numpy as np
 import torch as th
 import torch.nn.functional as F
-from mllogger import TBLogger
+from rlplugs.logger import LoggerType
 from torch import nn, optim
 
-from rlbase.algo import OnlineRLPolicy
-from rlbase.net.critic import MLPCritic
-from rlbase.util.ptu import freeze_net, gradient_descent, move_device
+from rlpyt.algo import OnlineRLAgent
+from rlpyt.net.critic import MLPCritic
+from rlpyt.util.ptu import freeze_net, gradient_descent, move_device
 
 
-class DQN(OnlineRLPolicy):
+class DQN(OnlineRLAgent):
     """Deep Q Networks (DQN)"""
 
-    def __init__(self, cfg: Dict, logger: TBLogger):
+    def __init__(self, cfg: Dict, logger: LoggerType):
         super().__init__(cfg, logger)
 
     def setup_model(self):

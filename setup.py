@@ -2,8 +2,8 @@ from setuptools import find_packages, setup
 
 
 def get_version():
-    """Gets the rlbase version."""
-    path = "rlbase/__init__.py"
+    """Gets the RL-pytorch version."""
+    path = "rlpyt/__init__.py"
     with open(path) as file:
         lines = file.readlines()
 
@@ -14,7 +14,7 @@ def get_version():
 
 
 setup(
-    name="rlbase",
+    name="rlpyt",
     version=get_version(),
     description="A clean code base for deep reinforcement learning.",
     author="Yi-Chen Li",

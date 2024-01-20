@@ -4,7 +4,7 @@ from typing import Callable, Dict, Tuple, Union
 import numpy as np
 import torch as th
 import torch.nn.functional as F
-from mllogger import TBLogger
+from rlplugs.logger import LoggerType
 from torch import nn, optim
 from torch.autograd import grad
 from torch.distributions.kl import kl_divergence
@@ -12,17 +12,17 @@ from torch.distributions.normal import Normal
 from torch.nn.utils.convert_parameters import parameters_to_vector, vector_to_parameters
 from torch.utils.data import BatchSampler
 
-from rlbase.algo import OnlineRLPolicy
-from rlbase.net.actor import MLPGaussianActor
-from rlbase.net.critic import MLPCritic
-from rlbase.util.drls import GAE
-from rlbase.util.ptu import gradient_descent, move_device
+from rlpyt.algo import OnlineRLAgent
+from rlpyt.net.actor import MLPGaussianActor
+from rlpyt.net.critic import MLPCritic
+from rlpyt.util.drls import GAE
+from rlpyt.util.ptu import gradient_descent, move_device
 
 
-class TRPO(OnlineRLPolicy):
+class TRPO(OnlineRLAgent):
     """Trust Region Policy Optimization (TRPO)"""
 
-    def __init__(self, cfg: Dict, logger: TBLogger):
+    def __init__(self, cfg: Dict, logger: LoggerType):
         super().__init__(cfg, logger)
 
     def setup_model(self):

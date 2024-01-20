@@ -3,8 +3,8 @@ from typing import List, Tuple
 import torch as th
 from torch.nn import Module, ReLU
 
-from rlbase.net.modules import mlp
-from rlbase.util.ptu import orthogonal_init_
+from rlpyt.net.modules import mlp
+from rlpyt.util.ptu import orthogonal_init_
 
 
 class MLPCritic(Module):

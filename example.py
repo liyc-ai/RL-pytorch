@@ -2,13 +2,13 @@ import os
 from os.path import join
 
 import hydra
-from mllogger import TBLogger
+from rlplugs.logger import TBLogger
 from omegaconf import DictConfig, OmegaConf
 from stable_baselines3.common.utils import set_random_seed
 
-import rlbase
-from rlbase.util.env import get_env_info, make_env, reset_env_fn
-from rlbase.util.ptu import clean_cuda, set_torch
+import rlpyt
+from rlpyt.util.env import get_env_info, make_env, reset_env_fn
+from rlpyt.util.ptu import clean_cuda, set_torch
 
 # get global work dir
 WORK_DIR = os.getcwd()
@@ -33,7 +33,7 @@ def main(cfg: DictConfig):
     logger = TBLogger(args=cfg, record_param=cfg["log"]["record_param"])
 
     # create agent
-    agent = rlbase.make(cfg, logger)
+    agent = rlpyt.make(cfg, logger)
     # agent.load_model()
 
     # train agent

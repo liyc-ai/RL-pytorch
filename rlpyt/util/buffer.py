@@ -52,7 +52,7 @@ class BaseBuffer(ABC):
 
     def load_dataset(self, dataset: Dict[str, np.ndarray], n_traj: int = None):
         """Load [n_traj] trajs into the buffer"""
-        from rlbase.util.data import get_one_traj, split_dataset_into_trajs
+        from rlpyt.util.data import get_one_traj, split_dataset_into_trajs
 
         if n_traj is None:
             self.insert_dataset(dataset)
@@ -178,7 +178,7 @@ class TransitionBuffer(BaseBuffer):
         self.insert_batch(observations, actions, next_observations, rewards, terminals)
 
     def save_buffer(self, save_dir: str, file_name: str = None):
-        from rlbase.util.data import save_dataset_to_h5
+        from rlpyt.util.data import save_dataset_to_h5
 
         buffer = {
             "observations": self.buffers[0].cpu().numpy(),

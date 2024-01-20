@@ -1,18 +1,18 @@
 from copy import deepcopy
 from typing import Dict
 
-from mllogger import TBLogger
+from rlplugs.logger import LoggerType
 from torch import nn, optim
 
-from rlbase.algo.ddqn import DDQN
-from rlbase.net.critic import MLPDuleQNet
-from rlbase.util.ptu import freeze_net, move_device
+from rlpyt.algo.ddqn import DDQN
+from rlpyt.net.critic import MLPDuleQNet
+from rlpyt.util.ptu import freeze_net, move_device
 
 
 class DuelDQN(DDQN):
     """Dueling Deep Q Networks (DuelDQN)"""
 
-    def __init__(self, cfg: Dict, logger: TBLogger):
+    def __init__(self, cfg: Dict, logger: LoggerType):
         super().__init__(cfg, logger)
 
     def setup_model(self):

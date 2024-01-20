@@ -5,8 +5,8 @@ import torch as th
 from torch.distributions.normal import Normal
 from torch.nn import Module, ReLU
 
-from rlbase.net.modules import mlp, variable
-from rlbase.util.ptu import orthogonal_init_, tensor2ndarray
+from rlpyt.net.modules import mlp, variable
+from rlpyt.util.ptu import orthogonal_init_, tensor2ndarray
 
 LOG_STD_MIN = -20
 LOG_STD_MAX = 2

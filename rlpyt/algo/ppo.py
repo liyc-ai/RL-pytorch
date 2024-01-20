@@ -2,21 +2,21 @@ import random
 from typing import Dict
 
 import torch as th
-from mllogger import TBLogger
+from rlplugs.logger import LoggerType
 from torch import nn, optim
 from torch.utils.data import BatchSampler
 
-from rlbase.algo.trpo import TRPO
-from rlbase.net.actor import MLPGaussianActor
-from rlbase.net.critic import MLPCritic
-from rlbase.util.drls import GAE
-from rlbase.util.ptu import gradient_descent, move_device
+from rlpyt.algo.trpo import TRPO
+from rlpyt.net.actor import MLPGaussianActor
+from rlpyt.net.critic import MLPCritic
+from rlpyt.util.drls import GAE
+from rlpyt.util.ptu import gradient_descent, move_device
 
 
 class PPO(TRPO):
     """Proximal Policy Optimization (PPO)"""
 
-    def __init__(self, cfg: Dict, logger: TBLogger):
+    def __init__(self, cfg: Dict, logger: LoggerType):
         super().__init__(cfg, logger)
 
     def setup_model(self):

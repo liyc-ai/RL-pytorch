@@ -8,7 +8,7 @@ import numpy as np
 import torch as th
 from tqdm import tqdm
 
-from rlbase.algo import BasePolicy
+from rlpyt.algo import BaseRLAgent
 
 # ================ Helpers =======================
 
@@ -44,7 +44,7 @@ def get_dataset_holder(with_log_prob: bool):
 
 @th.no_grad()
 def collect_dataset(
-    policy: BasePolicy,
+    policy: BaseRLAgent,
     env: gym.Env,
     reset_env_fn: Callable,
     n_traj: int = 0,

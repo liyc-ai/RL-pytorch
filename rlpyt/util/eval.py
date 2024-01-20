@@ -3,13 +3,13 @@ from typing import Callable
 import gymnasium as gym
 import numpy as np
 
-from rlbase.algo import BasePolicy
+from rlpyt.algo import BaseRLAgent
 
 
 def eval_policy(
     eval_env: gym.Env,
     reset_env_fn: Callable,
-    policy: BasePolicy,
+    policy: BaseRLAgent,
     seed: int,
     episodes=10,
 ):

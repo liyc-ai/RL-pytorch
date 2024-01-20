@@ -1,17 +1,16 @@
-from os.path import join
-from typing import Callable, Dict, Union
+from typing import Callable, Dict
 
 import gymnasium as gym
-from mllogger import TBLogger, WBLogger
+from rlplugs.logger import LoggerType
 from tqdm import trange
 
-from rlbase.algo import BasePolicy
-from rlbase.util.buffer import TransitionBuffer
-from rlbase.util.eval import eval_policy
+from rlpyt.algo import BaseRLAgent
+from rlpyt.util.buffer import TransitionBuffer
+from rlpyt.util.eval import eval_policy
 
 
-class OnlineRLPolicy(BasePolicy):
-    def __init__(self, cfg: Dict, logger: Union[TBLogger, WBLogger]):
+class OnlineRLAgent(BaseRLAgent):
+    def __init__(self, cfg: Dict, logger: LoggerType):
         super().__init__(cfg, logger)
 
         # hyper-param

@@ -5,20 +5,20 @@ from typing import Dict, Tuple, Union
 import numpy as np
 import torch as th
 import torch.nn.functional as F
-from mllogger import TBLogger
+from rlplugs.logger import LoggerType
 from stable_baselines3.common.utils import polyak_update
 from torch import nn, optim
 
-from rlbase.algo import OnlineRLPolicy
-from rlbase.net.actor import MLPGaussianActor
-from rlbase.net.critic import MLPTwinCritic
-from rlbase.util.ptu import freeze_net, gradient_descent, move_device, tensor2ndarray
+from rlpyt.algo import OnlineRLAgent
+from rlpyt.net.actor import MLPGaussianActor
+from rlpyt.net.critic import MLPTwinCritic
+from rlpyt.util.ptu import freeze_net, gradient_descent, move_device, tensor2ndarray
 
 
-class SAC(OnlineRLPolicy):
+class SAC(OnlineRLAgent):
     """Soft Actor Critic (SAC)"""
 
-    def __init__(self, cfg: Dict, logger: TBLogger):
+    def __init__(self, cfg: Dict, logger: LoggerType):
         super().__init__(cfg, logger)
 
     def setup_model(self):

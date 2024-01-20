@@ -1,16 +1,11 @@
-# rlbase
+# RL-pytorch
 Re-implementations of Deep Reinforcement Learning (DRL) algorithms, written in PyTorch.
 
 ## Installation
 
 ```bash
-git clone https://github.com/BepfCp/rlbase
-cd rlbase
-pip install -e .
-# logger
-cd ..
-git clone https://github.com/BepfCp/mllogger.git
-cd mllogger
+git clone https://github.com/BepfCp/RL-pytorch.git
+cd rlpyt
 pip install -e .
 ```
 

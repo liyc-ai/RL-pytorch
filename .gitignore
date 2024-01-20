@@ -1,9 +1,4 @@
-.ref/
-logs*
-ckpt/
-conf/_wandb_info.yaml
-archived/
-debug/
+# Self added
 runs/
 
 

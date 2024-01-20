@@ -4,14 +4,14 @@ from typing import Callable, Dict, Union
 import gymnasium as gym
 import numpy as np
 import torch as th
-from mllogger import TBLogger, WBLogger
+from rlplugs.logger import LoggerType
 from torch import nn, optim
 
 
-class BasePolicy(ABC):
+class BaseRLAgent(ABC):
     """Base for RL"""
 
-    def __init__(self, cfg: Dict, logger: Union[TBLogger, WBLogger]):
+    def __init__(self, cfg: Dict, logger: LoggerType):
         self.cfg = cfg
         self.algo_cfg = cfg["agent"]  # configs of algorithms
 
