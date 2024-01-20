@@ -1,15 +1,16 @@
 from typing import Dict
 
 import torch as th
+from omegaconf import DictConfig
 from rlplugs.logger import LoggerType
 
-from rlpyt.dqn import DQN
+from rlpyt.dqn import DQNAgent
 
 
-class DDQN(DQN):
+class DDQNAgent(DQNAgent):
     """Deep Double Q Networks (DDQN)"""
 
-    def __init__(self, cfg: Dict, logger: LoggerType):
+    def __init__(self, cfg: DictConfig, logger: LoggerType):
         super().__init__(cfg, logger)
 
     def _get_q_target(self, next_states: th.Tensor):

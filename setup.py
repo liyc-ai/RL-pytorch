@@ -24,9 +24,7 @@ setup(
     python_requires="<3.11,>=3.7",
     install_requires=[
         "gymnasium[all]",
-        "h5py",
         "hydra-core==1.3.2",
-        "numba",
         "numpy==1.23.5",
         "omegaconf==2.3.0",
         "setuptools",

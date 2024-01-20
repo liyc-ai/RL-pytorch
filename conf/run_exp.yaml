@@ -6,9 +6,10 @@ description: ""
 # env:
 env:
   id: Hopper-v4
-  state_shape:
-  action_shape:
-  action_dtype:
+  info:
+    state_shape:
+    action_shape:
+    action_dtype:
 
 # Note: All paths below are absolute paths or relative paths to project dir
 model_path: data/hopper-v4_sac.pt

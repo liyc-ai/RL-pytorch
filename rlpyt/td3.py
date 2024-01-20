@@ -4,6 +4,7 @@ from typing import Dict, Union
 import numpy as np
 import torch as th
 import torch.nn.functional as F
+from omegaconf import DictConfig
 from rlplugs.logger import LoggerType
 from rlplugs.net.actor import MLPDeterministicActor
 from rlplugs.net.critic import MLPTwinCritic
@@ -14,43 +15,43 @@ from torch import nn, optim
 from rlpyt import OnlineRLAgent
 
 
-class TD3(OnlineRLAgent):
+class TD3Agent(OnlineRLAgent):
     """Twin Delayed Deep Deterministic Policy Gradient (TD3)"""
 
-    def __init__(self, cfg: Dict, logger: LoggerType):
+    def __init__(self, cfg: DictConfig, logger: LoggerType):
         super().__init__(cfg, logger)
 
     def setup_model(self):
         # hyper-param
         self.entropy_target = -self.action_shape[0]
-        self.warmup_steps = self.algo_cfg["warmup_steps"]
-        self.env_steps = self.algo_cfg["env_steps"]
+        self.warmup_steps = self.algo_cfg.warmup_steps
+        self.env_steps = self.algo_cfg.env_steps
         self.total_train_it = 0
 
         # actor
         actor_kwarg = {
             "state_shape": self.state_shape,
-            "net_arch": self.algo_cfg["actor"]["net_arch"],
+            "net_arch": self.algo_cfg.actor.net_arch,
             "action_shape": self.action_shape,
-            "activation_fn": getattr(nn, self.algo_cfg["actor"]["activation_fn"]),
+            "activation_fn": getattr(nn, self.algo_cfg.actor.activation_fn),
         }
         self.actor = MLPDeterministicActor(**actor_kwarg)
         self.actor_target = deepcopy(self.actor)
-        self.actor_optim = getattr(optim, self.algo_cfg["actor"]["optimizer"])(
-            self.actor.parameters(), self.algo_cfg["actor"]["lr"]
+        self.actor_optim = getattr(optim, self.algo_cfg.actor.optimizer)(
+            self.actor.parameters(), self.algo_cfg.actor.lr
         )
 
         # critic
         critic_kwarg = {
             "input_shape": (self.state_shape[0] + self.action_shape[0],),
-            "net_arch": self.algo_cfg["critic"]["net_arch"],
+            "net_arch": self.algo_cfg.critic.net_arch,
             "output_shape": (1,),
-            "activation_fn": getattr(nn, self.algo_cfg["critic"]["activation_fn"]),
+            "activation_fn": getattr(nn, self.algo_cfg.critic.activation_fn),
         }
         self.critic = MLPTwinCritic(**critic_kwarg)
         self.critic_target = deepcopy(self.critic)
-        self.critic_optim = getattr(optim, self.algo_cfg["critic"]["optimizer"])(
-            self.critic.parameters(), self.algo_cfg["critic"]["lr"]
+        self.critic_optim = getattr(optim, self.algo_cfg.critic.optimizer)(
+            self.critic.parameters(), self.algo_cfg.critic.lr
         )
 
         freeze_net((self.actor_target, self.critic_target))
@@ -90,9 +91,9 @@ class TD3(OnlineRLAgent):
         # add explore noise
         if not deterministic:
             noise = th.clamp(
-                th.randn_like(action) * self.algo_cfg["sigma"],
-                -self.algo_cfg["c"],
-                self.algo_cfg["c"],
+                th.randn_like(action) * self.algo_cfg.sigma,
+                -self.algo_cfg.c,
+                self.algo_cfg.c,
             )
             action = th.clamp(action + noise, -1.0, 1.0)
 
@@ -117,18 +118,18 @@ class TD3(OnlineRLAgent):
             # update params
             for _ in range(self.env_steps):
                 self._update_critic(states, actions, next_states, rewards, dones)
-                if self.total_train_it % self.algo_cfg["policy_freq"] == 0:
+                if self.total_train_it % self.algo_cfg.policy_freq == 0:
                     self._update_actor(states)
 
                     polyak_update(
                         self.critic.parameters(),
                         self.critic_target.parameters(),
-                        self.algo_cfg["critic"]["tau"],
+                        self.algo_cfg.critic.tau,
                     )
                     polyak_update(
                         self.actor.parameters(),
                         self.actor_target.parameters(),
-                        self.algo_cfg["actor"]["tau"],
+                        self.algo_cfg.actor.tau,
                     )
 
         return self.log_info

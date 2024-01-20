@@ -5,6 +5,7 @@ from typing import Dict, Tuple, Union
 import numpy as np
 import torch as th
 import torch.nn.functional as F
+from omegaconf import DictConfig
 from rlplugs.logger import LoggerType
 from rlplugs.net.actor import MLPGaussianActor
 from rlplugs.net.critic import MLPTwinCritic
@@ -15,60 +16,60 @@ from torch import nn, optim
 from rlpyt import OnlineRLAgent
 
 
-class SAC(OnlineRLAgent):
+class SACAgent(OnlineRLAgent):
     """Soft Actor Critic (SAC)"""
 
-    def __init__(self, cfg: Dict, logger: LoggerType):
+    def __init__(self, cfg: DictConfig, logger: LoggerType):
         super().__init__(cfg, logger)
 
     def setup_model(self):
         # hyper-param
         self.entropy_target = -self.action_shape[0]
-        self.warmup_steps = self.algo_cfg["warmup_steps"]
-        self.env_steps = self.algo_cfg["env_steps"]
+        self.warmup_steps = self.algo_cfg.warmup_steps
+        self.env_steps = self.algo_cfg.env_steps
 
         # actor
         actor_kwarg = {
             "state_shape": self.state_shape,
-            "net_arch": self.algo_cfg["actor"]["net_arch"],
+            "net_arch": self.algo_cfg.actor.net_arch,
             "action_shape": self.action_shape,
-            "state_std_independent": self.algo_cfg["actor"]["state_std_independent"],
-            "activation_fn": getattr(nn, self.algo_cfg["actor"]["activation_fn"]),
+            "state_std_independent": self.algo_cfg.actor.state_std_independent,
+            "activation_fn": getattr(nn, self.algo_cfg.actor.activation_fn),
         }
         self.actor = MLPGaussianActor(**actor_kwarg)
-        self.actor_optim = getattr(optim, self.algo_cfg["actor"]["optimizer"])(
-            self.actor.parameters(), self.algo_cfg["actor"]["lr"]
+        self.actor_optim = getattr(optim, self.algo_cfg.actor.optimizer)(
+            self.actor.parameters(), self.algo_cfg.actor.lr
         )
 
         # critic
         critic_kwarg = {
             "input_shape": (self.state_shape[0] + self.action_shape[0],),
-            "net_arch": self.algo_cfg["critic"]["net_arch"],
+            "net_arch": self.algo_cfg.critic.net_arch,
             "output_shape": (1,),
-            "activation_fn": getattr(nn, self.algo_cfg["critic"]["activation_fn"]),
+            "activation_fn": getattr(nn, self.algo_cfg.critic.activation_fn),
         }
         self.critic = MLPTwinCritic(**critic_kwarg)
         self.critic_target = deepcopy(self.critic)
-        self.critic_optim = getattr(optim, self.algo_cfg["critic"]["optimizer"])(
-            self.critic.parameters(), self.algo_cfg["critic"]["lr"]
+        self.critic_optim = getattr(optim, self.algo_cfg.critic.optimizer)(
+            self.critic.parameters(), self.algo_cfg.critic.lr
         )
 
         # alpha, we optimize log(alpha) because alpha should always be bigger than 0.
-        if self.algo_cfg["log_alpha"]["auto_tune"]:
+        if self.algo_cfg.log_alpha.auto_tune:
             self.log_alpha = th.tensor(
-                [self.algo_cfg["log_alpha"]["init_value"]],
+                [self.algo_cfg.log_alpha.init_value],
                 device=self.device,
                 requires_grad=True,
             )
-            self.log_alpha_optim = getattr(
-                optim, self.algo_cfg["log_alpha"]["optimizer"]
-            )([self.log_alpha], self.algo_cfg["log_alpha"]["lr"])
+            self.log_alpha_optim = getattr(optim, self.algo_cfg.log_alpha.optimizer)(
+                [self.log_alpha], self.algo_cfg.log_alpha.lr
+            )
             self.models.update(
                 {"log_alpha": self.log_alpha, "log_alpha_optim": self.log_alpha_optim}
             )
         else:
             self.log_alpha = th.tensor(
-                [self.algo_cfg["log_alpha"]["init_value"]], device=self.device
+                [self.algo_cfg.log_alpha.init_value], device=self.device
             )
 
         freeze_net((self.critic_target,))
@@ -148,14 +149,14 @@ class SAC(OnlineRLAgent):
             # update params
             for _ in range(self.env_steps):
                 self._update_critic(states, actions, next_states, rewards, dones)
-                if self.algo_cfg["log_alpha"]["auto_tune"]:
+                if self.algo_cfg.log_alpha.auto_tune:
                     self._update_alpha(self._update_actor(states))
                 else:
                     self._update_actor(states)
                 polyak_update(
                     self.critic.parameters(),
                     self.critic_target.parameters(),
-                    self.algo_cfg["critic"]["tau"],
+                    self.algo_cfg.critic.tau,
                 )
 
         return self.log_info

@@ -4,6 +4,7 @@ from typing import Dict, Union
 import numpy as np
 import torch as th
 import torch.nn.functional as F
+from omegaconf import DictConfig
 from rlplugs.logger import LoggerType
 from rlplugs.net.critic import MLPCritic
 from rlplugs.net.ptu import freeze_net, gradient_descent, move_device
@@ -12,29 +13,29 @@ from torch import nn, optim
 from rlpyt import OnlineRLAgent
 
 
-class DQN(OnlineRLAgent):
+class DQNAgent(OnlineRLAgent):
     """Deep Q Networks (DQN)"""
 
-    def __init__(self, cfg: Dict, logger: LoggerType):
+    def __init__(self, cfg: DictConfig, logger: LoggerType):
         super().__init__(cfg, logger)
 
     def setup_model(self):
         # hyper-param
-        self.target_update_freq = self.algo_cfg["target_update_freq"]
-        self.epsilon = self.algo_cfg["epsilon"]
+        self.target_update_freq = self.algo_cfg.target_update_freq
+        self.epsilon = self.algo_cfg.epsilon
         self.global_t = 0
 
         # Q network
         q_net_kwarg = {
             "input_shape": self.state_shape,
             "output_shape": self.action_shape,
-            "net_arch": self.algo_cfg["QNet"]["net_arch"],
-            "activation_fn": getattr(nn, self.algo_cfg["QNet"]["activation_fn"]),
+            "net_arch": self.algo_cfg.QNet.net_arch,
+            "activation_fn": getattr(nn, self.algo_cfg.QNet.activation_fn),
         }
         self.q_net = MLPCritic(**q_net_kwarg)
         self.q_net_target = deepcopy(self.q_net)
-        self.q_net_optim = getattr(optim, self.algo_cfg["QNet"]["optimizer"])(
-            self.q_net.parameters(), self.algo_cfg["QNet"]["lr"]
+        self.q_net_optim = getattr(optim, self.algo_cfg.QNet.optimizer)(
+            self.q_net.parameters(), self.algo_cfg.QNet.lr
         )
 
         freeze_net((self.q_net_target,))

@@ -4,6 +4,7 @@ from typing import Callable, Dict, Union
 import gymnasium as gym
 import numpy as np
 import torch as th
+from omegaconf import DictConfig
 from rlplugs.logger import LoggerType
 from torch import nn, optim
 
@@ -11,21 +12,19 @@ from torch import nn, optim
 class BaseRLAgent(ABC):
     """Base for RL"""
 
-    def __init__(self, cfg: Dict, logger: LoggerType):
+    def __init__(self, cfg: DictConfig, logger: LoggerType):
         self.cfg = cfg
-        self.algo_cfg = cfg["agent"]  # configs of algorithms
+        self.algo_cfg = cfg.agent  # configs of algorithms
 
         # hyper-param
-        self.work_dir = cfg["work_dir"]
-        self.device = th.device(cfg["device"] if th.cuda.is_available() else "cpu")
-        self.seed = cfg["seed"]
+        self.work_dir = cfg.work_dir
+        self.device = th.device(cfg.device if th.cuda.is_available() else "cpu")
+        self.seed = cfg.seed
 
         # bind env
-        env_info = cfg["env"]
-
-        self.state_shape = env_info["state_shape"]
-        self.action_shape = env_info["action_shape"]
-        self.action_dtype = env_info["action_dtype"]
+        self.state_shape = tuple(cfg.env.info.state_shape)
+        self.action_shape = tuple(cfg.env.info.action_shape)
+        self.action_dtype = cfg.env.info.action_dtype
 
         # experiment management
         self.logger = logger

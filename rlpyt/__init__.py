@@ -1,53 +1,54 @@
-from typing import Any, Dict
+from typing import Dict
 
+from omegaconf import DictConfig
 from rlplugs.logger import LoggerType
 
 from rlpyt._base import BaseRLAgent
 from rlpyt._onlinerl import OnlineRLAgent
-from rlpyt.ddpg import DDPG
-from rlpyt.ddqn import DDQN
-from rlpyt.dqn import DQN
-from rlpyt.dueldqn import DuelDQN
-from rlpyt.ppo import PPO
-from rlpyt.sac import SAC
-from rlpyt.td3 import TD3
-from rlpyt.trpo import TRPO
+from rlpyt.ddpg import DDPGAgent
+from rlpyt.ddqn import DDQNAgent
+from rlpyt.dqn import DQNAgent
+from rlpyt.dueldqn import DuelDQNAgent
+from rlpyt.ppo import PPOAgent
+from rlpyt.sac import SACAgent
+from rlpyt.td3 import TD3Agent
+from rlpyt.trpo import TRPOAgent
 
 AGENTS: Dict[str, BaseRLAgent] = {
-    "ddpg": DDPG,
-    "ddqn": DDQN,
-    "dqn": DQN,
-    "dueldqn": DuelDQN,
-    "ppo": PPO,
-    "sac": SAC,
-    "td3": TD3,
-    "trpo": TRPO,
+    "ddpg": DDPGAgent,
+    "ddqn": DDQNAgent,
+    "dqn": DQNAgent,
+    "dueldqn": DuelDQNAgent,
+    "ppo": PPOAgent,
+    "sac": SACAgent,
+    "td3": TD3Agent,
+    "trpo": TRPOAgent,
 }
 
 
-def make(cfg: Dict[str, Any], logger: LoggerType) -> BaseRLAgent:
+def make(cfg: DictConfig, logger: LoggerType) -> BaseRLAgent:
     """To instantiate an agent"""
 
-    def _get_agent(cfg: Dict, logger: LoggerType) -> BaseRLAgent:
+    def _get_agent(cfg: DictConfig, logger: LoggerType) -> BaseRLAgent:
         """For python annotations"""
-        return AGENTS[cfg["agent"]["algo"]](cfg, logger)
+        return AGENTS[cfg.agent.algo](cfg, logger)
 
     agent = _get_agent(cfg, logger)
     agent.setup_model()
     return agent
 
 
-__version__ = "1.3.1"
+__version__ = "1.3.2"
 
 __all__ = [
-    "DDPG",
-    "DDQN",
-    "DQN",
-    "DuelDQN",
-    "PPO",
-    "SAC",
-    "TD3",
-    "TRPO",
+    "DDPGAgent",
+    "DDQNAgent",
+    "DQNAgent",
+    "DuelDQNAgent",
+    "PPOAgent",
+    "SACAgent",
+    "TD3Agent",
+    "TRPOAgent",
     "BaseRLAgent",
     "OnlineRLAgent",
     "AGENTS",

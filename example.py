@@ -18,19 +18,18 @@ WORK_DIR = os.getcwd()
     config_path=join(WORK_DIR, "conf"), config_name="run_exp", version_base="1.3.1"
 )
 def main(cfg: DictConfig):
+    cfg.work_dir = WORK_DIR
     # prepare experiment
-    cfg = OmegaConf.to_object(cfg)
     set_torch()
     clean_cuda()
-    set_random_seed(cfg["seed"], True)
-    cfg["work_dir"] = WORK_DIR
-
-    # setup environment
-    train_env, eval_env = (make_env(cfg["env"]["id"]), make_env(cfg["env"]["id"]))
-    cfg["env"].update(get_env_info(eval_env))
+    set_random_seed(cfg.seed, True)
 
     # setup logger
-    logger = TBLogger(args=cfg, record_param=cfg["log"]["record_param"])
+    logger = TBLogger(args=OmegaConf.to_object(cfg), record_param=cfg.log.record_param)
+
+    # setup environment
+    train_env, eval_env = (make_env(cfg.env.id), make_env(cfg.env.id))
+    OmegaConf.update(cfg, "env[info]", get_env_info(eval_env), merge=False)
 
     # create agent
     agent = rlpyt.make(cfg, logger)
