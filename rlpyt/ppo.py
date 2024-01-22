@@ -21,39 +21,39 @@ class PPOAgent(TRPOAgent):
 
     def setup_model(self):
         # hyper-param
-        self.epsilon = self.algo_cfg.epsilon
-        self.lambda_ = self.algo_cfg.lambda_
+        self.epsilon = self.cfg.agent.epsilon
+        self.lambda_ = self.cfg.agent.lambda_
 
         # GAE
         self.gae = GAE(
             self.gamma,
             self.lambda_,
-            self.algo_cfg.norm_adv,
-            self.algo_cfg.use_td_lambda,
+            self.cfg.agent.norm_adv,
+            self.cfg.agent.use_td_lambda,
         )
 
         # actor
         actor_kwarg = {
             "state_shape": self.state_shape,
-            "net_arch": self.algo_cfg.actor.net_arch,
+            "net_arch": self.cfg.agent.actor.net_arch,
             "action_shape": self.action_shape,
-            "activation_fn": getattr(nn, self.algo_cfg.actor.activation_fn),
+            "activation_fn": getattr(nn, self.cfg.agent.actor.activation_fn),
         }
         self.actor = MLPGaussianActor(**actor_kwarg)
-        self.actor_optim = getattr(optim, self.algo_cfg.actor.optimizer)(
-            self.actor.parameters(), self.algo_cfg.actor.lr
+        self.actor_optim = getattr(optim, self.cfg.agent.actor.optimizer)(
+            self.actor.parameters(), self.cfg.agent.actor.lr
         )
 
         # value network
         value_net_kwarg = {
             "input_shape": self.state_shape,
             "output_shape": (1,),
-            "net_arch": self.algo_cfg.value_net.net_arch,
-            "activation_fn": getattr(nn, self.algo_cfg.value_net.activation_fn),
+            "net_arch": self.cfg.agent.value_net.net_arch,
+            "activation_fn": getattr(nn, self.cfg.agent.value_net.activation_fn),
         }
         self.value_net = MLPCritic(**value_net_kwarg)
-        self.value_net_optim = getattr(optim, self.algo_cfg.value_net.optimizer)(
-            self.value_net.parameters(), self.algo_cfg.value_net.lr
+        self.value_net_optim = getattr(optim, self.cfg.agent.value_net.optimizer)(
+            self.value_net.parameters(), self.cfg.agent.value_net.lr
         )
 
         move_device((self.actor, self.value_net), self.device)
@@ -72,7 +72,7 @@ class PPOAgent(TRPOAgent):
             _, old_log_probs = self._select_action_dist(states, actions)
 
         idx = list(range(self.trans_buffer.size))
-        for _ in range(self.algo_cfg.value_net.n_update):
+        for _ in range(self.cfg.agent.value_net.n_update):
             random.shuffle(idx)
             batches = list(
                 BatchSampler(idx, batch_size=self.batch_size, drop_last=False)
@@ -90,7 +90,7 @@ class PPOAgent(TRPOAgent):
                 )
                 loss = (
                     -th.min(surr1, surr2).mean()
-                    - self.algo_cfg.entropy_coef * sampled_action_dist.entropy().mean()
+                    - self.cfg.agent.entropy_coef * sampled_action_dist.entropy().mean()
                 )
                 self.log_info.update(
                     {
@@ -99,7 +99,7 @@ class PPOAgent(TRPOAgent):
                             loss,
                             self.actor.parameters(),
                             # experimental results show that clipping grad realy improves performance
-                            self.algo_cfg.actor.clip,
+                            self.cfg.agent.actor.clip,
                         )
                     }
                 )

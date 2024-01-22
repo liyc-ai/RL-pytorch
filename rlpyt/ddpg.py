@@ -24,33 +24,33 @@ class DDPGAgent(OnlineRLAgent):
     def setup_model(self):
         # hyper-param
         self.entropy_target = -self.action_shape[0]
-        self.warmup_steps = self.algo_cfg.warmup_steps
-        self.env_steps = self.algo_cfg.env_steps
+        self.warmup_steps = self.cfg.agent.warmup_steps
+        self.env_steps = self.cfg.agent.env_steps
 
         # actor
         actor_kwarg = {
             "state_shape": self.state_shape,
-            "net_arch": self.algo_cfg.actor.net_arch,
+            "net_arch": self.cfg.agent.actor.net_arch,
             "action_shape": self.action_shape,
-            "activation_fn": getattr(nn, self.algo_cfg.actor.activation_fn),
+            "activation_fn": getattr(nn, self.cfg.agent.actor.activation_fn),
         }
         self.actor = MLPDeterministicActor(**actor_kwarg)
         self.actor_target = deepcopy(self.actor)
-        self.actor_optim = getattr(optim, self.algo_cfg.actor.optimizer)(
-            self.actor.parameters(), self.algo_cfg.actor.lr
+        self.actor_optim = getattr(optim, self.cfg.agent.actor.optimizer)(
+            self.actor.parameters(), self.cfg.agent.actor.lr
         )
 
         # critic
         critic_kwarg = {
             "input_shape": (self.state_shape[0] + self.action_shape[0],),
             "output_shape": (1,),
-            "net_arch": self.algo_cfg.critic.net_arch,
-            "activation_fn": getattr(nn, self.algo_cfg.critic.activation_fn),
+            "net_arch": self.cfg.agent.critic.net_arch,
+            "activation_fn": getattr(nn, self.cfg.agent.critic.activation_fn),
         }
         self.critic = MLPCritic(**critic_kwarg)
         self.critic_target = deepcopy(self.critic)
-        self.critic_optim = getattr(optim, self.algo_cfg.critic.optimizer)(
-            self.critic.parameters(), self.algo_cfg.critic.lr
+        self.critic_optim = getattr(optim, self.cfg.agent.critic.optimizer)(
+            self.critic.parameters(), self.cfg.agent.critic.lr
         )
 
         freeze_net((self.actor_target, self.critic_target))
@@ -89,7 +89,7 @@ class DDPGAgent(OnlineRLAgent):
 
         # add explore noise
         if not deterministic:
-            noise = th.randn_like(action) * (self.algo_cfg.expl_std)
+            noise = th.randn_like(action) * (self.cfg.agent.expl_std)
             # by default, the action scale is [-1.,1.]
             action = th.clamp(action + noise, -1.0, 1.0)
 
@@ -118,12 +118,12 @@ class DDPGAgent(OnlineRLAgent):
                 polyak_update(
                     self.critic.parameters(),
                     self.critic_target.parameters(),
-                    self.algo_cfg["critic"]["tau"],
+                    self.cfg.agent.critic.tau,
                 )
                 polyak_update(
                     self.actor.parameters(),
                     self.actor_target.parameters(),
-                    self.algo_cfg["actor"]["tau"],
+                    self.cfg.agent.actor.tau,
                 )
 
         return self.log_info

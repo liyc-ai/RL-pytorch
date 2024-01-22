@@ -17,8 +17,8 @@ class OnlineRLAgent(BaseRLAgent):
         super().__init__(cfg, logger)
 
         # hyper-param
-        self.batch_size = self.algo_cfg.batch_size
-        self.gamma = self.algo_cfg.gamma
+        self.batch_size = self.cfg.agent.batch_size
+        self.gamma = self.cfg.agent.gamma
 
         # buffer
         buffer_kwarg = {
@@ -26,7 +26,7 @@ class OnlineRLAgent(BaseRLAgent):
             "action_shape": self.action_shape,
             "action_dtype": self.action_dtype,
             "device": self.device,
-            "buffer_size": self.algo_cfg.buffer_size,
+            "buffer_size": self.cfg.agent.buffer_size,
         }
 
         self.trans_buffer = TransitionBuffer(**buffer_kwarg)
@@ -45,7 +45,7 @@ class OnlineRLAgent(BaseRLAgent):
         next_state, _ = reset_env_fn(train_env, self.seed)
         for t in trange(train_steps):
             state = next_state
-            if "warmup_steps" in self.algo_cfg and t < self.algo_cfg.warmup_steps:
+            if "warmup_steps" in self.cfg.agent and t < self.cfg.agent.warmup_steps:
                 action = train_env.action_space.sample()
             else:
                 action = self.select_action(

@@ -14,7 +14,6 @@ class BaseRLAgent(ABC):
 
     def __init__(self, cfg: DictConfig, logger: LoggerType):
         self.cfg = cfg
-        self.algo_cfg = cfg.agent  # configs of algorithms
 
         # hyper-param
         self.work_dir = cfg.work_dir
@@ -36,6 +35,7 @@ class BaseRLAgent(ABC):
         raise NotImplementedError
 
     # --------  Interaction  ----------
+    @th.compile
     @abstractmethod
     def select_action(
         self,
@@ -47,11 +47,13 @@ class BaseRLAgent(ABC):
     ) -> Union[np.ndarray, th.Tensor]:
         raise NotImplementedError
 
+    @th.compile
     @abstractmethod
     def update(self) -> Dict:
         """Provide the algorithm details for updating parameters"""
         raise NotImplementedError
 
+    @th.compile
     @abstractmethod
     def learn(self, train_env: gym.Env, eval_env: gym.Env, reset_env_fn_fn: Callable):
         raise NotImplementedError

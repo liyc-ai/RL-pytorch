@@ -17,24 +17,24 @@ class DuelDQNAgent(DDQNAgent):
 
     def setup_model(self):
         # hyper-param
-        self.target_update_freq = self.algo_cfg.target_update_freq
-        self.epsilon = self.algo_cfg.epsilon
+        self.target_update_freq = self.cfg.agent.target_update_freq
+        self.epsilon = self.cfg.agent.epsilon
         self.global_t = 0
 
         # Q network
         q_net_kwarg = {
             "input_shape": self.state_shape,
             "output_shape": self.action_shape,
-            "net_arch": self.algo_cfg.QNet.net_arch,
-            "v_head": self.algo_cfg.QNet.v_head,
-            "adv_head": self.algo_cfg.QNet.adv_head,
-            "activation_fn": getattr(nn, self.algo_cfg.QNet.activation_fn),
-            "mix_type": self.algo_cfg.QNet.mix_type,
+            "net_arch": self.cfg.agent.QNet.net_arch,
+            "v_head": self.cfg.agent.QNet.v_head,
+            "adv_head": self.cfg.agent.QNet.adv_head,
+            "activation_fn": getattr(nn, self.cfg.agent.QNet.activation_fn),
+            "mix_type": self.cfg.agent.QNet.mix_type,
         }
         self.q_net = MLPDuleQNet(**q_net_kwarg)
         self.q_net_target = deepcopy(self.q_net)
-        self.q_net_optim = getattr(optim, self.algo_cfg.QNet.optimizer)(
-            self.q_net.parameters(), self.algo_cfg.QNet.lr
+        self.q_net_optim = getattr(optim, self.cfg.agent.QNet.optimizer)(
+            self.q_net.parameters(), self.cfg.agent.QNet.lr
         )
 
         freeze_net((self.q_net_target,))

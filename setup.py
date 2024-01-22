@@ -29,7 +29,7 @@ setup(
         "omegaconf==2.3.0",
         "setuptools",
         "stable_baselines3",
-        "torch",
+        "torch>=2.1.0",
         "tqdm",
         "rlplugs @ git+https://github.com/BepfCp/rlplugs@main",
     ],

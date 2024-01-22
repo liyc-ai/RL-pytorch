@@ -25,51 +25,51 @@ class SACAgent(OnlineRLAgent):
     def setup_model(self):
         # hyper-param
         self.entropy_target = -self.action_shape[0]
-        self.warmup_steps = self.algo_cfg.warmup_steps
-        self.env_steps = self.algo_cfg.env_steps
+        self.warmup_steps = self.cfg.agent.warmup_steps
+        self.env_steps = self.cfg.agent.env_steps
 
         # actor
         actor_kwarg = {
             "state_shape": self.state_shape,
-            "net_arch": self.algo_cfg.actor.net_arch,
+            "net_arch": self.cfg.agent.actor.net_arch,
             "action_shape": self.action_shape,
-            "state_std_independent": self.algo_cfg.actor.state_std_independent,
-            "activation_fn": getattr(nn, self.algo_cfg.actor.activation_fn),
+            "state_std_independent": self.cfg.agent.actor.state_std_independent,
+            "activation_fn": getattr(nn, self.cfg.agent.actor.activation_fn),
         }
         self.actor = MLPGaussianActor(**actor_kwarg)
-        self.actor_optim = getattr(optim, self.algo_cfg.actor.optimizer)(
-            self.actor.parameters(), self.algo_cfg.actor.lr
+        self.actor_optim = getattr(optim, self.cfg.agent.actor.optimizer)(
+            self.actor.parameters(), self.cfg.agent.actor.lr
         )
 
         # critic
         critic_kwarg = {
             "input_shape": (self.state_shape[0] + self.action_shape[0],),
-            "net_arch": self.algo_cfg.critic.net_arch,
+            "net_arch": self.cfg.agent.critic.net_arch,
             "output_shape": (1,),
-            "activation_fn": getattr(nn, self.algo_cfg.critic.activation_fn),
+            "activation_fn": getattr(nn, self.cfg.agent.critic.activation_fn),
         }
         self.critic = MLPTwinCritic(**critic_kwarg)
         self.critic_target = deepcopy(self.critic)
-        self.critic_optim = getattr(optim, self.algo_cfg.critic.optimizer)(
-            self.critic.parameters(), self.algo_cfg.critic.lr
+        self.critic_optim = getattr(optim, self.cfg.agent.critic.optimizer)(
+            self.critic.parameters(), self.cfg.agent.critic.lr
         )
 
         # alpha, we optimize log(alpha) because alpha should always be bigger than 0.
-        if self.algo_cfg.log_alpha.auto_tune:
+        if self.cfg.agent.log_alpha.auto_tune:
             self.log_alpha = th.tensor(
-                [self.algo_cfg.log_alpha.init_value],
+                [self.cfg.agent.log_alpha.init_value],
                 device=self.device,
                 requires_grad=True,
             )
-            self.log_alpha_optim = getattr(optim, self.algo_cfg.log_alpha.optimizer)(
-                [self.log_alpha], self.algo_cfg.log_alpha.lr
+            self.log_alpha_optim = getattr(optim, self.cfg.agent.log_alpha.optimizer)(
+                [self.log_alpha], self.cfg.agent.log_alpha.lr
             )
             self.models.update(
                 {"log_alpha": self.log_alpha, "log_alpha_optim": self.log_alpha_optim}
             )
         else:
             self.log_alpha = th.tensor(
-                [self.algo_cfg.log_alpha.init_value], device=self.device
+                [self.cfg.agent.log_alpha.init_value], device=self.device
             )
 
         freeze_net((self.critic_target,))
@@ -149,14 +149,14 @@ class SACAgent(OnlineRLAgent):
             # update params
             for _ in range(self.env_steps):
                 self._update_critic(states, actions, next_states, rewards, dones)
-                if self.algo_cfg.log_alpha.auto_tune:
+                if self.cfg.agent.log_alpha.auto_tune:
                     self._update_alpha(self._update_actor(states))
                 else:
                     self._update_actor(states)
                 polyak_update(
                     self.critic.parameters(),
                     self.critic_target.parameters(),
-                    self.algo_cfg.critic.tau,
+                    self.cfg.agent.critic.tau,
                 )
 
         return self.log_info
