@@ -16,7 +16,7 @@ def eval_policy(
     episodes=10,
 ):
     """Evaluate Policy"""
-    policy.eval()
+    policy.on_eval_mode()
     avg_rewards = []
     for _ in range(episodes):
         (state, _), terminated, truncated = reset_env_fn(eval_env, seed), False, False
@@ -32,7 +32,7 @@ def eval_policy(
             state, reward, terminated, truncated, _ = eval_env.step(action)
             avg_reward += reward
         avg_rewards.append(avg_reward)
-    policy.train()
+    policy.on_train_mode()
 
     # average
     return np.mean(avg_rewards)

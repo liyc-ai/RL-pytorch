@@ -58,13 +58,13 @@ class BaseRLAgent(ABC):
     def learn(self, train_env: gym.Env, eval_env: gym.Env, reset_env_fn_fn: Callable):
         raise NotImplementedError
 
-    def eval(self):
+    def on_eval_mode(self):
         """Turn on eval mode"""
         for model in self.models:
             if isinstance(model, nn.Module):
                 self.models[model].eval()
 
-    def train(self):
+    def on_train_mode(self):
         """Turn on train mode"""
         for model in self.models:
             if isinstance(model, nn.Module):
