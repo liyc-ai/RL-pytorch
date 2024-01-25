@@ -1,4 +1,5 @@
 import os
+import signal
 from os.path import join
 
 import hydra
@@ -36,6 +37,16 @@ def main(cfg: DictConfig):
     # agent.load_model()
 
     # train agent
+    def ctr_c_handler(signum, frame):
+        """If the program was stopped by ctr+c, we will save the model before leaving"""
+        logger.console.warning("The program is stopped...")
+        logger.console.info(
+            f"Successfully save models into {save_torch_model(agent.models, logger.ckpt_dir, 'stopped_model.pt')}"
+        )  # save model
+        exit(1)
+
+    signal.signal(signal.SIGINT, ctr_c_handler)
+
     agent.learn(train_env, eval_env, reset_env_fn)
 
     # save model

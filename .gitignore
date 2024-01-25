@@ -1,6 +1,8 @@
 # Self added
 runs/
 .vscode/
+models/
+archived/
 
 
 # Byte-compiled / optimized / DLL files
