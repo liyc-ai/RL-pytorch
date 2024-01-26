@@ -12,8 +12,8 @@ from rlpyt.ddqn import DDQNAgent
 class DuelDQNAgent(DDQNAgent):
     """Dueling Deep Q Networks (DuelDQN)"""
 
-    def __init__(self, cfg: DictConfig, logger: LoggerType):
-        super().__init__(cfg, logger)
+    def __init__(self, cfg: DictConfig):
+        super().__init__(cfg)
 
     def setup_model(self):
         # hyper-param

@@ -23,7 +23,7 @@ pip install -e .
 ## Run Experiments
 
 ```bash
-python example.py agent=ppo env.id=Hopper-v4
+python scripts/train_agent.py agent=ppo env.id=Hopper-v4
 ```
 
 By default, the results are stored at the `runs` dir.

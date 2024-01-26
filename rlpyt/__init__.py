@@ -1,7 +1,6 @@
 from typing import Dict
 
 from omegaconf import DictConfig
-from rlplugs.logger import LoggerType
 
 from rlpyt._base import BaseRLAgent
 from rlpyt._onlinerl import OnlineRLAgent
@@ -26,14 +25,14 @@ AGENTS: Dict[str, BaseRLAgent] = {
 }
 
 
-def make(cfg: DictConfig, logger: LoggerType) -> BaseRLAgent:
+def make(cfg: DictConfig) -> BaseRLAgent:
     """To instantiate an agent"""
 
-    def _get_agent(cfg: DictConfig, logger: LoggerType) -> BaseRLAgent:
+    def _get_agent(cfg: DictConfig) -> BaseRLAgent:
         """For python annotations"""
-        return AGENTS[cfg.agent.algo](cfg, logger)
+        return AGENTS[cfg.agent.algo](cfg)
 
-    agent = _get_agent(cfg, logger)
+    agent = _get_agent(cfg)
     agent.setup_model()
     return agent
 
@@ -41,15 +40,15 @@ def make(cfg: DictConfig, logger: LoggerType) -> BaseRLAgent:
 __version__ = "1.3.2"
 
 __all__ = [
-    "DDPGAgent",
-    "DDQNAgent",
-    "DQNAgent",
-    "DuelDQNAgent",
-    "PPOAgent",
-    "SACAgent",
-    "TD3Agent",
-    "TRPOAgent",
-    "BaseRLAgent",
-    "OnlineRLAgent",
-    "AGENTS",
+    DDPGAgent,
+    DDQNAgent,
+    DQNAgent,
+    DuelDQNAgent,
+    PPOAgent,
+    SACAgent,
+    TD3Agent,
+    TRPOAgent,
+    BaseRLAgent,
+    OnlineRLAgent,
+    AGENTS,
 ]

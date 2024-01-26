@@ -23,7 +23,6 @@ log:
 
 # train
 train:
-  learn: true
   max_steps: 1000_000
   eval_interval: 5_000
 

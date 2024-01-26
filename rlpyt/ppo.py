@@ -1,7 +1,7 @@
 import random
-from typing import Dict
 
 import torch as th
+from omegaconf import DictConfig
 from rlplugs.drls.gae import GAE
 from rlplugs.logger import LoggerType
 from rlplugs.net.actor import MLPGaussianActor
@@ -16,8 +16,8 @@ from rlpyt.trpo import TRPOAgent
 class PPOAgent(TRPOAgent):
     """Proximal Policy Optimization (PPO)"""
 
-    def __init__(self, cfg: Dict, logger: LoggerType):
-        super().__init__(cfg, logger)
+    def __init__(self, cfg: DictConfig):
+        super().__init__(cfg)
 
     def setup_model(self):
         # hyper-param

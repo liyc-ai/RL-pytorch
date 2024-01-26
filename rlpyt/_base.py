@@ -5,14 +5,13 @@ import gymnasium as gym
 import numpy as np
 import torch as th
 from omegaconf import DictConfig
-from rlplugs.logger import LoggerType
 from torch import nn, optim
 
 
 class BaseRLAgent(ABC):
     """Base for RL"""
 
-    def __init__(self, cfg: DictConfig, logger: LoggerType):
+    def __init__(self, cfg: DictConfig):
         self.cfg = cfg
 
         # hyper-param
@@ -25,8 +24,7 @@ class BaseRLAgent(ABC):
         self.action_shape = tuple(cfg.env.info.action_shape)
         self.action_dtype = cfg.env.info.action_dtype
 
-        # experiment management
-        self.logger = logger
+        # models
         self.models: Dict[str, Union[nn.Module, optim.Optimizer, th.Tensor]] = dict()
 
     # -------- Initialization ---------
