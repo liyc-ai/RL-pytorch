@@ -3,7 +3,6 @@ import random
 import torch as th
 from omegaconf import DictConfig
 from rlplugs.drls.gae import GAE
-from rlplugs.logger import LoggerType
 from rlplugs.net.actor import MLPGaussianActor
 from rlplugs.net.critic import MLPCritic
 from rlplugs.net.ptu import gradient_descent, move_device

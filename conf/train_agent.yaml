@@ -11,9 +11,6 @@ env:
     action_shape:
     action_dtype:
 
-# Note: All paths below are absolute paths or relative paths to project dir
-model_path: data/hopper-v4_sac.pt
-
 # log
 log:
   record_param:
@@ -28,7 +25,7 @@ train:
 
 # algo
 defaults:
-  - agent: ddpg
+  - agent: ppo
   - override hydra/hydra_logging: disabled  
   - override hydra/job_logging: disabled
   - _self_

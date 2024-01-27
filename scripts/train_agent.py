@@ -46,14 +46,9 @@ def eval_policy(
     return np.mean(avg_rewards)
 
 
-WORK_DIR = os.getcwd()
-
-
-@hydra.main(
-    config_path=join(WORK_DIR, "conf"), config_name="run_exp", version_base="1.3.1"
-)
+@hydra.main(config_path="../conf", config_name="train_agent", version_base="1.3.1")
 def main(cfg: DictConfig):
-    cfg.work_dir = WORK_DIR
+    cfg.work_dir = os.getcwd()
     # prepare experiment
     set_torch()
     clean_cuda()
@@ -68,14 +63,13 @@ def main(cfg: DictConfig):
 
     # create agent
     agent = rlpyt.make(cfg)
-    # agent.load_model()
 
     # train agent
     def ctr_c_handler(_signum, _frame):
         """If the program was stopped by ctr+c, we will save the model before leaving"""
         logger.console.warning("The program is stopped...")
         logger.console.info(
-            f"Successfully save models into {save_torch_model(agent.models, logger.ckpt_dir, 'stopped_model.pt')}"
+            save_torch_model(agent.models, logger.ckpt_dir, "stopped_model.pt")
         )  # save model
         exit(1)
 
@@ -85,7 +79,7 @@ def main(cfg: DictConfig):
 
     # save model
     logger.console.info(
-        f"Successfully save models into {save_torch_model(agent.models, logger.ckpt_dir, 'final_model.pt')}"
+        save_torch_model(agent.models, logger.ckpt_dir, "final_model.pt")
     )
 
 

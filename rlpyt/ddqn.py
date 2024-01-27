@@ -1,6 +1,5 @@
 import torch as th
 from omegaconf import DictConfig
-from rlplugs.logger import LoggerType
 
 from rlpyt.dqn import DQNAgent
 

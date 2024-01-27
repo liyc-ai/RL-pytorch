@@ -5,7 +5,6 @@ import numpy as np
 import torch as th
 import torch.nn.functional as F
 from omegaconf import DictConfig
-from rlplugs.logger import LoggerType
 from rlplugs.net.actor import MLPDeterministicActor
 from rlplugs.net.critic import MLPTwinCritic
 from rlplugs.net.ptu import freeze_net, gradient_descent, move_device, tensor2ndarray

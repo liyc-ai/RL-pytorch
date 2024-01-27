@@ -1,7 +1,6 @@
 from copy import deepcopy
 
 from omegaconf import DictConfig
-from rlplugs.logger import LoggerType
 from rlplugs.net.critic import MLPDuleQNet
 from rlplugs.net.ptu import freeze_net, move_device
 from torch import nn, optim

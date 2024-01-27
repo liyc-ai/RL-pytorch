@@ -3,6 +3,7 @@ runs/
 .vscode/
 models/
 archived/
+data/
 
 
 # Byte-compiled / optimized / DLL files

@@ -1,0 +1,43 @@
+work_dir: 
+seed: 3407
+device: cuda:0
+description: "Demo"
+
+# env:
+env:
+  id: Hopper-v4
+  info:
+    state_shape:
+    action_shape:
+    action_dtype:
+
+# Note: All paths below are absolute paths or relative paths to project dir
+expert_model_path: models/hopper_sac_expert.pt
+
+# log
+log:
+  record_param:
+    - description
+    - seed
+    - agent.algo
+    - env.id
+
+# demo
+demo:
+  n_traj: 0
+  n_step: 1000_000
+  save_dir: data
+  save_name: ""
+  with_log_prob: False
+
+# algo
+defaults:
+  - agent: sac
+  - override hydra/hydra_logging: disabled  
+  - override hydra/job_logging: disabled
+  - _self_
+  
+hydra:  
+  output_subdir: null
+  run:
+    dir: .
