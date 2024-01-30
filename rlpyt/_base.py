@@ -5,6 +5,7 @@ import gymnasium as gym
 import numpy as np
 import torch as th
 from omegaconf import DictConfig
+from rlplugs.logger import LoggerType
 from torch import nn, optim
 
 
@@ -53,7 +54,14 @@ class BaseRLAgent(ABC):
 
     @th.compile
     @abstractmethod
-    def learn(self, train_env: gym.Env, eval_env: gym.Env, reset_env_fn_fn: Callable):
+    def learn(
+        self,
+        train_env: gym.Env,
+        eval_env: gym.Env,
+        reset_env_fn: Callable,
+        eval_policy: Callable,
+        logger: LoggerType = None,
+    ):
         raise NotImplementedError
 
     def on_eval_mode(self):
