@@ -63,15 +63,3 @@ class BaseRLAgent(ABC):
         logger: LoggerType = None,
     ):
         raise NotImplementedError
-
-    def on_eval_mode(self):
-        """Turn on eval mode"""
-        for model in self.models:
-            if isinstance(model, nn.Module):
-                self.models[model].eval()
-
-    def on_train_mode(self):
-        """Turn on train mode"""
-        for model in self.models:
-            if isinstance(model, nn.Module):
-                self.models[model].train()

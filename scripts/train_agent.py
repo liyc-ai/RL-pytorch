@@ -6,16 +6,24 @@ from typing import Callable
 import gymnasium as gym
 import hydra
 import numpy as np
+import torch as th
 from omegaconf import DictConfig, OmegaConf
 from rlplugs.drls.env import get_env_info, make_env, reset_env_fn
 from rlplugs.logger import TBLogger
-from rlplugs.net.ptu import clean_cuda, save_torch_model, set_torch
+from rlplugs.net.ptu import (
+    clean_cuda,
+    save_torch_model,
+    set_eval_mode,
+    set_torch,
+    set_train_mode,
+)
 from stable_baselines3.common.utils import set_random_seed
 
 import rlpyt
 from rlpyt import BaseRLAgent
 
 
+@th.no_grad
 def eval_policy(
     eval_env: gym.Env,
     reset_env_fn: Callable,
@@ -24,7 +32,7 @@ def eval_policy(
     episodes=10,
 ):
     """Evaluate Policy"""
-    policy.on_eval_mode()
+    set_eval_mode(policy.models)
     avg_rewards = []
     for _ in range(episodes):
         (state, _), terminated, truncated = reset_env_fn(eval_env, seed), False, False
@@ -40,7 +48,7 @@ def eval_policy(
             state, reward, terminated, truncated, _ = eval_env.step(action)
             avg_reward += reward
         avg_rewards.append(avg_reward)
-    policy.on_train_mode()
+    set_train_mode(policy.models)
 
     # average
     return np.mean(avg_rewards)
