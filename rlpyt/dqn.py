@@ -9,10 +9,10 @@ from rlplugs.net.critic import MLPCritic
 from rlplugs.net.ptu import freeze_net, gradient_descent, move_device
 from torch import nn, optim
 
-from rlpyt import OnlineRLAgent
+from rlpyt import BaseRLAgent
 
 
-class DQNAgent(OnlineRLAgent):
+class DQNAgent(BaseRLAgent):
     """Deep Q Networks (DQN)"""
 
     def __init__(self, cfg: DictConfig):

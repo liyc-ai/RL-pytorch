@@ -11,10 +11,10 @@ from rlplugs.net.ptu import freeze_net, gradient_descent, move_device, tensor2nd
 from stable_baselines3.common.utils import polyak_update
 from torch import nn, optim
 
-from rlpyt import OnlineRLAgent
+from rlpyt import BaseRLAgent
 
 
-class DDPGAgent(OnlineRLAgent):
+class DDPGAgent(BaseRLAgent):
     """Deep Deterministic Policy Gradient (DDPG)"""
 
     def __init__(self, cfg: DictConfig):

@@ -3,7 +3,6 @@ from typing import Dict
 from omegaconf import DictConfig
 
 from rlpyt._base import BaseRLAgent
-from rlpyt._onlinerl import OnlineRLAgent
 from rlpyt.ddpg import DDPGAgent
 from rlpyt.ddqn import DDQNAgent
 from rlpyt.dqn import DQNAgent
@@ -49,6 +48,5 @@ __all__ = [
     TD3Agent,
     TRPOAgent,
     BaseRLAgent,
-    OnlineRLAgent,
     AGENTS,
 ]

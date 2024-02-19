@@ -16,10 +16,10 @@ from torch.distributions.normal import Normal
 from torch.nn.utils.convert_parameters import parameters_to_vector, vector_to_parameters
 from torch.utils.data import BatchSampler
 
-from rlpyt import OnlineRLAgent
+from rlpyt import BaseRLAgent
 
 
-class TRPOAgent(OnlineRLAgent):
+class TRPOAgent(BaseRLAgent):
     """Trust Region Policy Optimization (TRPO)"""
 
     def __init__(self, cfg: DictConfig):

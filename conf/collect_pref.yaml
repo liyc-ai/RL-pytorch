@@ -1,1 +1,43 @@
 # TODO
+work_dir:
+seed: 3407
+device: cuda:0
+description: ""
+
+# env:
+env:
+  id: Hopper-v4
+  info:
+    state_shape:
+    action_shape:
+    action_dtype:
+
+# log
+log:
+  record_param:
+    - seed
+    - agent.algo
+    - env.id
+
+# train
+train:
+  max_steps: 1000_000
+  eval_interval: 5_000
+
+# preference
+pref:
+  n_pair: 20
+  save_dir: data
+  save_name: ""
+
+# algo
+defaults:
+  - agent: ppo
+  - override hydra/hydra_logging: disabled  
+  - override hydra/job_logging: disabled
+  - _self_
+  
+hydra:  
+  output_subdir: null
+  run:
+    dir: .

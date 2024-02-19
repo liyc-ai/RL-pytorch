@@ -11,10 +11,10 @@ from rlplugs.net.ptu import freeze_net, gradient_descent, move_device, tensor2nd
 from stable_baselines3.common.utils import polyak_update
 from torch import nn, optim
 
-from rlpyt import OnlineRLAgent
+from rlpyt import BaseRLAgent
 
 
-class TD3Agent(OnlineRLAgent):
+class TD3Agent(BaseRLAgent):
     """Twin Delayed Deep Deterministic Policy Gradient (TD3)"""
 
     def __init__(self, cfg: DictConfig):

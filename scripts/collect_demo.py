@@ -17,7 +17,7 @@ import rlpyt
 
 
 @th.no_grad()
-def collect_expert_data(
+def _collect_demo(
     policy: rlpyt.BaseRLAgent,
     env: gym.Env,
     reset_env_fn: Callable,
@@ -118,7 +118,7 @@ def main(cfg: DictConfig):
     # collect expert dataset
     logger.console.info(f"Collecting expert data on the environment {cfg.env.id}...")
     logger.console.info(
-        collect_expert_data(
+        _collect_demo(
             agent,
             env,
             reset_env_fn,
