@@ -1,8 +1,8 @@
 from copy import deepcopy
 
+from drlplugs.net.critic import MLPDuleQNet
+from drlplugs.net.ptu import freeze_net, move_device
 from omegaconf import DictConfig
-from rlplugs.net.critic import MLPDuleQNet
-from rlplugs.net.ptu import freeze_net, move_device
 from torch import nn, optim
 
 from rlpyt.ddqn import DDQNAgent

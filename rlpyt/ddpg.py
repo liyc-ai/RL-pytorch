@@ -4,10 +4,10 @@ from typing import Dict, Union
 import numpy as np
 import torch as th
 import torch.nn.functional as F
+from drlplugs.net.actor import MLPDeterministicActor
+from drlplugs.net.critic import MLPCritic
+from drlplugs.net.ptu import freeze_net, gradient_descent, move_device, tensor2ndarray
 from omegaconf import DictConfig
-from rlplugs.net.actor import MLPDeterministicActor
-from rlplugs.net.critic import MLPCritic
-from rlplugs.net.ptu import freeze_net, gradient_descent, move_device, tensor2ndarray
 from stable_baselines3.common.utils import polyak_update
 from torch import nn, optim
 

@@ -1,11 +1,11 @@
 import random
 
 import torch as th
+from drlplugs.drls.gae import GAE
+from drlplugs.net.actor import MLPGaussianActor
+from drlplugs.net.critic import MLPCritic
+from drlplugs.net.ptu import gradient_descent, move_device
 from omegaconf import DictConfig
-from rlplugs.drls.gae import GAE
-from rlplugs.net.actor import MLPGaussianActor
-from rlplugs.net.critic import MLPCritic
-from rlplugs.net.ptu import gradient_descent, move_device
 from torch import nn, optim
 from torch.utils.data import BatchSampler
 

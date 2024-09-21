@@ -7,16 +7,16 @@ import gymnasium as gym
 import hydra
 import numpy as np
 import torch as th
-from omegaconf import DictConfig, OmegaConf
-from rlplugs.drls.env import get_env_info, make_env, reset_env_fn
-from rlplugs.logger import TBLogger
-from rlplugs.net.ptu import (
+from drlplugs.drls.env import get_env_info, make_env, reset_env_fn
+from drlplugs.logger import TBLogger
+from drlplugs.net.ptu import (
     clean_cuda,
     save_torch_model,
     set_eval_mode,
     set_torch,
     set_train_mode,
 )
+from omegaconf import DictConfig, OmegaConf
 from stable_baselines3.common.utils import set_random_seed
 
 import rlpyt

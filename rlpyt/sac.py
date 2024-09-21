@@ -5,10 +5,10 @@ from typing import Dict, Tuple, Union
 import numpy as np
 import torch as th
 import torch.nn.functional as F
+from drlplugs.net.actor import MLPGaussianActor
+from drlplugs.net.critic import MLPTwinCritic
+from drlplugs.net.ptu import freeze_net, gradient_descent, move_device, tensor2ndarray
 from omegaconf import DictConfig
-from rlplugs.net.actor import MLPGaussianActor
-from rlplugs.net.critic import MLPTwinCritic
-from rlplugs.net.ptu import freeze_net, gradient_descent, move_device, tensor2ndarray
 from stable_baselines3.common.utils import polyak_update
 from torch import nn, optim
 

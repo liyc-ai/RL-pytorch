@@ -4,10 +4,10 @@ from typing import Callable, Dict, Union
 import gymnasium as gym
 import numpy as np
 import torch as th
+from drlplugs.drls.buffer import TransitionBuffer
+from drlplugs.logger import LoggerType
+from drlplugs.net.ptu import save_torch_model
 from omegaconf import DictConfig
-from rlplugs.drls.buffer import TransitionBuffer
-from rlplugs.logger import LoggerType
-from rlplugs.net.ptu import save_torch_model
 from torch import nn, optim
 from tqdm import trange
 

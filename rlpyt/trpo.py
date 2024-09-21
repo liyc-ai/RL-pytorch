@@ -4,11 +4,11 @@ from typing import Callable, Dict, Tuple, Union
 import numpy as np
 import torch as th
 import torch.nn.functional as F
+from drlplugs.drls.gae import GAE
+from drlplugs.net.actor import MLPGaussianActor
+from drlplugs.net.critic import MLPCritic
+from drlplugs.net.ptu import gradient_descent, move_device
 from omegaconf import DictConfig
-from rlplugs.drls.gae import GAE
-from rlplugs.net.actor import MLPGaussianActor
-from rlplugs.net.critic import MLPCritic
-from rlplugs.net.ptu import gradient_descent, move_device
 from torch import nn, optim
 from torch.autograd import grad
 from torch.distributions.kl import kl_divergence

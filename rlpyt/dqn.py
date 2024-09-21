@@ -4,9 +4,9 @@ from typing import Dict, Union
 import numpy as np
 import torch as th
 import torch.nn.functional as F
+from drlplugs.net.critic import MLPCritic
+from drlplugs.net.ptu import freeze_net, gradient_descent, move_device
 from omegaconf import DictConfig
-from rlplugs.net.critic import MLPCritic
-from rlplugs.net.ptu import freeze_net, gradient_descent, move_device
 from torch import nn, optim
 
 from rlpyt import BaseRLAgent
