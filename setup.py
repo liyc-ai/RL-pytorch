@@ -19,7 +19,7 @@ setup(
     description="A clean code base for deep reinforcement learning.",
     author="Yi-Chen Li",
     author_email="ychenli.X@gmail.com",
-    url="https://github.com/BepfCp/RL-pytorch",
+    url="https://github.com/liyc-ai/RL-pytorch",
     packages=find_packages(include=["rlpyt*"]),
     python_requires="<3.11,>=3.7",
     install_requires=[
@@ -32,6 +32,6 @@ setup(
         "torch>=2.1.0",
         "tqdm",
         "h5py",
-        "drlplugs @ git+https://github.com/BepfCp/DRL-plugs@main",
+        "drlplugs @ git+https://github.com/liyc-ai/DRL-plugs@main",
     ],
 )
