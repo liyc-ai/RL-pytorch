@@ -80,15 +80,9 @@ class TRPOAgent(BaseRLAgent):
         )
 
     def select_action(
-        self,
-        state: np.ndarray,
-        deterministic: bool,
-        return_log_prob: bool,
-        **kwarg
+        self, state: np.ndarray, deterministic: bool, return_log_prob: bool, **kwarg
     ) -> Union[Tuple[th.Tensor, th.Tensor], th.Tensor]:
-        return self.actor.sample(
-            state, deterministic, return_log_prob, self.device
-        )
+        return self.actor.sample(state, deterministic, return_log_prob, self.device)
 
     def update(self) -> Dict:
         self.log_info = dict()

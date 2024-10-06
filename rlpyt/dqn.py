@@ -49,10 +49,7 @@ class DQNAgent(BaseRLAgent):
         )
 
     def select_action(
-        self,
-        state: Union[np.ndarray, th.Tensor],
-        deterministic: bool,
-        **kwarg
+        self, state: Union[np.ndarray, th.Tensor], deterministic: bool, **kwarg
     ) -> th.Tensor:
         if not deterministic and np.random.random() < self.epsilon:
             return kwarg["action_space"].sample()

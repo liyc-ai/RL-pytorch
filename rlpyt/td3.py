@@ -154,9 +154,7 @@ class TD3Agent(BaseRLAgent):
         )
 
     def _update_actor(self, states: th.Tensor):
-        pred_actions = self.select_action(
-            states, deterministic=True
-        )
+        pred_actions = self.select_action(states, deterministic=True)
         Q = self.critic(False, states, pred_actions)
         actor_loss = -th.mean(Q)
         self.log_info.update(

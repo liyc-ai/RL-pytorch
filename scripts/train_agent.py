@@ -35,10 +35,10 @@ def eval_policy(
 ):
     """Evaluate Policy"""
     set_eval_mode(policy.models)
-    avg_rewards = []
+    returns = []
     for _ in range(episodes):
         (state, _), terminated, truncated = reset_env_fn(eval_env, seed), False, False
-        avg_reward = 0.0
+        return_ = 0.0
         while not (terminated or truncated):
             action = policy.select_action(
                 state,
@@ -46,13 +46,15 @@ def eval_policy(
                 return_log_prob=False,
                 **{"action_space": eval_env.action_space},
             )
-            state, reward, terminated, truncated, _ = eval_env.step(tensor2ndarray((action,))[0])
-            avg_reward += reward
-        avg_rewards.append(avg_reward)
+            state, reward, terminated, truncated, _ = eval_env.step(
+                tensor2ndarray((action,))[0]
+            )
+            return_ += reward
+        returns.append(return_)
     set_train_mode(policy.models)
 
     # average
-    return np.mean(avg_rewards)
+    return np.mean(returns)
 
 
 @hydra.main(config_path="../conf", config_name="train_agent", version_base="1.3.1")
