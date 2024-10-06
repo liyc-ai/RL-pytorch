@@ -52,9 +52,8 @@ class DQNAgent(BaseRLAgent):
         self,
         state: Union[np.ndarray, th.Tensor],
         deterministic: bool,
-        keep_dtype_tensor: bool,
         **kwarg
-    ) -> Union[th.Tensor, np.ndarray]:
+    ) -> th.Tensor:
         if not deterministic and np.random.random() < self.epsilon:
             return kwarg["action_space"].sample()
         with th.no_grad():
@@ -63,10 +62,7 @@ class DQNAgent(BaseRLAgent):
             )
             pred_q = self.q_net(state)
             action = th.argmax(pred_q, dim=-1)
-        if keep_dtype_tensor:
-            return action
-        else:
-            return action.cpu().numpy()
+        return action
 
     def _get_q_target(self, next_states: th.Tensor):
         with th.no_grad():

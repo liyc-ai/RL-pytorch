@@ -22,6 +22,8 @@ from stable_baselines3.common.utils import set_random_seed
 import rlpyt
 from rlpyt import BaseRLAgent
 
+from drlplugs.net.ptu import tensor2ndarray
+
 
 @th.no_grad
 def eval_policy(
@@ -41,11 +43,10 @@ def eval_policy(
             action = policy.select_action(
                 state,
                 deterministic=True,
-                keep_dtype_tensor=False,
                 return_log_prob=False,
                 **{"action_space": eval_env.action_space},
             )
-            state, reward, terminated, truncated, _ = eval_env.step(action)
+            state, reward, terminated, truncated, _ = eval_env.step(tensor2ndarray((action,))[0])
             avg_reward += reward
         avg_rewards.append(avg_reward)
     set_train_mode(policy.models)

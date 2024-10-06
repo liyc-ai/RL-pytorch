@@ -83,12 +83,11 @@ class TRPOAgent(BaseRLAgent):
         self,
         state: np.ndarray,
         deterministic: bool,
-        keep_dtype_tensor: bool,
         return_log_prob: bool,
         **kwarg
-    ) -> Union[Tuple[th.Tensor, th.Tensor], th.Tensor, np.ndarray]:
+    ) -> Union[Tuple[th.Tensor, th.Tensor], th.Tensor]:
         return self.actor.sample(
-            state, deterministic, keep_dtype_tensor, return_log_prob, self.device
+            state, deterministic, return_log_prob, self.device
         )
 
     def update(self) -> Dict:

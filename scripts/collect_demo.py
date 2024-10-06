@@ -43,13 +43,13 @@ def _collect_demo(
         obs = next_obs
         if with_log_prob:
             action, log_prob = policy.select_action(
-                obs, keep_dtype_tensor=False, deterministic=True, return_log_prob=True
+                obs, deterministic=True, return_log_prob=True
             )
         else:
             action = policy.select_action(
-                obs, keep_dtype_tensor=False, deterministic=True, return_log_prob=False
+                obs, deterministic=True, return_log_prob=False
             )
-        next_obs, reward, terminated, truncated, _ = env.step(action)
+        next_obs, reward, terminated, truncated, _ = env.step(action.cpu().numpy())
 
         # insert
         _dataset["observations"].append(obs)

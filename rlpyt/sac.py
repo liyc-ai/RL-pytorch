@@ -7,7 +7,7 @@ import torch as th
 import torch.nn.functional as F
 from drlplugs.net.actor import MLPGaussianActor
 from drlplugs.net.critic import MLPTwinCritic
-from drlplugs.net.ptu import freeze_net, gradient_descent, move_device, tensor2ndarray
+from drlplugs.net.ptu import freeze_net, gradient_descent, move_device
 from omegaconf import DictConfig
 from stable_baselines3.common.utils import polyak_update
 from torch import nn, optim
@@ -92,10 +92,9 @@ class SACAgent(BaseRLAgent):
         self,
         state: Union[np.ndarray, th.Tensor],
         deterministic: bool,
-        keep_dtype_tensor: bool,
         return_log_prob: bool,
         **kwarg
-    ) -> Union[Tuple[th.Tensor, th.Tensor], th.Tensor, np.ndarray]:
+    ) -> Union[th.Tensor, Tuple[th.Tensor, th.Tensor]]:
         """
         :param deterministic: whether sample from the action distribution or just the action mean.
         :param return_dtype_tensor: whether the returned data's dtype keeps to be torch.Tensor or numpy.ndarray
@@ -127,9 +126,6 @@ class SACAgent(BaseRLAgent):
         #         keepdim=True,
         #     )
         # action *= self.action_scale
-
-        if not keep_dtype_tensor:
-            action, log_prob = tensor2ndarray((action, log_prob))
 
         return (action, log_prob) if return_log_prob else action
 
@@ -172,7 +168,6 @@ class SACAgent(BaseRLAgent):
             pred_next_actions, pred_next_log_pis = self.select_action(
                 next_states,
                 deterministic=False,
-                keep_dtype_tensor=True,
                 return_log_prob=True,
             )
             target_Q1, target_Q2 = self.critic_target(
@@ -190,7 +185,7 @@ class SACAgent(BaseRLAgent):
 
     def _update_actor(self, states: th.Tensor):
         pred_actions, pred_log_pis = self.select_action(
-            states, deterministic=False, keep_dtype_tensor=True, return_log_prob=True
+            states, deterministic=False, return_log_prob=True
         )
         Q1, Q2 = self.critic(True, states, pred_actions)
         actor_loss = th.mean(self.alpha * pred_log_pis - th.min(Q1, Q2))

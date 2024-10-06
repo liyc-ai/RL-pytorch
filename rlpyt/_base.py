@@ -10,6 +10,7 @@ from drlplugs.net.ptu import save_torch_model
 from omegaconf import DictConfig
 from torch import nn, optim
 from tqdm import trange
+from drlplugs.net.ptu import tensor2ndarray
 
 
 class BaseRLAgent(ABC):
@@ -55,10 +56,9 @@ class BaseRLAgent(ABC):
         self,
         state: Union[np.ndarray, th.Tensor],
         deterministic: bool,
-        keep_dtype_tensor: bool,
         return_log_prob: bool,
         **kwarg,
-    ) -> Union[np.ndarray, th.Tensor]:
+    ) -> th.Tensor:
         raise NotImplementedError
 
     @abstractmethod
@@ -88,11 +88,11 @@ class BaseRLAgent(ABC):
             else:
                 action = self.select_action(
                     state,
-                    keep_dtype_tensor=False,
                     deterministic=False,
                     return_log_prob=False,
                     action_space=train_env.action_space,
                 )
+                action = tensor2ndarray((action,))[0]
             next_state, reward, terminated, truncated, _ = train_env.step(action)
             train_return += reward
 

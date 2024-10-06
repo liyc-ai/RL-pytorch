@@ -6,7 +6,7 @@ import torch as th
 import torch.nn.functional as F
 from drlplugs.net.actor import MLPDeterministicActor
 from drlplugs.net.critic import MLPTwinCritic
-from drlplugs.net.ptu import freeze_net, gradient_descent, move_device, tensor2ndarray
+from drlplugs.net.ptu import freeze_net, gradient_descent, move_device
 from omegaconf import DictConfig
 from stable_baselines3.common.utils import polyak_update
 from torch import nn, optim
@@ -74,10 +74,9 @@ class TD3Agent(BaseRLAgent):
         self,
         state: Union[np.ndarray, th.Tensor],
         deterministic: bool,
-        keep_dtype_tensor: bool,
         actor: nn.Module = None,
         **kwargs
-    ) -> Union[th.Tensor, np.ndarray]:
+    ) -> th.Tensor:
         state = th.Tensor(state).to(self.device) if type(state) is np.ndarray else state
 
         if actor is None:
@@ -95,9 +94,6 @@ class TD3Agent(BaseRLAgent):
                 self.cfg.agent.c,
             )
             action = th.clamp(action + noise, -1.0, 1.0)
-
-        if not keep_dtype_tensor:
-            (action,) = tensor2ndarray((action,))
 
         return action
 
@@ -145,7 +141,6 @@ class TD3Agent(BaseRLAgent):
             pred_next_actions = self.select_action(
                 next_states,
                 deterministic=False,
-                keep_dtype_tensor=True,
                 actor=self.actor_target,
             )
             target_Q1, target_Q2 = self.critic_target(
@@ -160,7 +155,7 @@ class TD3Agent(BaseRLAgent):
 
     def _update_actor(self, states: th.Tensor):
         pred_actions = self.select_action(
-            states, deterministic=True, keep_dtype_tensor=True
+            states, deterministic=True
         )
         Q = self.critic(False, states, pred_actions)
         actor_loss = -th.mean(Q)
