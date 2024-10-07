@@ -5,7 +5,7 @@ Re-implementations of Deep Reinforcement Learning (DRL) algorithms, written in P
 
 ```bash
 git clone https://github.com/liyc-ai/RL-pytorch.git
-cd rlpyt
+cd RL-pytorch
 pip install -e .
 ```
 
