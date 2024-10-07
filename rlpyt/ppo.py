@@ -91,7 +91,7 @@ class PPOAgent(TRPOAgent):
                     -th.min(surr1, surr2).mean()
                     - self.cfg.agent.entropy_coef * sampled_action_dist.entropy().mean()
                 )
-                self.log_info.update(
+                self.stats.update(
                     {
                         "loss/actor": gradient_descent(
                             self.actor_optim,

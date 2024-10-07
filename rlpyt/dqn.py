@@ -71,7 +71,7 @@ class DQNAgent(BaseRLAgent):
         return q
 
     def update(self) -> Dict:
-        self.log_info = dict()
+        self.stats = dict()
         if self.trans_buffer.size >= self.batch_size:
             self.global_t += 1
             states, actions, next_states, rewards, dones = self.trans_buffer.sample(
@@ -87,7 +87,7 @@ class DQNAgent(BaseRLAgent):
 
             # update q network
             loss = F.mse_loss(q, td_target)
-            self.log_info.update(
+            self.stats.update(
                 {
                     "loss": gradient_descent(self.q_net_optim, loss),
                     "Q/q": th.mean(q).item(),
@@ -99,4 +99,4 @@ class DQNAgent(BaseRLAgent):
             if self.global_t % self.target_update_freq == 0:
                 self.q_net_target.load_state_dict(self.q_net.state_dict())
 
-        return self.log_info
+        return self.stats

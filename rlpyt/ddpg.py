@@ -22,7 +22,6 @@ class DDPGAgent(BaseRLAgent):
 
     def setup_model(self):
         # hyper-param
-        self.entropy_target = -self.action_shape[0]
         self.warmup_steps = self.cfg.agent.warmup_steps
         self.env_steps = self.cfg.agent.env_steps
 
@@ -94,7 +93,7 @@ class DDPGAgent(BaseRLAgent):
         return action
 
     def update(self) -> Dict:
-        self.log_info = dict()
+        self.stats = dict()
         rest_steps = self.trans_buffer.size - self.warmup_steps
         if not (
             self.trans_buffer.size < self.batch_size
@@ -121,7 +120,7 @@ class DDPGAgent(BaseRLAgent):
                     self.cfg.agent.actor.tau,
                 )
 
-        return self.log_info
+        return self.stats
 
     def _update_critic(
         self,
@@ -141,7 +140,7 @@ class DDPGAgent(BaseRLAgent):
             target_Q = rewards + self.gamma * (1 - dones) * target_Q
         Q = self.critic(states, actions)
         critic_loss = F.mse_loss(Q, target_Q)
-        self.log_info.update(
+        self.stats.update(
             {"loss/critic": gradient_descent(self.critic_optim, critic_loss)}
         )
 
@@ -149,6 +148,6 @@ class DDPGAgent(BaseRLAgent):
         pred_actions = self.select_action(states, deterministic=True)
         Q = self.critic(states, pred_actions)
         actor_loss = -th.mean(Q)
-        self.log_info.update(
+        self.stats.update(
             {"loss/actor": gradient_descent(self.actor_optim, actor_loss)}
         )

@@ -85,7 +85,7 @@ class TRPOAgent(BaseRLAgent):
         return self.actor.sample(state, deterministic, return_log_prob, self.device)
 
     def update(self) -> Dict:
-        self.log_info = dict()
+        self.stats = dict()
         if self.trans_buffer.size >= self.cfg.agent.rollout_steps:
             states, actions, next_states, rewards, dones = self.trans_buffer.buffers
 
@@ -99,7 +99,7 @@ class TRPOAgent(BaseRLAgent):
             self._update_value_net(states, Rs)
 
             self.trans_buffer.clear()
-        return self.log_info
+        return self.stats
 
     def _update_value_net(self, states: th.Tensor, Rs: th.Tensor) -> float:
         idx = list(range(self.trans_buffer.size))
@@ -112,7 +112,7 @@ class TRPOAgent(BaseRLAgent):
                 sampled_states = states[batch]
                 values = self.value_net(sampled_states)
                 loss = F.mse_loss(values, Rs[batch])
-                self.log_info.update(
+                self.stats.update(
                     {"loss/critic": gradient_descent(self.value_net_optim, loss)}
                 )
 
@@ -144,7 +144,7 @@ class TRPOAgent(BaseRLAgent):
         )  # denominator: x^t (Hx)
 
         ## line search for appropriate step size
-        self.log_info.update({"loss/actor": 0.0})
+        self.stats.update({"loss/actor": 0.0})
 
         def check_constrain(alpha):
             step = alpha * full_step_size * update_dir
@@ -166,7 +166,7 @@ class TRPOAgent(BaseRLAgent):
                 actual_improve = new_loss - loss
 
             if actual_improve.item() > 0.0 and new_kl.item() <= self.delta:
-                self.log_info.update({"loss/actor": new_loss.item()})
+                self.stats.update({"loss/actor": new_loss.item()})
                 return True
             else:
                 return False

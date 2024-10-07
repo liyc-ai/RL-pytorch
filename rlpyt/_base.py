@@ -102,7 +102,7 @@ class BaseRLAgent(ABC):
             )
 
             # update policy
-            logger.add_dict(self.update(), t)
+            logger.add_stats(self.update(), t)
 
             # whether this episode ends
             if terminated or truncated:

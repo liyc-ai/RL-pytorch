@@ -130,7 +130,7 @@ class SACAgent(BaseRLAgent):
         return (action, log_prob) if return_log_prob else action
 
     def update(self) -> Dict:
-        self.log_info = dict()
+        self.stats = dict()
         rest_steps = self.trans_buffer.size - self.warmup_steps
         if not (
             self.trans_buffer.size < self.batch_size
@@ -154,7 +154,7 @@ class SACAgent(BaseRLAgent):
                     self.cfg.agent.critic.tau,
                 )
 
-        return self.log_info
+        return self.stats
 
     def _update_critic(
         self,
@@ -179,7 +179,7 @@ class SACAgent(BaseRLAgent):
         Q1, Q2 = self.critic(True, states, actions)
         critic_loss = F.mse_loss(Q1, target_Q) + F.mse_loss(Q2, target_Q)
 
-        self.log_info.update(
+        self.stats.update(
             {"loss/critic": gradient_descent(self.critic_optim, critic_loss)}
         )
 
@@ -189,7 +189,7 @@ class SACAgent(BaseRLAgent):
         )
         Q1, Q2 = self.critic(True, states, pred_actions)
         actor_loss = th.mean(self.alpha * pred_log_pis - th.min(Q1, Q2))
-        self.log_info.update(
+        self.stats.update(
             {"loss/actor": gradient_descent(self.actor_optim, actor_loss)}
         )
 
@@ -201,7 +201,7 @@ class SACAgent(BaseRLAgent):
         Note: pred_log_pis are detached from the computation graph
         """
         alpha_loss = th.mean(self.log_alpha * (-pred_log_pis - self.entropy_target))
-        self.log_info.update(
+        self.stats.update(
             {"loss/alpha": gradient_descent(self.log_alpha_optim, alpha_loss)}
         )
 
