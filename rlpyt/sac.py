@@ -103,7 +103,7 @@ class SACAgent(BaseRLAgent):
         # Due to the squash operation, we need that keep_dtype_tensor == True here.
         if return_log_prob:
             action, log_prob = self.actor.sample(
-                state, deterministic, True, True, self.device
+                state, deterministic, True, self.device
             )
             # squash action
             log_prob -= th.sum(
@@ -112,7 +112,7 @@ class SACAgent(BaseRLAgent):
                 keepdims=True,
             )
         else:
-            action = self.actor.sample(state, deterministic, True, False, self.device)
+            action = self.actor.sample(state, deterministic, False, self.device)
             log_prob = None
 
         action = th.tanh(action)
