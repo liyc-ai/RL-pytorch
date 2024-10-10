@@ -7,11 +7,11 @@ import hydra
 import numpy as np
 import torch as th
 from drlplugs.drls.env import get_env_info, make_env, reset_env_fn
+from drlplugs.exp.prepare import set_random_seed
 from drlplugs.logger import TBLogger
 from drlplugs.net.ptu import clean_cuda, load_torch_model, set_torch
 from drlplugs.ospy.dataset import get_dataset_holder, save_dataset_to_h5
 from omegaconf import DictConfig, OmegaConf
-from stable_baselines3.common.utils import set_random_seed
 
 import rlpyt
 
@@ -100,7 +100,7 @@ def main(cfg: DictConfig):
     # prepare experiment
     set_torch()
     clean_cuda()
-    set_random_seed(cfg.seed, True)
+    set_random_seed(cfg.seed)
 
     # setup logger
     logger = TBLogger(args=OmegaConf.to_object(cfg), record_param=cfg.log.record_param)

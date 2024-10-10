@@ -28,7 +28,6 @@ setup(
         "numpy==1.23.5",
         "omegaconf==2.3.0",
         "setuptools",
-        "stable_baselines3",
         "torch>=2.1.0",
         "tqdm",
         "h5py",

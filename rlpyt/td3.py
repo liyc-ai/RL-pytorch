@@ -6,9 +6,8 @@ import torch as th
 import torch.nn.functional as F
 from drlplugs.net.actor import MLPDeterministicActor
 from drlplugs.net.critic import MLPTwinCritic
-from drlplugs.net.ptu import freeze_net, gradient_descent, move_device
+from drlplugs.net.ptu import freeze_net, gradient_descent, move_device, polyak_update
 from omegaconf import DictConfig
-from stable_baselines3.common.utils import polyak_update
 from torch import nn, optim
 
 from rlpyt import BaseRLAgent
