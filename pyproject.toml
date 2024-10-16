@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rlpyt"
+version = "1.3.2"
+description = "A clean code base for deep reinforcement learning."
+authors = [
+    {name = "Yi-Chen Li", email = "ychenli.x@gmail.com" }
+]
+license = {file = "LICENSE"}
+readme = "README.md"
+requires-python = ">= 3.8"
+dependencies = [
+    "hydra-core==1.3.2",
+    "omegaconf==2.3.0",
+    "drlplugs @ git+https://github.com/liyc-ai/DRL-plugs@main",
+]
+
+[tool.setuptools.packages.find]
+include = ["rlpyt"]

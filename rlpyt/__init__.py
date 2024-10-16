@@ -1,3 +1,4 @@
+import importlib.metadata
 from typing import Dict
 
 from omegaconf import DictConfig
@@ -36,7 +37,7 @@ def make(cfg: DictConfig) -> BaseRLAgent:
     return agent
 
 
-__version__ = "1.3.2"
+__version__ = importlib.metadata.version("rlpyt")
 
 __all__ = [
     DDPGAgent,
