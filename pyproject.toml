@@ -15,8 +15,10 @@ requires-python = ">= 3.8"
 dependencies = [
     "hydra-core==1.3.2",
     "omegaconf==2.3.0",
-    "drlplugs @ git+https://github.com/liyc-ai/DRL-plugs@main",
+#    "drlplugs @ git+https://github.com/liyc-ai/DRL-plugs@main",
 ]
 
 [tool.setuptools.packages.find]
-include = ["rlpyt"]
+where = ["src"]
+include = ["rlpyt*"]
+namespaces = false

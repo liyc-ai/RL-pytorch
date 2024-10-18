@@ -1,6 +1,5 @@
 import os
 import signal
-from os.path import join
 from typing import Callable
 
 import gymnasium as gym
@@ -61,7 +60,7 @@ def main(cfg: DictConfig):
     cfg.work_dir = os.getcwd()
     # prepare experiment
     set_torch()
-    clean_cuda()
+    clean_cuda()  # comment if you use wsl
     set_random_seed(cfg.seed)
 
     # setup logger
