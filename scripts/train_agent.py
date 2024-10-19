@@ -10,7 +10,6 @@ from drlplugs.drls.env import get_env_info, make_env, reset_env_fn
 from drlplugs.exp.prepare import set_random_seed
 from drlplugs.logger import TBLogger
 from drlplugs.net.ptu import (
-    clean_cuda,
     save_torch_model,
     set_eval_mode,
     set_torch,
@@ -60,7 +59,6 @@ def main(cfg: DictConfig):
     cfg.work_dir = os.getcwd()
     # prepare experiment
     set_torch()
-    clean_cuda()  # comment if you use wsl
     set_random_seed(cfg.seed)
 
     # setup logger
@@ -78,7 +76,7 @@ def main(cfg: DictConfig):
         """If the program was stopped by ctr+c, we will save the model before leaving"""
         logger.console.warning("The program is stopped...")
         logger.console.info(
-            save_torch_model(agent.models, logger.ckpt_dir, "stopped_model.pt")
+            save_torch_model(agent.models, logger.ckpt_dir, "stopped_model")
         )  # save model
         exit(1)
 
@@ -87,9 +85,7 @@ def main(cfg: DictConfig):
     agent.learn(train_env, eval_env, reset_env_fn, eval_policy, logger)
 
     # save model
-    logger.console.info(
-        save_torch_model(agent.models, logger.ckpt_dir, "final_model.pt")
-    )
+    logger.console.info(save_torch_model(agent.models, logger.ckpt_dir, "final_model"))
 
 
 if __name__ == "__main__":

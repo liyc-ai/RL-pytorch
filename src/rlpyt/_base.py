@@ -6,11 +6,10 @@ import numpy as np
 import torch as th
 from drlplugs.drls.buffer import TransitionBuffer
 from drlplugs.logger import LoggerType
-from drlplugs.net.ptu import save_torch_model
+from drlplugs.net.ptu import save_torch_model, tensor2ndarray
 from omegaconf import DictConfig
 from torch import nn, optim
 from tqdm import trange
-from drlplugs.net.ptu import tensor2ndarray
 
 
 class BaseRLAgent(ABC):
@@ -117,7 +116,7 @@ class BaseRLAgent(ABC):
 
                 if eval_return > best_return:
                     logger.console.info(
-                        f"Successfully save models into {save_torch_model(self.models, logger.ckpt_dir, 'best_model.pt')}"
+                        f"Successfully save models into {save_torch_model(self.models, logger.ckpt_dir, 'best_model')}"
                     )
 
                     best_return = eval_return
