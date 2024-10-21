@@ -62,7 +62,11 @@ def main(cfg: DictConfig):
     set_random_seed(cfg.seed)
 
     # setup logger
-    logger = TBLogger(args=OmegaConf.to_object(cfg), record_param=cfg.log.record_param)
+    logger = TBLogger(
+        args=OmegaConf.to_object(cfg),
+        record_param=cfg.log.record_param,
+        console_output=cfg.log.console_output,
+    )
 
     # setup environment
     train_env, eval_env = (make_env(cfg.env.id), make_env(cfg.env.id))

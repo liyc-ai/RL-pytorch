@@ -17,6 +17,7 @@ log:
     - seed
     - agent.algo
     - env.id
+  console_output: true
 
 # train
 train:

@@ -10,7 +10,12 @@
             "request": "launch",
             "program": "${file}",
             "console": "integratedTerminal",
-            "justMyCode": false
+            "justMyCode": false,
+            "args": [
+                "agent=ppo",
+                "env.id=Hopper-v5",
+                "log.console_output=false"
+            ]
         }
     ]
 }

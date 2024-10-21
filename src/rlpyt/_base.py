@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from os.path import join
 from typing import Callable, Dict, Union
 
 import gymnasium as gym
@@ -79,8 +80,14 @@ class BaseRLAgent(ABC):
         eval_interval = self.cfg.train.eval_interval
 
         # start training
+        if self.cfg.log.console_output:
+            progress_f = None
+            progress_bar = trange(train_steps)
+        else:
+            progress_f = open(join(logger.exp_dir, "progress.txt"), "w")
+            progress_bar = trange(train_steps, file=progress_f)
         next_state, _ = reset_env_fn(train_env, self.seed)
-        for t in trange(train_steps):
+        for t in progress_bar:
             state = next_state
             if "warmup_steps" in self.cfg.agent and t < self.cfg.agent.warmup_steps:
                 action = train_env.action_space.sample()
@@ -120,3 +127,5 @@ class BaseRLAgent(ABC):
                     )
 
                     best_return = eval_return
+        if progress_f is not None:
+            progress_f.close()
