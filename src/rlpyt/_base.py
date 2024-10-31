@@ -123,9 +123,10 @@ class BaseRLAgent(ABC):
 
                 if eval_return > best_return:
                     logger.console.info(
-                        f"Successfully save models into {save_torch_model(self.models, logger.ckpt_dir, 'best_model')}"
+                        f"Step {t}: get new best return: {eval_return}!"
                     )
-
+                    save_torch_model(self.models, logger.ckpt_dir, "best_model")
                     best_return = eval_return
+
         if progress_f is not None:
             progress_f.close()
