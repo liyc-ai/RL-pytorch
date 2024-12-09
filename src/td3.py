@@ -10,7 +10,7 @@ from drlplugs.net.ptu import freeze_net, gradient_descent, move_device, polyak_u
 from omegaconf import DictConfig
 from torch import nn, optim
 
-from rlpyt import BaseRLAgent
+from .base import BaseRLAgent
 
 
 class TD3Agent(BaseRLAgent):
@@ -73,7 +73,7 @@ class TD3Agent(BaseRLAgent):
         state: Union[np.ndarray, th.Tensor],
         deterministic: bool,
         actor: nn.Module = None,
-        **kwargs
+        **kwargs,
     ) -> th.Tensor:
         state = th.Tensor(state).to(self.device) if type(state) is np.ndarray else state
 

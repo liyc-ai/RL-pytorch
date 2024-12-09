@@ -18,8 +18,7 @@ from drlplugs.net.ptu import (
 )
 from omegaconf import DictConfig, OmegaConf
 
-import rlpyt
-from rlpyt import BaseRLAgent
+from src import BaseRLAgent, create_agent
 
 
 @th.no_grad
@@ -54,7 +53,7 @@ def eval_policy(
     return np.mean(returns)
 
 
-@hydra.main(config_path="../conf", config_name="train_agent", version_base="1.3.1")
+@hydra.main(config_path="./conf", config_name="train_agent", version_base="1.3.1")
 def main(cfg: DictConfig):
     cfg.work_dir = os.getcwd()
     # prepare experiment
@@ -73,7 +72,7 @@ def main(cfg: DictConfig):
     OmegaConf.update(cfg, "env[info]", get_env_info(eval_env), merge=False)
 
     # create agent
-    agent = rlpyt.make(cfg)
+    agent = create_agent(cfg)
 
     # train agent
     def ctr_c_handler(_signum, _frame):

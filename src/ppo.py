@@ -9,7 +9,7 @@ from omegaconf import DictConfig
 from torch import nn, optim
 from torch.utils.data import BatchSampler
 
-from rlpyt.trpo import TRPOAgent
+from .trpo import TRPOAgent
 
 
 class PPOAgent(TRPOAgent):

@@ -6,7 +6,7 @@ import gymnasium as gym
 import numpy as np
 import torch as th
 from drlplugs.drls.buffer import TransitionBuffer
-from drlplugs.logger import LoggerType
+from drlplugs.logger import TBLogger
 from drlplugs.net.ptu import save_torch_model, tensor2ndarray
 from omegaconf import DictConfig
 from torch import nn, optim
@@ -21,7 +21,7 @@ class BaseRLAgent(ABC):
 
         # hyper-param
         self.work_dir = cfg.work_dir
-        self.device = th.device(cfg.device if th.cuda.is_available() else "cpu")
+        self.device = th.device(cfg.device)
         self.seed = cfg.seed
         self.batch_size = self.cfg.agent.batch_size
         self.gamma = self.cfg.agent.gamma
@@ -72,7 +72,7 @@ class BaseRLAgent(ABC):
         eval_env: gym.Env,
         reset_env_fn: Callable,
         eval_policy: Callable,
-        logger: LoggerType,
+        logger: TBLogger,
     ):
         train_return = 0
         best_return = -float("inf")

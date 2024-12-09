@@ -9,7 +9,7 @@ from drlplugs.net.ptu import freeze_net, gradient_descent, move_device
 from omegaconf import DictConfig
 from torch import nn, optim
 
-from rlpyt import BaseRLAgent
+from .base import BaseRLAgent
 
 
 class DQNAgent(BaseRLAgent):

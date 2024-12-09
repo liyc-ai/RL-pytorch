@@ -11,7 +11,7 @@ from drlplugs.net.ptu import freeze_net, gradient_descent, move_device, polyak_u
 from omegaconf import DictConfig
 from torch import nn, optim
 
-from rlpyt import BaseRLAgent
+from .base import BaseRLAgent
 
 
 class SACAgent(BaseRLAgent):
@@ -92,7 +92,7 @@ class SACAgent(BaseRLAgent):
         state: Union[np.ndarray, th.Tensor],
         deterministic: bool,
         return_log_prob: bool,
-        **kwarg
+        **kwarg,
     ) -> Union[th.Tensor, Tuple[th.Tensor, th.Tensor]]:
         """
         :param deterministic: whether sample from the action distribution or just the action mean.

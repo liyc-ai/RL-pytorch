@@ -4,13 +4,11 @@ Re-implementations of Deep Reinforcement Learning (DRL) algorithms, written in P
 ## Installation
 
 ```bash
-git clone https://github.com/liyc-ai/RL-pytorch.git
-cd RL-pytorch
+git clone https://github.com/liyc-ai/DRL-plugs
+cd DRL-plugs
 pip install .
 
-# update installation if you make modifications
-pip install --upgrade .
-# pip install -e . --config-settings editable_mode=compat
+pip install "hydra-core==1.3.2" "omegaconf==2.3.0"
 ```
 
 ## Implemented Algorithms
@@ -27,10 +25,16 @@ pip install --upgrade .
 ## Run Experiments
 
 ```bash
-python scripts/train_agent.py agent=ppo env.id=Hopper-v4
-```
+# train an RL agent
+# by default, training results are stored at the `runs` dir
+python train_agent.py agent=ppo env.id=Hopper-v5
 
-By default, the results are stored at the `runs` dir.
+# plot the training results
+python plot.py
+
+# collect expert demonstrations
+python collect_demo.py env.id=Hopper-v5 expert_model_path=models/hopper_sac_expert.pt
+```
 
 ## Acknowledgement
 With the progress of this project, I found many open-source materials on the Internet to be excellent references. I am deeply grateful for the efforts of their authors. Below is a detailed list. Additionally, I would like to extend my thanks to my friends from [LAMDA-RL](https://github.com/LAMDA-RL) for our helpful discussions.

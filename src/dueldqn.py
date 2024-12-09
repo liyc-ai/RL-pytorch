@@ -5,7 +5,7 @@ from drlplugs.net.ptu import freeze_net, move_device
 from omegaconf import DictConfig
 from torch import nn, optim
 
-from rlpyt.ddqn import DDQNAgent
+from .ddqn import DDQNAgent
 
 
 class DuelDQNAgent(DDQNAgent):

@@ -3,15 +3,15 @@ from typing import Dict
 
 from omegaconf import DictConfig
 
-from rlpyt._base import BaseRLAgent
-from rlpyt.ddpg import DDPGAgent
-from rlpyt.ddqn import DDQNAgent
-from rlpyt.dqn import DQNAgent
-from rlpyt.dueldqn import DuelDQNAgent
-from rlpyt.ppo import PPOAgent
-from rlpyt.sac import SACAgent
-from rlpyt.td3 import TD3Agent
-from rlpyt.trpo import TRPOAgent
+from .base import BaseRLAgent
+from .ddpg import DDPGAgent
+from .ddqn import DDQNAgent
+from .dqn import DQNAgent
+from .dueldqn import DuelDQNAgent
+from .ppo import PPOAgent
+from .sac import SACAgent
+from .td3 import TD3Agent
+from .trpo import TRPOAgent
 
 AGENTS: Dict[str, BaseRLAgent] = {
     "ddpg": DDPGAgent,
@@ -25,7 +25,7 @@ AGENTS: Dict[str, BaseRLAgent] = {
 }
 
 
-def make(cfg: DictConfig) -> BaseRLAgent:
+def create_agent(cfg: DictConfig) -> BaseRLAgent:
     """To instantiate an agent"""
 
     def _get_agent(cfg: DictConfig) -> BaseRLAgent:
@@ -36,8 +36,6 @@ def make(cfg: DictConfig) -> BaseRLAgent:
     agent.setup_model()
     return agent
 
-
-__version__ = importlib.metadata.version("rlpyt")
 
 __all__ = [
     DDPGAgent,

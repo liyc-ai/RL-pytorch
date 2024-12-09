@@ -13,12 +13,12 @@ from drlplugs.net.ptu import load_torch_model, set_torch
 from drlplugs.ospy.dataset import get_dataset_holder, save_dataset_to_h5
 from omegaconf import DictConfig, OmegaConf
 
-import rlpyt
+from src import BaseRLAgent, create_agent
 
 
 @th.no_grad()
 def _collect_demo(
-    policy: rlpyt.BaseRLAgent,
+    policy: BaseRLAgent,
     env: gym.Env,
     reset_env_fn: Callable,
     save_dir: str,
@@ -94,7 +94,7 @@ def _collect_demo(
     )
 
 
-@hydra.main(config_path="../conf", config_name="collect_demo", version_base="1.3.1")
+@hydra.main(config_path="./conf", config_name="collect_demo", version_base="1.3.1")
 def main(cfg: DictConfig):
     cfg.work_dir = os.getcwd()
     # prepare experiment
@@ -109,7 +109,7 @@ def main(cfg: DictConfig):
     OmegaConf.update(cfg, "env[info]", get_env_info(env), merge=False)
 
     # create agent
-    agent = rlpyt.make(cfg)
+    agent = create_agent(cfg)
     logger.console.info(
         load_torch_model(agent.models, join(cfg.work_dir, cfg.expert_model_path))
     )

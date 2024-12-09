@@ -16,7 +16,7 @@ from torch.distributions.normal import Normal
 from torch.nn.utils.convert_parameters import parameters_to_vector, vector_to_parameters
 from torch.utils.data import BatchSampler
 
-from rlpyt import BaseRLAgent
+from .base import BaseRLAgent
 
 
 class TRPOAgent(BaseRLAgent):

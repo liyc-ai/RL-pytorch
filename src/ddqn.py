@@ -1,7 +1,7 @@
 import torch as th
 from omegaconf import DictConfig
 
-from rlpyt.dqn import DQNAgent
+from .dqn import DQNAgent
 
 
 class DDQNAgent(DQNAgent):
