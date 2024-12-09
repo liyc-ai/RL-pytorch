@@ -1,5 +1,4 @@
 import os
-import sys
 from os.path import join
 from typing import Callable, Dict, Tuple
 
@@ -13,8 +12,6 @@ from drlplugs.logger import TBLogger
 from drlplugs.net.ptu import load_torch_model, set_torch
 from drlplugs.ospy.dataset import get_dataset_holder, save_dataset_to_h5
 from omegaconf import DictConfig, OmegaConf
-
-sys.path.append("./")
 
 from src import BaseRLAgent, create_agent
 

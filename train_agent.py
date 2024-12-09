@@ -1,6 +1,5 @@
 import os
 import signal
-import sys
 from typing import Callable
 
 import gymnasium as gym
@@ -18,8 +17,6 @@ from drlplugs.net.ptu import (
     tensor2ndarray,
 )
 from omegaconf import DictConfig, OmegaConf
-
-sys.path.append("./")
 
 from src import BaseRLAgent, create_agent
 
@@ -56,7 +53,7 @@ def eval_policy(
     return np.mean(returns)
 
 
-@hydra.main(config_path="../conf", config_name="train_agent", version_base="1.3.1")
+@hydra.main(config_path="./conf", config_name="train_agent", version_base="1.3.1")
 def main(cfg: DictConfig):
     cfg.work_dir = os.getcwd()
     # prepare experiment
