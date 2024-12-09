@@ -27,13 +27,13 @@ pip install "hydra-core==1.3.2" "omegaconf==2.3.0"
 ```bash
 # train an RL agent
 # by default, training results are stored at the `runs` dir
-python train_agent.py agent=ppo env.id=Hopper-v5
+python scripts/train_agent.py agent=ppo env.id=Hopper-v5
 
 # plot the training results
-python plot.py
+python scripts/plot.py
 
 # collect expert demonstrations
-python collect_demo.py env.id=Hopper-v5 expert_model_path=models/hopper_sac_expert.pt
+python scripts/collect_demo.py env.id=Hopper-v5 expert_model_path=models/hopper_sac_expert.pt
 ```
 
 ## Acknowledgement
