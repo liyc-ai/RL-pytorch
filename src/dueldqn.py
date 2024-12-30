@@ -1,7 +1,7 @@
 from copy import deepcopy
 
-from drlplugs.net.critic import MLPDuleQNet
-from drlplugs.net.ptu import freeze_net, move_device
+from exputils.net.critic import MLPDuleQNet
+from exputils.net.ptu import freeze_net, move_device
 from omegaconf import DictConfig
 from torch import nn, optim
 

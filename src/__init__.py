@@ -1,4 +1,3 @@
-import importlib.metadata
 from typing import Dict
 
 from omegaconf import DictConfig

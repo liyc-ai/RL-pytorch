@@ -6,10 +6,10 @@ import gymnasium as gym
 import hydra
 import numpy as np
 import torch as th
-from drlplugs.drls.env import get_env_info, make_env, reset_env_fn
-from drlplugs.exp.prepare import set_random_seed
-from drlplugs.logger import TBLogger
-from drlplugs.net.ptu import (
+from exputils.drls.env import get_env_info, make_env, reset_env_fn
+from exputils.exp.prepare import set_random_seed
+from exputils.logger import TBLogger
+from exputils.net.ptu import (
     save_torch_model,
     set_eval_mode,
     set_torch,

@@ -4,10 +4,10 @@ from typing import Callable, Dict, Tuple, Union
 import numpy as np
 import torch as th
 import torch.nn.functional as F
-from drlplugs.drls.gae import GAE
-from drlplugs.net.actor import MLPGaussianActor
-from drlplugs.net.critic import MLPCritic
-from drlplugs.net.ptu import gradient_descent, move_device
+from exputils.drls.gae import GAE
+from exputils.net.actor import MLPGaussianActor
+from exputils.net.critic import MLPCritic
+from exputils.net.ptu import gradient_descent, move_device
 from omegaconf import DictConfig
 from torch import nn, optim
 from torch.autograd import grad

@@ -4,8 +4,8 @@ Re-implementations of Deep Reinforcement Learning (DRL) algorithms, written in P
 ## Installation
 
 ```bash
-git clone https://github.com/liyc-ai/DRL-plugs
-cd DRL-plugs
+git clone https://github.com/liyc-ai/ExpUtils
+cd ExpUtils
 pip install .
 
 pip install "hydra-core==1.3.2" "omegaconf==2.3.0"

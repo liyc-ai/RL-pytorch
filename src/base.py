@@ -5,9 +5,9 @@ from typing import Callable, Dict, Union
 import gymnasium as gym
 import numpy as np
 import torch as th
-from drlplugs.drls.buffer import TransitionBuffer
-from drlplugs.logger import TBLogger
-from drlplugs.net.ptu import save_torch_model, tensor2ndarray
+from exputils.drls.buffer import TransitionBuffer
+from exputils.logger import TBLogger
+from exputils.net.ptu import save_torch_model, tensor2ndarray
 from omegaconf import DictConfig
 from torch import nn, optim
 from tqdm import trange

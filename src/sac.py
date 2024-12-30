@@ -5,9 +5,9 @@ from typing import Dict, Tuple, Union
 import numpy as np
 import torch as th
 import torch.nn.functional as F
-from drlplugs.net.actor import MLPGaussianActor
-from drlplugs.net.critic import MLPTwinCritic
-from drlplugs.net.ptu import freeze_net, gradient_descent, move_device, polyak_update
+from exputils.net.actor import MLPGaussianActor
+from exputils.net.critic import MLPTwinCritic
+from exputils.net.ptu import freeze_net, gradient_descent, move_device, polyak_update
 from omegaconf import DictConfig
 from torch import nn, optim
 
