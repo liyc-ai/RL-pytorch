@@ -6,19 +6,19 @@ import gymnasium as gym
 import hydra
 import numpy as np
 import torch as th
-from exputils.drls.env import get_env_info, make_env, reset_env_fn
-from exputils.exp.prepare import set_random_seed
-from exputils.logger import TBLogger
-from exputils.net.ptu import (
+from omegaconf import DictConfig, OmegaConf
+
+from src import BaseRLAgent, create_agent
+from src.utils.drls.env import get_env_info, make_env, reset_env_fn
+from src.utils.exp.prepare import set_random_seed
+from src.utils.logger import TBLogger
+from src.utils.net.ptu import (
     save_torch_model,
     set_eval_mode,
     set_torch,
     set_train_mode,
     tensor2ndarray,
 )
-from omegaconf import DictConfig, OmegaConf
-
-from src import BaseRLAgent, create_agent
 
 
 @th.no_grad
@@ -53,7 +53,7 @@ def eval_policy(
     return np.mean(returns)
 
 
-@hydra.main(config_path="./conf", config_name="train_agent", version_base="1.3.1")
+@hydra.main(config_path="./conf", config_name="train_agent", version_base="1.3.2")
 def main(cfg: DictConfig):
     cfg.work_dir = os.getcwd()
     # prepare experiment

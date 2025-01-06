@@ -1,9 +1,10 @@
 from copy import deepcopy
 
-from exputils.net.critic import MLPDuleQNet
-from exputils.net.ptu import freeze_net, move_device
 from omegaconf import DictConfig
 from torch import nn, optim
+
+from src.utils.net.critic import MLPDuleQNet
+from src.utils.net.ptu import freeze_net, move_device
 
 from .ddqn import DDQNAgent
 

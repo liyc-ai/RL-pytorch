@@ -2,6 +2,8 @@ from typing import Dict
 
 from omegaconf import DictConfig
 
+import utils
+
 from .base import BaseRLAgent
 from .ddpg import DDPGAgent
 from .ddqn import DDQNAgent
@@ -47,4 +49,5 @@ __all__ = [
     TRPOAgent,
     BaseRLAgent,
     AGENTS,
+    utils,
 ]

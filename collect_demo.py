@@ -6,14 +6,14 @@ import gymnasium as gym
 import hydra
 import numpy as np
 import torch as th
-from exputils.drls.env import get_env_info, make_env, reset_env_fn
-from exputils.exp.prepare import set_random_seed
-from exputils.logger import TBLogger
-from exputils.net.ptu import load_torch_model, set_torch
-from exputils.ospy.dataset import get_dataset_holder, save_dataset_to_h5
 from omegaconf import DictConfig, OmegaConf
 
 from src import BaseRLAgent, create_agent
+from src.utils.drls.env import get_env_info, make_env, reset_env_fn
+from src.utils.exp.prepare import set_random_seed
+from src.utils.logger import TBLogger
+from src.utils.net.ptu import load_torch_model, set_torch
+from src.utils.ospy.dataset import get_dataset_holder, save_dataset_to_h5
 
 
 @th.no_grad()
@@ -94,7 +94,7 @@ def _collect_demo(
     )
 
 
-@hydra.main(config_path="./conf", config_name="collect_demo", version_base="1.3.1")
+@hydra.main(config_path="./conf", config_name="collect_demo", version_base="1.3.2")
 def main(cfg: DictConfig):
     cfg.work_dir = os.getcwd()
     # prepare experiment

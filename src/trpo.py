@@ -4,10 +4,6 @@ from typing import Callable, Dict, Tuple, Union
 import numpy as np
 import torch as th
 import torch.nn.functional as F
-from exputils.drls.gae import GAE
-from exputils.net.actor import MLPGaussianActor
-from exputils.net.critic import MLPCritic
-from exputils.net.ptu import gradient_descent, move_device
 from omegaconf import DictConfig
 from torch import nn, optim
 from torch.autograd import grad
@@ -15,6 +11,11 @@ from torch.distributions.kl import kl_divergence
 from torch.distributions.normal import Normal
 from torch.nn.utils.convert_parameters import parameters_to_vector, vector_to_parameters
 from torch.utils.data import BatchSampler
+
+from src.utils.drls.gae import GAE
+from src.utils.net.actor import MLPGaussianActor
+from src.utils.net.critic import MLPCritic
+from src.utils.net.ptu import gradient_descent, move_device
 
 from .base import BaseRLAgent
 

@@ -4,8 +4,9 @@ import os.path as osp
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sbn
-from exputils.logger import tb2dict, window_smooth
-from exputils.ospy import filter_from_list
+
+from src.utils.logger import tb2dict, window_smooth
+from src.utils.ospy import filter_from_list
 
 # Hyper-param
 WORK_DIR = osp.expanduser("~/workspace/RL-pytorch/runs")

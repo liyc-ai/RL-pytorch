@@ -1,13 +1,14 @@
 import random
 
 import torch as th
-from exputils.drls.gae import GAE
-from exputils.net.actor import MLPGaussianActor
-from exputils.net.critic import MLPCritic
-from exputils.net.ptu import gradient_descent, move_device
 from omegaconf import DictConfig
 from torch import nn, optim
 from torch.utils.data import BatchSampler
+
+from src.utils.drls.gae import GAE
+from src.utils.net.actor import MLPGaussianActor
+from src.utils.net.critic import MLPCritic
+from src.utils.net.ptu import gradient_descent, move_device
 
 from .trpo import TRPOAgent
 
