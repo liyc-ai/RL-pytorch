@@ -11,5 +11,5 @@ paramiko==3.5.0
 seaborn==0.13.2
 tensorboard==2.18.0
 tensorboardX==2.6.2.2
-torch==2.5.1
+torch~=2.6.0
 tqdm==4.67.1
