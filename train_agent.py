@@ -64,6 +64,8 @@ def main(cfg: DictConfig):
     logger = TBLogger(
         args=OmegaConf.to_object(cfg),
         record_param=cfg.log.record_param,
+        backup_code=cfg.backup_code.enable,
+        code_files_list=cfg.backup_code.files,
         console_output=cfg.log.console_output,
     )
 

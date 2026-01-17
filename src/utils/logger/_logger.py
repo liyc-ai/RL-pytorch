@@ -35,11 +35,11 @@ def _get_exp_name(record_param_dict: Dict[str, Any], prefix: str = None):
     if prefix is not None:
         exp_name = prefix
     else:
-        exp_name = datetime.now().strftime("%Y-%m-%d__%H-%M-%S")
+        exp_name = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
     for key, value in record_param_dict.items():
         if isinstance(value, str):
             value = "-".join(value.split(" "))
-        exp_name = exp_name + f"~{key}={value}"
+        exp_name = exp_name + f"__{key}@{value}"
     return exp_name
 
 

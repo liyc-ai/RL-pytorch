@@ -1,7 +1,7 @@
 work_dir: 
 seed: 3407
 device: cuda:0
-description: "Demo"
+comment: "collect demo"
 
 # env:
 env:
@@ -17,7 +17,7 @@ expert_model_path: models/hopper_sac_expert.pt
 # log
 log:
   record_param:
-    - description
+    - comment
     - seed
     - agent.algo
     - env.id

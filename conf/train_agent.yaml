@@ -1,7 +1,7 @@
 work_dir:
 seed: 3407
 device: cuda:0
-description: ""
+comment: "benchmark"
 
 # env:
 env:
@@ -14,10 +14,18 @@ env:
 # log
 log:
   record_param:
+    - comment
     - seed
     - agent.algo
     - env.id
   console_output: true
+
+backup_code:
+  enable: true
+  files:
+    - src/
+    - conf/
+    - requirements.txt
 
 # train
 train:

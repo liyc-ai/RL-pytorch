@@ -23,13 +23,13 @@ pip install -r requirements.txt
 ```bash
 # train an RL agent
 # by default, training results are stored at the `runs` dir
-python train_agent.py agent=ppo env.id=Hopper-v5
+python train_agent.py agent=ppo env.id=Hopper-v5 comment=benchmark_results
 
 # plot the training results
 python plot.py
 
 # collect expert demonstrations
-python collect_demo.py env.id=Hopper-v5 expert_model_path=models/hopper_sac_expert.pt
+python collect_demo.py agent=ppo env.id=Hopper-v5 expert_model_path=runs/2026-01-17-14-49-26__comment@benchmark_results__seed@3407__agent.algo@ppo__env.id@Hopper-v5/ckpt/best_model.pt
 ```
 
 ## Citation
