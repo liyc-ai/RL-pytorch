@@ -32,7 +32,7 @@ class DQNAgent(BaseRLAgent):
             "net_arch": self.cfg.agent.QNet.net_arch,
             "activation_fn": getattr(nn, self.cfg.agent.QNet.activation_fn),
         }
-        self.q_net = MLPCritic(**q_net_kwarg)
+        self.q_net = th.compile(MLPCritic(**q_net_kwarg))
         self.q_net_target = deepcopy(self.q_net)
         self.q_net_optim = getattr(optim, self.cfg.agent.QNet.optimizer)(
             self.q_net.parameters(), self.cfg.agent.QNet.lr

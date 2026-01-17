@@ -35,7 +35,7 @@ class SACAgent(BaseRLAgent):
             "state_std_independent": self.cfg.agent.actor.state_std_independent,
             "activation_fn": getattr(nn, self.cfg.agent.actor.activation_fn),
         }
-        self.actor = MLPGaussianActor(**actor_kwarg)
+        self.actor = th.compile(MLPGaussianActor(**actor_kwarg))
         self.actor_optim = getattr(optim, self.cfg.agent.actor.optimizer)(
             self.actor.parameters(), self.cfg.agent.actor.lr
         )
@@ -47,7 +47,7 @@ class SACAgent(BaseRLAgent):
             "output_shape": (1,),
             "activation_fn": getattr(nn, self.cfg.agent.critic.activation_fn),
         }
-        self.critic = MLPTwinCritic(**critic_kwarg)
+        self.critic = th.compile(MLPTwinCritic(**critic_kwarg))
         self.critic_target = deepcopy(self.critic)
         self.critic_optim = getattr(optim, self.cfg.agent.critic.optimizer)(
             self.critic.parameters(), self.cfg.agent.critic.lr
@@ -206,4 +206,5 @@ class SACAgent(BaseRLAgent):
         )
 
         # update alpha
+        self.models["log_alpha"].data = self.log_alpha.data
         self.models["log_alpha"].data = self.log_alpha.data

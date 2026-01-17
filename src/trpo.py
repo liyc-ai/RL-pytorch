@@ -56,7 +56,7 @@ class TRPOAgent(BaseRLAgent):
             "action_shape": self.action_shape,
             "activation_fn": getattr(nn, self.cfg.agent.actor.activation_fn),
         }
-        self.actor = MLPGaussianActor(**actor_kwarg)
+        self.actor = th.compile(MLPGaussianActor(**actor_kwarg))
 
         # value network
         value_net_kwarg = {
@@ -65,7 +65,7 @@ class TRPOAgent(BaseRLAgent):
             "net_arch": self.cfg.agent.value_net.net_arch,
             "activation_fn": getattr(nn, self.cfg.agent.value_net.activation_fn),
         }
-        self.value_net = MLPCritic(**value_net_kwarg)
+        self.value_net = th.compile(MLPCritic(**value_net_kwarg))
         self.value_net_optim = getattr(optim, self.cfg.agent.value_net.optimizer)(
             self.value_net.parameters(), self.cfg.agent.value_net.lr
         )
@@ -231,4 +231,5 @@ class TRPOAgent(BaseRLAgent):
         # tricks to stablize
         # see https://www2.maths.lth.se/matematiklth/vision/publdb/reports/pdf/byrod-eccv-10.pdf
         Hvp += self.damping * p
+        return Hvp
         return Hvp

@@ -39,7 +39,7 @@ class PPOAgent(TRPOAgent):
             "action_shape": self.action_shape,
             "activation_fn": getattr(nn, self.cfg.agent.actor.activation_fn),
         }
-        self.actor = MLPGaussianActor(**actor_kwarg)
+        self.actor = th.compile(MLPGaussianActor(**actor_kwarg))
         self.actor_optim = getattr(optim, self.cfg.agent.actor.optimizer)(
             self.actor.parameters(), self.cfg.agent.actor.lr
         )
@@ -51,7 +51,7 @@ class PPOAgent(TRPOAgent):
             "net_arch": self.cfg.agent.value_net.net_arch,
             "activation_fn": getattr(nn, self.cfg.agent.value_net.activation_fn),
         }
-        self.value_net = MLPCritic(**value_net_kwarg)
+        self.value_net = th.compile(MLPCritic(**value_net_kwarg))
         self.value_net_optim = getattr(optim, self.cfg.agent.value_net.optimizer)(
             self.value_net.parameters(), self.cfg.agent.value_net.lr
         )

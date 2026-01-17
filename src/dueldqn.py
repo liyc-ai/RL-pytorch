@@ -1,5 +1,6 @@
 from copy import deepcopy
 
+import torch as th
 from omegaconf import DictConfig
 from torch import nn, optim
 
@@ -31,7 +32,7 @@ class DuelDQNAgent(DDQNAgent):
             "activation_fn": getattr(nn, self.cfg.agent.QNet.activation_fn),
             "mix_type": self.cfg.agent.QNet.mix_type,
         }
-        self.q_net = MLPDuleQNet(**q_net_kwarg)
+        self.q_net = th.compile(MLPDuleQNet(**q_net_kwarg))
         self.q_net_target = deepcopy(self.q_net)
         self.q_net_optim = getattr(optim, self.cfg.agent.QNet.optimizer)(
             self.q_net.parameters(), self.cfg.agent.QNet.lr
