@@ -9,10 +9,10 @@ from src.utils.logger import tb2dict, window_smooth
 from src.utils.ospy import filter_from_list
 
 # Hyper-param
-WORK_DIR = osp.expanduser("~/workspace/RL-pytorch/runs")
+WORK_DIR = osp.expanduser("~/workspace/RL-pytorch")
 LOG_DIRs = [
-    "2024-01-27__18-19-31~seed=3407~agent.algo=ppo~env.id=Hopper-v4",
-    "2024-01-27__19-14-55~seed=1290~agent.algo=ppo~env.id=Hopper-v4",
+    "runs/2026-01-17-15-12-21__comment@benchmark__seed@3407__agent.algo@ppo__env.id@Hopper-v5",
+    "runs/2026-01-17-15-12-42__comment@benchmark__seed@3407__agent.algo@trpo__env.id@Hopper-v5",
 ]
 KEYs = ["return/eval", "return/train"]
 RULE = "events.out.tfevents*"
@@ -26,9 +26,9 @@ datas = {key: list() for key in KEYs}
 env_id, algo = None, None
 for log_dir in LOG_DIRs:
     # check
-    _log_dir = log_dir.split("~")
-    tmp_env_id = filter_from_list(_log_dir, "env.id=*")[0].split("=")[-1]
-    tmp_algo = filter_from_list(_log_dir, "agent.algo=*")[0].split("=")[-1]
+    _log_dir = log_dir.split("__")
+    tmp_env_id = filter_from_list(_log_dir, "env.id@*")[0].split("@")[-1]
+    tmp_algo = filter_from_list(_log_dir, "agent.algo@*")[0].split("@")[-1]
     if env_id is None:
         env_id = tmp_env_id
     else:

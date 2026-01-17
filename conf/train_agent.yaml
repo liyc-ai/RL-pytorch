@@ -1,7 +1,7 @@
 work_dir:
 seed: 3407
 device: cuda:0
-comment: "benchmark"
+comment: "debug"
 
 # env:
 env:

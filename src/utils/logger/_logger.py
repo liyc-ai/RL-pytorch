@@ -101,8 +101,8 @@ class TBLogger:
         self.ckpt_dir = join(self.exp_dir, "ckpt")
         os.makedirs(self.ckpt_dir)  # checkpoint, for model, data, etc.
 
-        self.result_dir = join(self.exp_dir, "result")
-        os.makedirs(self.result_dir)  # result, for some intermediate result
+        # self.result_dir = join(self.exp_dir, "result")
+        # os.makedirs(self.result_dir)  # result, for some intermediate result
 
         self.code_bk_dir = join(self.exp_dir, "code")
         os.makedirs(self.code_bk_dir)  # back up code
