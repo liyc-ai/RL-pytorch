@@ -13,3 +13,8 @@ tensorboard==2.18.0
 tensorboardX==2.6.2.2
 torch==2.8.0
 tqdm==4.67.1
+
+# TODO: support brax for accelerated training
+# brax==0.14.0
+# jax[cuda12]==0.8.2
+# warp-lang==1.11.0

@@ -9,10 +9,10 @@ from src.utils.logger import tb2dict, window_smooth
 from src.utils.ospy import filter_from_list
 
 # Hyper-param
-WORK_DIR = osp.expanduser("~/workspace/RL-pytorch")
+WORK_DIR = os.getcwd()
 LOG_DIRs = [
     "runs/2026-01-17-15-12-21__comment@benchmark__seed@3407__agent.algo@ppo__env.id@Hopper-v5",
-    "runs/2026-01-17-15-12-42__comment@benchmark__seed@3407__agent.algo@trpo__env.id@Hopper-v5",
+    "runs/2026-01-17-16-59-43__comment@benchmark__seed@3407__agent.algo@ppo__env.id@Hopper-v5",
 ]
 KEYs = ["return/eval", "return/train"]
 RULE = "events.out.tfevents*"
@@ -53,12 +53,20 @@ for key in KEYs:  # smooth
             datas[key][i]["values"], SMOOTH_WINDOW_SIZE
         )
 
-## 2. Drawing multiple lines in a single picture
-for key in KEYs:
-    sbn.lineplot(data=pd.DataFrame(merged_datas[key]), x="steps", y="values", label=key)
-plt.title(f"Learning Curves of {algo} on {env_id}")
-plt.xlabel("Steps", size=14)
-plt.ylabel("Return", size=14)
-plt.yticks(size=14)
-plt.legend(loc="lower right", fontsize=14)
-plt.savefig("result.pdf")
+## 2. Drawing multiple lines in different subplots
+fig, axes = plt.subplots(len(KEYs), 1, figsize=(10, 5))
+for i, key in enumerate(KEYs):
+    sbn.lineplot(
+        data=pd.DataFrame(merged_datas[key]),
+        x="steps",
+        y="values",
+        label=key,
+        ax=axes[i],
+    )
+    axes[i].set_title(f"Learning Curves of {algo} on {env_id}", size=14)
+    axes[i].set_xlabel("Steps", size=14)
+    axes[i].set_ylabel("Return", size=14)
+    axes[i].tick_params(axis="both", which="major", labelsize=14)
+    axes[i].legend(loc="lower right", fontsize=14)
+fig.tight_layout()
+fig.savefig("result.pdf")
