@@ -1,5 +1,5 @@
 # RL-pytorch
-Re-implementations of Deep Reinforcement Learning (DRL) algorithms, written in PyTorch.
+PyTorch implementations of Deep Reinforcement Learning algorithms.
 
 ## Installation
 
@@ -30,6 +30,18 @@ python plot.py
 
 # collect expert demonstrations
 python collect_demo.py env.id=Hopper-v5 expert_model_path=models/hopper_sac_expert.pt
+```
+
+## Citation
+
+If you use RL-pytorch in your research, please cite:
+```bib
+@software{rl_pytorch,
+  author       = {Yi{-}Chen Li},
+  title        = {RL-pytorch: PyTorch Implementations of Deep Reinforcement Learning Algorithms},
+  year         = 2026,
+  url          = {https://github.com/liyc-ai/RL-pytorch}
+}
 ```
 
 ## Acknowledgement
