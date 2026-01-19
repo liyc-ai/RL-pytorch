@@ -81,10 +81,13 @@ class BaseBuffer(ABC):
 
     def clear(self) -> None:
         self.init_buffer()
-        self.buffers = [item.to(self.device) for item in self.buffers]
         self.ptr = 0
         self.size = 0
         self.total_size = 0  # Number of all the pushed items
+
+        # Unlike some popular implementations,
+        # we start with an empty buffer located in self.device (may be gpu).
+        self.buffers = [item.to(self.device) for item in self.buffers]
 
 
 class TransitionBuffer(BaseBuffer):
@@ -103,9 +106,6 @@ class TransitionBuffer(BaseBuffer):
         super().__init__(state_shape, action_shape, action_dtype, device, buffer_size)
 
     def init_buffer(self) -> None:
-        # Unlike some popular implementations,
-        # we start with an empty buffer located in self.device (may be gpu).
-
         state_shape = (0,) + self.state_shape
 
         if self.action_dtype == np.int64:
@@ -118,7 +118,7 @@ class TransitionBuffer(BaseBuffer):
             th.tensor(np.zeros(action_shape, dtype=self.action_dtype)),  # action_buffer
             th.zeros(state_shape),  # next_state_buffer
             th.zeros((0, 1)),  # reward_buffer
-            th.zeros((0, 1)),  # done_buffer
+            th.zeros((0, 1)),  # terminal_buffer
         ]
 
     def insert_transition(
@@ -127,27 +127,29 @@ class TransitionBuffer(BaseBuffer):
         action: Union[np.ndarray, int],
         next_state: np.ndarray,
         reward: Union[np.ndarray, float],
-        done: Union[np.ndarray, float],
+        terminal: Union[np.ndarray, float],
     ) -> None:
         # state
         state, next_state = (
             np.array(item, dtype=np.float32) for item in [state, next_state]
         )
+
         # action
         if isinstance(action, (int, np.int64)):
             action = [action]
         action = np.array(action, dtype=self.action_dtype)
-        # reward and done
-        reward, done = (
+
+        # reward and terminal
+        reward, terminal = (
             (
                 np.array([item], dtype=np.float32)
                 if isinstance(item, (float, np.float32))
                 else item
             )
-            for item in [reward, done]
+            for item in [reward, terminal]
         )
 
-        new_transition = [state, action, next_state, reward, done]
+        new_transition = [state, action, next_state, reward, terminal]
         new_transition = [th.tensor(item).to(self.device) for item in new_transition]
 
         if self.total_size <= self.buffer_size:
@@ -170,12 +172,12 @@ class TransitionBuffer(BaseBuffer):
         actions: np.ndarray,
         next_states: np.ndarray,
         rewards: np.ndarray,
-        dones: np.ndarray,
+        terminals: np.ndarray,
     ) -> None:
         """Insert a batch of transitions"""
         for i in range(states.shape[0]):
             self.insert_transition(
-                states[i], actions[i], next_states[i], rewards[i], dones[i]
+                states[i], actions[i], next_states[i], rewards[i], terminals[i]
             )
 
     def insert_dataset(self, dataset: Dict) -> None:

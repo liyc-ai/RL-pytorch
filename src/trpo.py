@@ -88,12 +88,12 @@ class TRPOAgent(BaseRLAgent):
     def update(self) -> Dict:
         self.stats = dict()
         if self.trans_buffer.size >= self.cfg.agent.rollout_steps:
-            states, actions, next_states, rewards, dones = self.trans_buffer.buffers
+            states, actions, next_states, rewards, terminals = self.trans_buffer.buffers
 
             # get advantage
             with th.no_grad():
                 Rs, self.adv = self.gae(
-                    self.value_net, states, rewards, next_states, dones
+                    self.value_net, states, rewards, next_states, terminals
                 )
 
             self._update_actor(states, actions)

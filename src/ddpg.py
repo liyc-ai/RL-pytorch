@@ -100,13 +100,13 @@ class DDPGAgent(BaseRLAgent):
             or rest_steps < 0
             or rest_steps % self.env_steps != 0
         ):
-            states, actions, next_states, rewards, dones = self.trans_buffer.sample(
+            states, actions, next_states, rewards, terminals = self.trans_buffer.sample(
                 self.batch_size
             )
 
             # update params
             for _ in range(self.env_steps):
-                self._update_critic(states, actions, next_states, rewards, dones)
+                self._update_critic(states, actions, next_states, rewards, terminals)
                 self._update_actor(states)
 
                 polyak_update(
@@ -128,7 +128,7 @@ class DDPGAgent(BaseRLAgent):
         actions: th.Tensor,
         next_states: th.Tensor,
         rewards: th.Tensor,
-        dones: th.Tensor,
+        terminals: th.Tensor,
     ):
         with th.no_grad():
             pred_next_actions = self.select_action(
@@ -137,7 +137,7 @@ class DDPGAgent(BaseRLAgent):
                 actor=self.actor_target,
             )
             target_Q = self.critic_target(next_states, pred_next_actions)
-            target_Q = rewards + self.gamma * (1 - dones) * target_Q
+            target_Q = rewards + self.gamma * (1 - terminals) * target_Q
         Q = self.critic(states, actions)
         critic_loss = F.mse_loss(Q, target_Q)
         self.stats.update(

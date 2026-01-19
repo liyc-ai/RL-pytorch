@@ -29,18 +29,18 @@ class GAE:
         states: th.Tensor,
         rewards: th.Tensor,
         next_states: th.Tensor,
-        dones: th.Tensor,
+        terminals: th.Tensor,
     ) -> Tuple[th.Tensor, th.Tensor]:
         """Here we can use two different methods to calculate Returns"""
-        not_dones = 1.0 - dones
+        not_terminals = 1.0 - terminals
 
         if self.use_td_lambda:
             Rs, advantages = self.td_lambda(
-                value_net, states, rewards, next_states, not_dones
+                value_net, states, rewards, next_states, not_terminals
             )
         else:
             Rs, advantages = self.gae(
-                value_net, states, rewards, next_states, not_dones
+                value_net, states, rewards, next_states, not_terminals
             )
 
         if self.norm_adv:
@@ -54,7 +54,7 @@ class GAE:
         states: th.Tensor,
         rewards: th.Tensor,
         next_states: th.Tensor,
-        not_dones: th.Tensor,
+        not_terminals: th.Tensor,
     ) -> Tuple[th.Tensor, th.Tensor]:
         Rs = th.empty_like(rewards)  # reward-to-go R_t
         advantages = th.empty_like(rewards)  # advantage
@@ -66,11 +66,11 @@ class GAE:
 
         for t in reversed(range(rewards.shape[0])):
             # calculate rewards-to-go reward
-            Rs[t] = rewards[t] + self.gamma * last_return * not_dones[t]
+            Rs[t] = rewards[t] + self.gamma * last_return * not_terminals[t]
             # delta and advantage
-            delta = rewards[t] + self.gamma * last_value * not_dones[t] - values[t]
+            delta = rewards[t] + self.gamma * last_value * not_terminals[t] - values[t]
             advantages[t] = (
-                delta + self.gamma * self.lambda_ * not_dones[t] * last_advantage
+                delta + self.gamma * self.lambda_ * not_terminals[t] * last_advantage
             )
             # update pointer
             last_value = th.clone(values[t])
@@ -84,19 +84,20 @@ class GAE:
         states: th.Tensor,
         rewards: th.Tensor,
         next_states: th.Tensor,
-        not_dones: th.Tensor,
+        not_terminals: th.Tensor,
     ) -> Tuple[th.Tensor, th.Tensor]:
         # calcultae value
         values, next_values = value_net(states), value_net(next_states)
         # calculate TD errors.
-        deltas = rewards + self.gamma * next_values * not_dones - values
+        deltas = rewards + self.gamma * next_values * not_terminals - values
         # initialize gae.
         advantages = th.empty_like(rewards)
         # calculate gae recursively from behind.
         advantages[-1] = deltas[-1]
         for t in reversed(range(rewards.size(0) - 1)):
             advantages[t] = (
-                deltas[t] + self.gamma * self.lambda_ * not_dones[t] * advantages[t + 1]
+                deltas[t]
+                + self.gamma * self.lambda_ * not_terminals[t] * advantages[t + 1]
             )
 
         return advantages + values, advantages

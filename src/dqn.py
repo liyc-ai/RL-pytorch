@@ -75,13 +75,13 @@ class DQNAgent(BaseRLAgent):
         self.stats = dict()
         if self.trans_buffer.size >= self.batch_size:
             self.global_t += 1
-            states, actions, next_states, rewards, dones = self.trans_buffer.sample(
+            states, actions, next_states, rewards, terminals = self.trans_buffer.sample(
                 self.batch_size, shuffle=True
             )
 
             # calculate q target and td target
             q_target = self._get_q_target(next_states)
-            td_target = rewards + self.gamma * (1 - dones) * q_target
+            td_target = rewards + self.gamma * (1 - terminals) * q_target
 
             # calculate q
             q = self._get_q(states, actions)

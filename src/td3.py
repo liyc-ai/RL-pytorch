@@ -105,13 +105,13 @@ class TD3Agent(BaseRLAgent):
             or rest_steps % self.env_steps != 0
         ):
             self.total_train_it += 1
-            states, actions, next_states, rewards, dones = self.trans_buffer.sample(
+            states, actions, next_states, rewards, terminals = self.trans_buffer.sample(
                 self.batch_size
             )
 
             # update params
             for _ in range(self.env_steps):
-                self._update_critic(states, actions, next_states, rewards, dones)
+                self._update_critic(states, actions, next_states, rewards, terminals)
                 if self.total_train_it % self.cfg.agent.policy_freq == 0:
                     self._update_actor(states)
 
@@ -134,7 +134,7 @@ class TD3Agent(BaseRLAgent):
         actions: th.Tensor,
         next_states: th.Tensor,
         rewards: th.Tensor,
-        dones: th.Tensor,
+        terminals: th.Tensor,
     ):
         with th.no_grad():
             pred_next_actions = self.select_action(
@@ -145,7 +145,9 @@ class TD3Agent(BaseRLAgent):
             target_Q1, target_Q2 = self.critic_target(
                 True, next_states, pred_next_actions
             )
-            target_Q = rewards + self.gamma * (1 - dones) * th.min(target_Q1, target_Q2)
+            target_Q = rewards + self.gamma * (1 - terminals) * th.min(
+                target_Q1, target_Q2
+            )
         Q1, Q2 = self.critic(True, states, actions)
         critic_loss = F.mse_loss(Q1, target_Q) + F.mse_loss(Q2, target_Q)
         self.stats.update(

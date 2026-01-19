@@ -137,13 +137,13 @@ class SACAgent(BaseRLAgent):
             or rest_steps < 0
             or rest_steps % self.env_steps != 0
         ):
-            states, actions, next_states, rewards, dones = self.trans_buffer.sample(
+            states, actions, next_states, rewards, terminals = self.trans_buffer.sample(
                 self.batch_size
             )
 
             # update params
             for _ in range(self.env_steps):
-                self._update_critic(states, actions, next_states, rewards, dones)
+                self._update_critic(states, actions, next_states, rewards, terminals)
                 if self.cfg.agent.log_alpha.auto_tune:
                     self._update_alpha(self._update_actor(states))
                 else:
@@ -162,7 +162,7 @@ class SACAgent(BaseRLAgent):
         actions: th.Tensor,
         next_states: th.Tensor,
         rewards: th.Tensor,
-        dones: th.Tensor,
+        terminals: th.Tensor,
     ):
         with th.no_grad():
             pred_next_actions, pred_next_log_pis = self.select_action(
@@ -174,7 +174,7 @@ class SACAgent(BaseRLAgent):
                 True, next_states, pred_next_actions
             )
             target_Q = th.min(target_Q1, target_Q2) - self.alpha * pred_next_log_pis
-            target_Q = rewards + self.gamma * (1 - dones) * target_Q
+            target_Q = rewards + self.gamma * (1 - terminals) * target_Q
 
         Q1, Q2 = self.critic(True, states, actions)
         critic_loss = F.mse_loss(Q1, target_Q) + F.mse_loss(Q2, target_Q)
