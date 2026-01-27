@@ -4,8 +4,8 @@ import torch as th
 from omegaconf import DictConfig
 from torch import nn, optim
 
-from src.utils.net.critic import MLPDuleQNet
-from src.utils.net.ptu import freeze_net, move_device
+from emg.helper.nn.critic import MLPDuleQNet
+from emg.helper.nn.ptu import freeze_net, move_device
 
 from .ddqn import DDQNAgent
 

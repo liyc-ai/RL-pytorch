@@ -1,7 +1,6 @@
-work_dir:
 seed: 3407
 device: cuda:0
-comment: "debug"
+comment: ""
 
 # env:
 env:
@@ -11,26 +10,25 @@ env:
     action_shape:
     action_dtype:
 
-# log
-log:
-  record_param:
-    - comment
-    - seed
-    - agent.algo
-    - env.id
-  console_output: true
-
-backup_code:
-  enable: true
-  files:
-    - src/
-    - conf/
-    - requirements.txt
-
 # train
 train:
   max_steps: 1000_000
   eval_interval: 5_000
+
+# manager
+manager:
+  root_dir: ./logs
+  code:
+    enable: true
+    src: 
+      - ./src
+      - ./train_agent.py
+  eval_only: false
+  tracking:
+    project_name: benchmark
+    experiment_name: ${env.id}/${agent.algo}
+    default_backend: 
+      - tensorboard
 
 # algo
 defaults:

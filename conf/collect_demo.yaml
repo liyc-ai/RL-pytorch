@@ -1,9 +1,9 @@
-work_dir: 
 seed: 3407
 device: cuda:0
-comment: "collect demo"
+comment: ""
+expert_model_path: models/hopper_sac_expert.pt
 
-# env:
+# env
 env:
   id: Hopper-v4
   info:
@@ -11,23 +11,23 @@ env:
     action_shape:
     action_dtype:
 
-# Note: All paths below are absolute paths or relative paths to project dir
-expert_model_path: models/hopper_sac_expert.pt
-
-# log
-log:
-  record_param:
-    - comment
-    - seed
-    - agent.algo
-    - env.id
+# manager
+manager:
+  root_dir: ./logs
+  code:
+    enable: true
+    src: 
+      - ./src
+      - ./collect_demo.py
+  eval_only: true
+  tracking:
+    project_name: collect_demo
+    experiment_name: ${env.id}
+    default_backend: null
 
 # demo
 demo:
-  n_traj: 0
-  n_step: 1000_000
-  save_dir: data
-  save_name: ""
+  n_traj: 10
   with_log_prob: False
 
 # algo

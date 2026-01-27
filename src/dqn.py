@@ -7,8 +7,8 @@ import torch.nn.functional as F
 from omegaconf import DictConfig
 from torch import nn, optim
 
-from src.utils.net.critic import MLPCritic
-from src.utils.net.ptu import freeze_net, gradient_descent, move_device
+from emg.helper.nn.critic import MLPCritic
+from emg.helper.nn.ptu import freeze_net, gradient_descent, move_device
 
 from .base import BaseRLAgent
 

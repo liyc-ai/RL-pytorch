@@ -5,10 +5,10 @@ from omegaconf import DictConfig
 from torch import nn, optim
 from torch.utils.data import BatchSampler
 
-from src.utils.drls.gae import GAE
-from src.utils.net.actor import MLPGaussianActor
-from src.utils.net.critic import MLPCritic
-from src.utils.net.ptu import gradient_descent, move_device
+from emg.helper.drl.gae import GAE
+from emg.helper.nn.actor import MLPGaussianActor
+from emg.helper.nn.critic import MLPCritic
+from emg.helper.nn.ptu import gradient_descent, move_device
 
 from .trpo import TRPOAgent
 

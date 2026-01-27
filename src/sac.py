@@ -8,9 +8,9 @@ import torch.nn.functional as F
 from omegaconf import DictConfig
 from torch import nn, optim
 
-from src.utils.net.actor import MLPGaussianActor
-from src.utils.net.critic import MLPTwinCritic
-from src.utils.net.ptu import freeze_net, gradient_descent, move_device, polyak_update
+from emg.helper.nn.actor import MLPGaussianActor
+from emg.helper.nn.critic import MLPTwinCritic
+from emg.helper.nn.ptu import freeze_net, gradient_descent, move_device, polyak_update
 
 from .base import BaseRLAgent
 

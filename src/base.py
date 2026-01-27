@@ -5,13 +5,12 @@ from typing import Callable, Dict, Union
 import gymnasium as gym
 import numpy as np
 import torch as th
+from emg import Manager
+from emg.helper.drl.buffer import TransitionBuffer
+from emg.helper.nn.ptu import save_torch_model, tensor2ndarray
 from omegaconf import DictConfig
 from torch import nn, optim
 from tqdm import trange
-
-from src.utils.drls.buffer import TransitionBuffer
-from src.utils.logger import TBLogger
-from src.utils.net.ptu import save_torch_model, tensor2ndarray
 
 
 class BaseRLAgent(ABC):
@@ -21,7 +20,6 @@ class BaseRLAgent(ABC):
         self.cfg = cfg
 
         # hyper-param
-        self.work_dir = cfg.work_dir
         self.device = th.device(cfg.device)
         self.seed = cfg.seed
         self.batch_size = self.cfg.agent.batch_size
@@ -73,7 +71,7 @@ class BaseRLAgent(ABC):
         eval_env: gym.Env,
         reset_env_fn: Callable,
         eval_policy: Callable,
-        logger: TBLogger,
+        manager: Manager,
     ):
         train_return = 0
         best_return = -float("inf")
@@ -81,14 +79,8 @@ class BaseRLAgent(ABC):
         eval_interval = self.cfg.train.eval_interval
 
         # start training
-        if self.cfg.log.console_output:
-            progress_f = None
-            progress_bar = trange(train_steps)
-        else:
-            progress_f = open(join(logger.exp_dir, "progress.txt"), "w")
-            progress_bar = trange(train_steps, file=progress_f)
         next_state, _ = reset_env_fn(train_env, self.seed)
-        for t in progress_bar:
+        for t in trange(train_steps):
             state = next_state
             if "warmup_steps" in self.cfg.agent and t < self.cfg.agent.warmup_steps:
                 action = train_env.action_space.sample()
@@ -109,25 +101,22 @@ class BaseRLAgent(ABC):
             )
 
             # update policy
-            logger.add_stats(self.update(), t)
+            manager.tracking.log(self.update(), t)
 
             # whether this episode ends
             if terminated or truncated:
-                logger.add_stats({"return/train": train_return}, t)
+                manager.tracking.log({"return/train": train_return}, t)
                 next_state, _ = reset_env_fn(train_env, self.seed)
                 train_return = 0
 
             # evaluate
             if (t + 1) % eval_interval == 0:
                 eval_return = eval_policy(eval_env, reset_env_fn, self, self.seed)
-                logger.add_stats({"return/eval": eval_return}, t)
+                manager.tracking.log({"return/eval": eval_return}, t)
 
                 if eval_return > best_return:
-                    logger.console.info(
+                    manager.tracking.print(
                         f"Step {t}: get new best return: {eval_return}!"
                     )
-                    save_torch_model(self.models, logger.ckpt_dir, "best_model")
+                    save_torch_model(self.models, manager.ckpt_dir, "best_model")
                     best_return = eval_return
-
-        if progress_f is not None:
-            progress_f.close()

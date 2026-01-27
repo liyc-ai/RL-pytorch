@@ -1,19 +1,18 @@
-import os
-from os.path import join
 from typing import Callable, Dict, Tuple
 
 import gymnasium as gym
 import hydra
 import numpy as np
 import torch as th
+from emg import Manager
+from emg.helper.drl.dataset import get_dataset_holder, save_dataset_to_h5
+from emg.helper.drl.env import get_env_info, make_env, reset_env_fn
+from emg.helper.exp.prepare import set_random_seed
+from emg.helper.nn.ptu import load_torch_model, set_torch
 from omegaconf import DictConfig, OmegaConf
+from tqdm import tqdm
 
 from src import BaseRLAgent, create_agent
-from src.utils.drls.env import get_env_info, make_env, reset_env_fn
-from src.utils.exp.prepare import set_random_seed
-from src.utils.logger import TBLogger
-from src.utils.net.ptu import load_torch_model, set_torch
-from src.utils.ospy.dataset import get_dataset_holder, save_dataset_to_h5
 
 
 @th.no_grad()
@@ -21,12 +20,8 @@ def _collect_demo(
     policy: BaseRLAgent,
     env: gym.Env,
     reset_env_fn: Callable,
-    save_dir: str,
-    save_name: str,
-    n_traj: int = 10,
-    n_step: int = 1000_000,
-    with_log_prob: bool = False,
-    seed: int = 0,
+    cfg: DictConfig,
+    manager: Manager,
 ) -> Tuple[str, Dict[str, np.ndarray]]:
     """Collect dataset
 
@@ -34,40 +29,40 @@ def _collect_demo(
     :param n_step: Collect [max_steps] transitions
     """
     collected_steps, collected_n_traj = 0, 0
-    _dataset = get_dataset_holder(with_log_prob)
+    _dataset = get_dataset_holder(cfg.demo.with_log_prob)
 
-    next_obs, _ = reset_env_fn(env, seed)
-    while collected_n_traj < n_traj or collected_steps < n_step:
-        collected_steps += 1
+    for _ in tqdm(range(cfg.demo.n_traj)):
+        next_obs, _ = reset_env_fn(env, cfg.seed)
+        while True:
+            obs = next_obs
+            if cfg.demo.with_log_prob:
+                action, log_prob = policy.select_action(
+                    obs, deterministic=True, return_log_prob=True
+                )
+            else:
+                action = policy.select_action(
+                    obs, deterministic=True, return_log_prob=False
+                )
+            action = action.cpu().numpy()
+            next_obs, reward, terminated, truncated, _ = env.step(action)
 
-        obs = next_obs
-        if with_log_prob:
-            action, log_prob = policy.select_action(
-                obs, deterministic=True, return_log_prob=True
-            )
-        else:
-            action = policy.select_action(
-                obs, deterministic=True, return_log_prob=False
-            )
-        next_obs, reward, terminated, truncated, _ = env.step(action.cpu().numpy())
+            # insert
+            _dataset["observations"].append(obs)
+            _dataset["actions"].append(action)
+            _dataset["rewards"].append(reward)
+            _dataset["next_observations"].append(next_obs)
+            _dataset["terminals"].append(terminated)
+            _dataset["timeouts"].append(truncated)
 
-        # insert
-        _dataset["observations"].append(obs)
-        _dataset["actions"].append(action)
-        _dataset["rewards"].append(reward)
-        _dataset["next_observations"].append(next_obs)
-        _dataset["terminals"].append(terminated)
-        _dataset["timeouts"].append(truncated)
+            if cfg.demo.with_log_prob:
+                _dataset["infos/action_log_probs"].append(log_prob)
 
-        if with_log_prob:
-            _dataset["infos/action_log_probs"].append(log_prob)
-
-        if terminated or truncated:
-            next_obs, _ = reset_env_fn(env, seed)
-            collected_n_traj += 1
+            if terminated or truncated:
+                next_obs, _ = reset_env_fn(env, cfg.seed)
+                break
 
     dataset = {}
-    if with_log_prob:
+    if cfg.demo.with_log_prob:
         dataset["infos/action_log_probs"] = np.array(
             _dataset["infos/action_log_probs"]
         ).astype(np.float64)
@@ -86,23 +81,22 @@ def _collect_demo(
     )
 
     # dump the saved dataset
-    save_dataset_to_h5(dataset, save_dir, save_name)
+    save_dataset_to_h5(dataset, manager.log_dir, "expert_demo")
 
     return (
-        f"Successfully save expert demonstration into {save_dir}/{save_name}.hdf5!",
+        f"Successfully save expert demonstration into {manager.log_dir}/expert_demo.hdf5!",
         dataset,
     )
 
 
 @hydra.main(config_path="./conf", config_name="collect_demo", version_base="1.3.2")
 def main(cfg: DictConfig):
-    cfg.work_dir = os.getcwd()
     # prepare experiment
     set_torch()
     set_random_seed(cfg.seed)
 
-    # setup logger
-    logger = TBLogger(args=OmegaConf.to_object(cfg), record_param=cfg.log.record_param)
+    # setup manager
+    manager = Manager(config=cfg)
 
     # setup environment
     env = make_env(cfg.env.id)
@@ -110,25 +104,11 @@ def main(cfg: DictConfig):
 
     # create agent
     agent = create_agent(cfg)
-    logger.console.info(
-        load_torch_model(agent.models, join(cfg.work_dir, cfg.expert_model_path))
-    )
+    manager.tracking.print(load_torch_model(agent.models, cfg.expert_model_path))
 
     # collect expert dataset
-    logger.console.info(f"Collecting expert data on the environment {cfg.env.id}...")
-    logger.console.info(
-        _collect_demo(
-            agent,
-            env,
-            reset_env_fn,
-            cfg.demo.save_dir,
-            cfg.demo.save_name,
-            cfg.demo.n_traj,
-            cfg.demo.n_step,
-            cfg.demo.with_log_prob,
-            cfg.seed,
-        )[0]
-    )
+    manager.tracking.print(f"Collecting expert data on the environment {cfg.env.id}...")
+    manager.tracking.print(_collect_demo(agent, env, reset_env_fn, cfg, manager)[0])
 
 
 if __name__ == "__main__":

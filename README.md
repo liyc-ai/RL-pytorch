@@ -21,17 +21,14 @@ pip install -r requirements.txt
 ## Run Experiments
 
 ```bash
-# Train an RL agent. By default, training results are stored at the `runs` dir
-python train_agent.py agent=ppo env.id=Hopper-v5 comment=benchmark
+# Train an RL agent.
+python train_agent.py agent=ppo env.id=Hopper-v5
 
 # Watch the training results
-tensorboard --logdir=./runs
-
-# We also provide a simple script to plot the training results.
-python plot.py
+tensorboard --logdir=./logs
 
 # Collect expert demonstrations
-python collect_demo.py agent=ppo env.id=Hopper-v5 expert_model_path=runs/2026-01-17-15-12-21__comment@benchmark__seed@3407__agent.algo@ppo__env.id@Hopper-v5/ckpt/best_model.pt
+python collect_demo.py agent=ppo env.id=Hopper-v5 expert_model_path=logs/benchmark/Hopper-v5/ppo/20260127_151112/ckpt/best_model.pt
 ```
 
 ## Citation

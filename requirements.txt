@@ -13,6 +13,7 @@ tensorboard==2.18.0
 tensorboardX==2.6.2.2
 torch==2.8.0
 tqdm==4.67.1
+emg @ git+https://git.nju.edu.cn/Y/emg.git@main
 
 # TODO: support brax for accelerated training
 # brax==0.14.0
