@@ -6,7 +6,7 @@ import gymnasium as gym
 import hydra
 import numpy as np
 import torch as th
-from emg import Manager
+from emg.helper.exp.tracking import Tracking
 from emg.helper.drl.env import get_env_info, make_env, reset_env_fn
 from emg.helper.exp.prepare import set_random_seed
 from emg.helper.nn.ptu import (
@@ -60,7 +60,7 @@ def main(cfg: DictConfig):
     set_random_seed(cfg.seed)
 
     # setup manager
-    manager = Manager(config=cfg)
+    tracking = Tracking(config=cfg)
 
     # setup environment
     train_env, eval_env = (make_env(cfg.env.id), make_env(cfg.env.id))
@@ -72,20 +72,18 @@ def main(cfg: DictConfig):
     # train agent
     def ctr_c_handler(_signum, _frame):
         """If the program was stopped by ctr+c, we will save the model before leaving"""
-        manager.tracking.print("The program is stopped...")
-        manager.tracking.print(
-            save_torch_model(agent.models, manager.ckpt_dir, "stopped_model")
+        tracking.print("The program is stopped...")
+        tracking.print(
+            save_torch_model(agent.models, tracking.ckpt_dir, "stopped_model")
         )  # save model
         exit(1)
 
     signal.signal(signal.SIGINT, ctr_c_handler)
 
-    agent.learn(train_env, eval_env, reset_env_fn, eval_policy, manager)
+    agent.learn(train_env, eval_env, reset_env_fn, eval_policy, tracking)
 
     # save model
-    manager.tracking.print(
-        save_torch_model(agent.models, manager.ckpt_dir, "final_model")
-    )
+    tracking.print(save_torch_model(agent.models, tracking.ckpt_dir, "final_model"))
 
 
 if __name__ == "__main__":

@@ -5,8 +5,8 @@ from typing import Callable, Dict, Union
 import gymnasium as gym
 import numpy as np
 import torch as th
-from emg import Manager
 from emg.helper.drl.buffer import TransitionBuffer
+from emg.helper.exp.tracking import Tracking
 from emg.helper.nn.ptu import save_torch_model, tensor2ndarray
 from omegaconf import DictConfig
 from torch import nn, optim
@@ -71,7 +71,7 @@ class BaseRLAgent(ABC):
         eval_env: gym.Env,
         reset_env_fn: Callable,
         eval_policy: Callable,
-        manager: Manager,
+        tracking: Tracking,
     ):
         train_return = 0
         best_return = -float("inf")
@@ -80,7 +80,7 @@ class BaseRLAgent(ABC):
 
         # start training
         next_state, _ = reset_env_fn(train_env, self.seed)
-        for t in trange(train_steps):
+        for t in trange(train_steps, desc="Training"):
             state = next_state
             if "warmup_steps" in self.cfg.agent and t < self.cfg.agent.warmup_steps:
                 action = train_env.action_space.sample()
@@ -101,22 +101,20 @@ class BaseRLAgent(ABC):
             )
 
             # update policy
-            manager.tracking.log(self.update(), t)
+            tracking.log(self.update(), t)
 
             # whether this episode ends
             if terminated or truncated:
-                manager.tracking.log({"return/train": train_return}, t)
+                tracking.log({"return/train": train_return}, t)
                 next_state, _ = reset_env_fn(train_env, self.seed)
                 train_return = 0
 
             # evaluate
             if (t + 1) % eval_interval == 0:
                 eval_return = eval_policy(eval_env, reset_env_fn, self, self.seed)
-                manager.tracking.log({"return/eval": eval_return}, t)
+                tracking.log({"return/eval": eval_return}, t)
 
                 if eval_return > best_return:
-                    manager.tracking.print(
-                        f"Step {t}: get new best return: {eval_return}!"
-                    )
-                    save_torch_model(self.models, manager.ckpt_dir, "best_model")
+                    tracking.print(f"Get new best evaluation return: {eval_return}!", t)
+                    save_torch_model(self.models, tracking.ckpt_dir, "best_model")
                     best_return = eval_return

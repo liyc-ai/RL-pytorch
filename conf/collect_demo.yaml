@@ -11,19 +11,20 @@ env:
     action_shape:
     action_dtype:
 
-# manager
-manager:
+# tracking
+tracking:
   root_dir: ./logs
-  code:
+  backup:
     enable: true
     src: 
       - ./src
       - ./collect_demo.py
   eval_only: true
-  tracking:
-    project_name: collect_demo
-    experiment_name: ${env.id}
-    default_backend: null
+  project_name: collect_demo
+  experiment_name: ${env.id}
+  default_backend:
+    - console
+    - logfile
 
 # demo
 demo:

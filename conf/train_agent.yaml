@@ -15,20 +15,21 @@ train:
   max_steps: 1000_000
   eval_interval: 5_000
 
-# manager
-manager:
+# tracking
+tracking:
   root_dir: ./logs
-  code:
+  backup:
     enable: true
     src: 
       - ./src
       - ./train_agent.py
   eval_only: false
-  tracking:
-    project_name: benchmark
-    experiment_name: ${env.id}/${agent.algo}
-    default_backend: 
-      - tensorboard
+  project_name: benchmark
+  experiment_name: ${env.id}/${agent.algo}
+  default_backend: 
+    - tensorboard
+    - console
+    - logfile
 
 # algo
 defaults:

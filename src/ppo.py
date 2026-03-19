@@ -72,7 +72,7 @@ class PPOAgent(TRPOAgent):
             _, old_log_probs = self._select_action_dist(states, actions)
 
         idx = list(range(self.trans_buffer.size))
-        for _ in range(self.cfg.agent.value_net.n_update):
+        for _ in range(self.cfg.agent.actor.n_update):
             random.shuffle(idx)
             batches = list(
                 BatchSampler(idx, batch_size=self.batch_size, drop_last=False)
