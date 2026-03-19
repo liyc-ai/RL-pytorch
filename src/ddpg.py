@@ -4,9 +4,9 @@ from typing import Dict, Union
 import numpy as np
 import torch as th
 import torch.nn.functional as F
-from emg.helper.nn.actor import MLPDeterministicActor
-from emg.helper.nn.critic import MLPCritic
-from emg.helper.nn.ptu import freeze_net, gradient_descent, move_device, polyak_update
+from emg.utils.drl.actor import MLPDeterministicActor
+from emg.utils.drl.critic import MLPCritic
+from emg.nn.ptu import freeze_net, gradient_descent, move_device, polyak_update
 from omegaconf import DictConfig
 from torch import nn, optim
 

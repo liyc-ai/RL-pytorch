@@ -5,12 +5,11 @@ from typing import Dict, Tuple, Union
 import numpy as np
 import torch as th
 import torch.nn.functional as F
+from emg.nn.ptu import freeze_net, gradient_descent, move_device, polyak_update
+from emg.utils.drl.actor import MLPGaussianActor
+from emg.utils.drl.critic import MLPTwinCritic
 from omegaconf import DictConfig
 from torch import nn, optim
-
-from emg.helper.nn.actor import MLPGaussianActor
-from emg.helper.nn.critic import MLPTwinCritic
-from emg.helper.nn.ptu import freeze_net, gradient_descent, move_device, polyak_update
 
 from .base import BaseRLAgent
 

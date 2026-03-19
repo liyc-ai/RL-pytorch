@@ -4,11 +4,11 @@ import gymnasium as gym
 import hydra
 import numpy as np
 import torch as th
-from emg.helper.drl.dataset import get_dataset_holder, save_dataset_to_h5
-from emg.helper.drl.env import get_env_info, make_env, reset_env_fn
-from emg.helper.exp.prepare import set_random_seed
-from emg.helper.exp.tracking import Tracking
-from emg.helper.nn.ptu import load_torch_model, set_torch
+from emg.exp.prepare import set_random_seed
+from emg.exp.tracking import Tracking
+from emg.nn.ptu import load_torch_model, set_torch
+from emg.utils.drl.dataset import get_dataset_holder, save_dataset_to_h5
+from emg.utils.drl.env import get_env_info, make_env, reset_env_fn
 from omegaconf import DictConfig, OmegaConf
 from tqdm import tqdm
 

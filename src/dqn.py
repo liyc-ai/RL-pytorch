@@ -4,11 +4,10 @@ from typing import Dict, Union
 import numpy as np
 import torch as th
 import torch.nn.functional as F
+from emg.nn.ptu import freeze_net, gradient_descent, move_device
+from emg.utils.drl.critic import MLPCritic
 from omegaconf import DictConfig
 from torch import nn, optim
-
-from emg.helper.nn.critic import MLPCritic
-from emg.helper.nn.ptu import freeze_net, gradient_descent, move_device
 
 from .base import BaseRLAgent
 

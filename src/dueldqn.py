@@ -1,11 +1,10 @@
 from copy import deepcopy
 
 import torch as th
+from emg.nn.ptu import freeze_net, move_device
+from emg.utils.drl.critic import MLPDuleQNet
 from omegaconf import DictConfig
 from torch import nn, optim
-
-from emg.helper.nn.critic import MLPDuleQNet
-from emg.helper.nn.ptu import freeze_net, move_device
 
 from .ddqn import DDQNAgent
 
